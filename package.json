@@ -1,0 +1,18 @@
+{
+  "name": "entrenamiento_auditivo_backend",
+  "version": "0.0.1",
+  "description": "Backend para la app Entrenamiento Auditivo para Musicos",
+  "main": "index.js",
+  "author": "Franco Wanseéle & Martín Nogueira",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "easymidi": "^2.0.3",
+    "express": "^4.17.1",
+    "global": "^4.4.0",
+    "nodemon": "^2.0.7"
+  },
+  "scripts": {
+    "start": "nodemon index.js"
+  }
+}
