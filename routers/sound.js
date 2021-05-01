@@ -3,6 +3,7 @@ const SoundController = require('../controllers/sound');
 
 const api = express.Router();
 
-api.post('/play-sound', SoundController.playSound);
+api.get('/play-sound', SoundController.playSound);
+api.get('/transmit-sound', SoundController.transmitirSound);
 
 module.exports = api;

@@ -10,6 +10,24 @@ app.listen(port, () => {
     console.log(`http://${IP_SERVER}:${port}/api/`);
 });
 
+// if (process.env.NODE_ENV === 'development') {
+//     const { cache } = require;
+//     const persistentFiles: String[] = [];
+//     const clearCache = (except: String[]) => {
+//         for (let key in cache)
+//             if (!except.includes(key) && key.indexOf('/node_modules/') === -1)
+//                 delete cache[key];
+//     };
+//     app.use((req, res, next) => {
+//         clearCache(persistentFiles);
+//         const { router } = require('config/routes');
+//         router.handle(req, res, next);
+//     });
+// } else {
+//     const router = require('config/routes');
+//     app.use(router.handle);
+// }
+
 // const easymidi = require('easymidi');
 // const output = new easymidi.Output('Mindy', true);
 
