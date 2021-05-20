@@ -1,4 +1,4 @@
-const IP_SERVER = 'localhost';
+const IP_SERVER = '10.0.2.2';
 // PORT_DB
 // NAME_DATABASE
 
