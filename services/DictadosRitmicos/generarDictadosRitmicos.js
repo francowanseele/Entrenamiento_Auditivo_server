@@ -85,12 +85,6 @@ const generarDictadoRitmico = (
     return res;
 };
 
-// PARAMETROS = ( tarjetas de figuras , cantidad de compases ,numerador , denominador )
-// console.log(generarDictadoRitmico(['redonda','blanca','negra','negra-punto-corchea','corchea-2semicorcheas'],10,3,4))
-console.log(
-    generarDictadoRitmico(['1', '2', '4', 'd4-8', '8-16-16'], 10, 3, 4)
-);
-
 module.exports = {
     generarDictadoRitmico,
     getFigurasValida,
