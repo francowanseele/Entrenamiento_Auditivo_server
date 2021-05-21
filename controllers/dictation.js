@@ -3,6 +3,7 @@ const cte_dictados = require('../services/DictadosMelodicos/constants');
 const transformar = require('../services/DictadosMelodicos/transformarEscala');
 const dictado = require('../services/DictadosMelodicos/generarDictado');
 const dictadoRitmico = require('../services/DictadosRitmicos/generarDictadosRitmicos');
+const funcsGeralDictado = require('../services/funcsGralDictados');
 
 function melodicDictation(req, res) {
     try {
@@ -132,9 +133,13 @@ function melodicDictation(req, res) {
             notaFin_Transform: notaFinTransformada,
         };
 
+        let dictadoGeneradoTraducido =
+            funcsGeralDictado.translateNotes(dictadoGenerado);
+
         res.status(200).send({
             ok: true,
             message: 'Dictado generado correctamente',
+            dictadoTraducido: dictadoGeneradoTraducido,
             dictado: dictadoGenerado,
             configuracion: configDictado,
         });

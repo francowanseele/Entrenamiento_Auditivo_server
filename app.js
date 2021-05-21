@@ -6,10 +6,11 @@ const app = express();
 // Load routings
 const soundRoutes = require('./routers/sound');
 const dictationRoutes = require('./routers/dictation');
+const studentRoutes = require('./routers/student');
 
 // Configuration body parser
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
 // Configure Header HTTP
 app.use((req, res, next) => {
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 // router Basic
 app.use(`/api`, soundRoutes);
 app.use(`/api`, dictationRoutes);
+app.use(`/api`, studentRoutes);
 
 // Export
 module.exports = app;
