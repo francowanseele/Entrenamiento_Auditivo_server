@@ -132,15 +132,15 @@ function melodicDictation(req, res) {
             notaInicio_Transform: notaBaseTransformada,
             notaFin_Transform: notaFinTransformada,
         };
-
         let dictadoGeneradoTraducido = funcsGeralDictado.translateNotes(dictadoGenerado);
-        console.log(dictadoGeneradoTraducido)
+
+        
 
         res.status(200).send({
             ok: true,
             message: 'Dictado generado correctamente',
             dictado: dictadoGenerado,
-            dictadoTraducido: dictadoGeneradoTraducido,
+            dictadoTraducido: dictadoGeneradoTraducido,            
             configuracion: configDictado,
         });
     } catch (error) {
@@ -181,10 +181,10 @@ function rhythmicDictation(req, res) {
         }
 
         const figurasDictado = getFiguras(dictado);
-
+        
         res.status(200).send({
             ok: true,
-            figuras: figurasDictado,
+            figuras: figurasDictado,            
             dictado: dictado,
         });
     } catch (error) {
