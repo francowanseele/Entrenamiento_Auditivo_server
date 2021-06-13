@@ -17,7 +17,7 @@ const DENOMINADOR = {
     'corchea':8,
     'semicorchea':16,
     'fusa':32,
-    'semifusa:':64
+    'semifusa:':64 
 }
 const VALOR_DE_NOTA = {
     '1':4/4,
