@@ -77,13 +77,44 @@ const generarDictadoRitmico = (
     numerador,
     denominador
 ) => {
+    // console.log('entra generar dictado')
+    // console.log('tarjetas'+tarjetas)
+    let tarjetasRes =[];
+    for (let j =0; j< tarjetas.length; j++){
+        tarjetasRes.push(gral.getElemPrioridad(tarjetas));
+    }
+    //sacar tarjetas repetidas antes de generar los dictados
+    let tarjetasSinRepetir = [];
+    tarjetasRes.forEach((item)=>{
+    	//pushes only unique element
+        if(!tarjetasSinRepetir.includes(item)){
+    		tarjetasSinRepetir.push(item);
+    	}
+    })
+    
     let res = [];
-    let dictadosValidos = getFigurasValida(tarjetas, numerador, denominador);
+    console.log(tarjetasSinRepetir);
+    let dictadosValidos = getFigurasValida(tarjetasSinRepetir, numerador, denominador);
     for (i = 0; i < numeroCompases; i++) {
         res.push(gral.getRandom(dictadosValidos));
     }
+    // console.log(res)
     return res;
 };
+
+// console.log(generarDictadoRitmico(
+//             [
+//             {elem:'1',prioridad:1}, 
+//             {elem:'2',prioridad:5}, 
+//             {elem:'4',prioridad:1}, 
+//             {elem:'16-16-16-16',prioridad:1},
+//             {elem:'8-8',prioridad:1},
+//             {elem:'8-16-16',prioridad:1},
+//             {elem:'16-8-16',prioridad:1}        
+        
+//         ]
+//         ,5,4,4))
+
 
 module.exports = {
     generarDictadoRitmico,

@@ -171,11 +171,13 @@ function rhythmicDictation(req, res) {
         const { tarjetas, nroCompases, numerador, denominador } = req.body;
 
         var dictado = [];
-        let dictadosValidos = dictadoRitmico.getFigurasValida(
+        let dictadosValidos = dictadoRitmico.generarDictadoRitmico(
             tarjetas,
+            nroCompases,
             numerador,
             denominador
         );
+        console.log(dictadosValidos)
         for (i = 0; i < nroCompases; i++) {
             dictado.push(gral.getRandom(dictadosValidos));
         }
