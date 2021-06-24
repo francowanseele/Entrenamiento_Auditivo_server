@@ -6,7 +6,10 @@ const app = express();
 // Load routings
 const soundRoutes = require('./routers/sound');
 const dictationRoutes = require('./routers/dictation');
-const studentRoutes = require('./routers/student');
+const courseRoutes = require('./routers/course');
+const giroMelodicoRoutes = require('./routers/giro_melodico');
+const compasRoutes = require('./routers/compas');
+const userRoutes = require('./routers/user');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -30,7 +33,10 @@ app.use((req, res, next) => {
 // router Basic
 app.use(`/api`, soundRoutes);
 app.use(`/api`, dictationRoutes);
-app.use(`/api`, studentRoutes);
+app.use(`/api`, courseRoutes);
+app.use(`/api`, giroMelodicoRoutes);
+app.use(`/api`, compasRoutes);
+app.use(`/api`, userRoutes);
 
 // Export
 module.exports = app;

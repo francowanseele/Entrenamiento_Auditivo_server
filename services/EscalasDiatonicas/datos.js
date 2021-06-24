@@ -83,6 +83,61 @@ const REGLA_AVANCE = 7;
 
 const REGLA_MOV_DIATONICA = ['terceras'];
 
+const ALTERACIONES_ESCALA_DIATONICA = [
+    {
+        escala: 'Do',
+        alteracion: [],
+    },
+    {
+        escala: 'Sol',
+        alteracion: ['F#'],
+    },
+    {
+        escala: 'Re',
+        alteracion: ['C#', 'F#'],
+    },
+    {
+        escala: 'La',
+        alteracion: ['C#', 'F#', 'G#'],
+    },
+    {
+        escala: 'Mi',
+        alteracion: ['C#', 'F#', 'G#', 'D#'],
+    },
+    {
+        escala: 'Si',
+        alteracion: ['C#', 'F#', 'G#', 'D#', 'A#'],
+    },
+    {
+        escala: 'Fa#',
+        alteracion: ['C#', 'F#', 'G#', 'D#', 'A#', 'E#'],
+    },
+    {
+        escala: 'Solb',
+        alteracion: ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb'],
+    },
+    {
+        escala: 'Reb',
+        alteracion: ['Gb', 'Ab', 'Bb', 'Db', 'Eb'],
+    },
+    {
+        escala: 'Lab',
+        alteracion: ['Ab', 'Bb', 'Db', 'Eb'],
+    },
+    {
+        escala: 'Mib',
+        alteracion: ['Ab', 'Bb', 'Eb'],
+    },
+    {
+        escala: 'Sib',
+        alteracion: ['Bb', 'Eb'],
+    },
+    {
+        escala: 'Fa',
+        alteracion: ['Bb'],
+    },
+];
+
 module.exports = {
     SECUENCIA_ASCENDENTE,
     SECUENCIA_DESCENDENTE,
@@ -93,5 +148,6 @@ module.exports = {
     REGLA_MOV_DIATONICA,
     INTERVALO_SEMITONOS,
     INTERVALO_NOMBRES,
-    INTERVALOS
+    INTERVALOS,
+    ALTERACIONES_ESCALA_DIATONICA,
 };

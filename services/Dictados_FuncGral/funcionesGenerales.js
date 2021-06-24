@@ -44,10 +44,22 @@ const removeItemFromArr = (arr, item) => {
     }
 };
 
+const removeItemFromArrRegla = (arrayRegla, elem) => {
+    var res = [];
+    arrayRegla.forEach((elemRegla) => {
+        if (elemRegla.elem != elem) {
+            res.push(elemRegla);
+        }
+    });
+
+    return res;
+};
+
 module.exports = {
     printArray,
     printError,
     getRandom,
     getElemPrioridad,
     removeItemFromArr,
+    removeItemFromArrRegla,
 };

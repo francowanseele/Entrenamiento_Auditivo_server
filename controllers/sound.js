@@ -36,10 +36,10 @@ function tramsitDictation(req, res) {
 function generateDictationFile(req, res) {
     try {
         const addNotes = (track, dictation, figurasDictado) => {
-            const dictadoTrans = funcGralDictado.translateNotes(dictation);
+            // const dictadoTrans = funcGralDictado.translateNotes(dictation);
 
-            for (let i = 0; i < dictadoTrans.length; i++) {
-                const nota = dictadoTrans[i];
+            for (let i = 0; i < dictation.length; i++) {
+                const nota = dictation[i];
                 const fig = figurasDictado[i];
 
                 track.addEvent(
@@ -59,12 +59,29 @@ function generateDictationFile(req, res) {
             return track;
         };
 
-        const { dictado, figurasDictado } = req.body;
+        const getFigurasALL = (conjuntoFiguras) => {
+            var res = [];
+            conjuntoFiguras.forEach((figuras) => {
+                figuras.forEach((fig) => {
+                    res.push(fig);
+                });
+            });
+
+            return res;
+        };
+
+        const { dictado, figurasDictado, escalaDiatoica } = req.body;
         const { id } = req.params;
 
         var track = new MidiWriter.Track();
         // track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 9 }));
-        track = addNotes(track, dictado, figurasDictado);
+        const figuras = getFigurasALL(figurasDictado);
+        const dictadoConTransformaciones = funcGralDictado.applyTransformation(
+            dictado,
+            escalaDiatoica
+        );
+
+        track = addNotes(track, dictadoConTransformaciones, figuras);
 
         var write = new MidiWriter.Writer(track);
         const nameFileMidi = id.toString();
@@ -85,6 +102,7 @@ function generateDictationFile(req, res) {
 
         res.status(200).send({
             ok: true,
+            dictadoTransformado: dictadoConTransformaciones,
             message:
                 'Generación correcta de los dictados en archivos .mid y .mp3.',
         });

@@ -195,7 +195,4 @@ function rhythmicDictation(req, res) {
     }
 }
 
-module.exports = {
-    melodicDictation,
-    rhythmicDictation,
-};
+module.exports = {};
