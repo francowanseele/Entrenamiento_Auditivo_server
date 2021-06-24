@@ -202,7 +202,9 @@ const transformarAEscalaDiatonica = (notas, tonalidad) => {
     });
 
     // Aplicar alteraciones dependiendo de la escala diatónica
-    const notasTransformadas = aplicarAlteraciones(notasMovidas, tonalidad);
+    // const notasTransformadas = aplicarAlteraciones(notasMovidas, tonalidad);
+
+    const notasTransformadas = notasMovidas;
 
     return notasTransformadas;
 };
