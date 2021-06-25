@@ -130,28 +130,28 @@ const generarDictadoRitmico = (
 
 console.log(generarDictadoRitmico(
             [
-            {elem:'d4',prioridad:1}, 
-            {elem:'4-8',prioridad:1}, 
-            {elem:'8-4',prioridad:1},
-            {elem:'4-4-4T',prioridad:1}
-            // {elem:'16-16-16-16T',prioridad:1},
-            // {elem:'8-8T',prioridad:1},
-            // {elem:'8-16-16T',prioridad:1},
-            // {elem:'4',prioridad:1},
-            // {elem:'2',prioridad:1},
-            // {elem:'1',prioridad:1},
-            // {elem:'16-8-16T',prioridad:1}                
+            // {elem:'d4',prioridad:1}, 
+            // {elem:'4-8',prioridad:1}, 
+            // {elem:'8-4',prioridad:1},
+            // {elem:'8-8-8',prioridad:1}
+            {elem:'16-16-16-16',prioridad:0},
+            {elem:'8-8',prioridad:0},
+            {elem:'8-16-16',prioridad:0},
+            {elem:'4',prioridad:1},
+            {elem:'2',prioridad:1},
+            {elem:'1',prioridad:1},
+            {elem:'16-8-16',prioridad:1}                
             ],
         5,
         [
-            // {elem:'4/4', prioridad:1},
-            // {elem:'3/4', prioridad:0},
-            // {elem:'2/4', prioridad:0}
-            {elem:'6/8',prioridad:1},
-            {elem:'9/8',prioridad:1},
-            {elem:'12/8',prioridad:1}  
+            {elem:'4/4', prioridad:1},
+            {elem:'3/4', prioridad:0},
+            {elem:'2/4', prioridad:0} 
+        //     {elem:'6/8',prioridad:1},
+        //     {elem:'9/8',prioridad:1},
+        //     {elem:'12/8',prioridad:1}  
         ],
-        'compuestas'
+        'simples'
         )) 
 
 

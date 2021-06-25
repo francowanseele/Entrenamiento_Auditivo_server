@@ -9,13 +9,12 @@ const VALOR_COMPASES_COMPUESTOS = [
 // Los elementos con una T al final indica que son figuras con "techito" para diferenciarlas en el front
 // La d indica que llevan un punto
 const FIGURAS = [
-            '1','2','4','d4-8',
-            'd4-16-16T','d2','8-8T',
-            '16-16-16-16T','8-16-16T','16-8-16T'         
+            '1','2','4','d4-8','d2','8-8',
+            '16-16-16-16','8-16-16','16-8-16'         
             ]
 
 const FIGURAS_COMPUESTAS = [
-                                'd4','4-8','8-4','4-4-4T'
+                                'd4','4-8','8-4','8-8-8'
                             ]
 
 // const FIGURAS = [
@@ -53,7 +52,7 @@ const VALOR_DE_NOTA = {
     'd4': 3/8, //2/8+1/8 = 3/8
     '4-8' : 3/8,//1/4 + 1/8
     '8-4' : 3/8,//1/4 + 1/8
-    '4-4-4': 3/4 
+    '8-8-8': 3/8 
 }
 // const VALOR_DE_NOTA = {
 //     'redonda':4/4,
