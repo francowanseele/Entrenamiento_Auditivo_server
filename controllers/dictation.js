@@ -168,26 +168,32 @@ function rhythmicDictation(req, res) {
             return figuras;
         };
 
-        const { tarjetas, nroCompases, numerador, denominador } = req.body;
+        const { tarjetas, nroCompases, numeradorDenominador,tipoCelulas } = req.body;
 
         var dictado = [];
-        let dictadosValidos = dictadoRitmico.generarDictadoRitmico(
+        let dictadosValidosRes = dictadoRitmico.generarDictadoRitmico(
             tarjetas,
             nroCompases,
-            numerador,
-            denominador
+            numeradorDenominador,
+            tipoCelulas
         );
+        console.log('dictadosValidosRes')
+        console.log(dictadosValidosRes);
+        dictadosValidos = dictadosValidosRes.dictadoRitmico;
+            
         console.log(dictadosValidos)
         for (i = 0; i < nroCompases; i++) {
             dictado.push(gral.getRandom(dictadosValidos));
         }
 
         const figurasDictado = getFiguras(dictado);
-
+        
         res.status(200).send({
             ok: true,
             figuras: figurasDictado,
             dictado: dictado,
+            numerador: dictadosValidosRes.numerador,
+            denominador: dictadosValidosRes.denominador
         });
     } catch (error) {
         res.status(501).send({
