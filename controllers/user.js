@@ -128,8 +128,8 @@ function generateDictation(req, res) {
         const {
             tarjetas,
             nroCompases,
-            numerador,
-            denominador,
+            compas,
+            simple,
             notasRegla,
             nivelPrioridadRegla,
             intervaloNotas,
@@ -137,7 +137,7 @@ function generateDictation(req, res) {
             notasFin,
             nivelPrioridadClave,
             escalaDiatonicaRegla,
-            date,
+            notaBase,
         } = req.body;
         const { id } = req.params;
         const { idCourse, idModule, idConfigDictation, cantDictation } =
@@ -156,16 +156,18 @@ function generateDictation(req, res) {
         while (i < nroDic) {
             const dateNow = Date.now();
             // Rhythmic
-
-            // Elegir numerador y denominador con prioridad
-            // Agregar tarjetas con prioridad (Martin)
-            const dictadoRitmico_Compases =
+            const res_generarDictadoRitmico =
                 dictadoRitmico.generarDictadoRitmico(
                     tarjetas,
                     nroCompases,
-                    numerador,
-                    denominador
+                    compas,
+                    simple
                 );
+            const dictadoRitmico_Compases =
+                res_generarDictadoRitmico.dictadoRitmico;
+            const numeradorDictadoRitmico = res_generarDictadoRitmico.numerador;
+            const denominadorDictadoRitmico =
+                res_generarDictadoRitmico.denominador;
             const figurasDictado = getFiguras(dictadoRitmico_Compases);
             const largoDictadoMelodico = figurasDictado.length;
 
@@ -201,6 +203,9 @@ function generateDictation(req, res) {
                     figuras: dictadoRitmico_Compases, // con compás
                     clave: clave,
                     escala_diatonica: escala_diatonica,
+                    nota_base: notaBase,
+                    numerador: numeradorDictadoRitmico,
+                    denominador: denominadorDictadoRitmico,
                     resuelto: [],
                 };
 

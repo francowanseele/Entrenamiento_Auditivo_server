@@ -45,6 +45,9 @@ const UsuarioSchema = Schema({
             figuras: [[String]], // con compás
             clave: String,
             escala_diatonica: String,
+            nota_base: String,
+            numerador: Number,
+            denominador: Number,
             resuelto: [
                 {
                     fecha: Date,

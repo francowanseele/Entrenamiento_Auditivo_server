@@ -63,7 +63,10 @@ function generateDictationFile(req, res) {
             var res = [];
             conjuntoFiguras.forEach((figuras) => {
                 figuras.forEach((fig) => {
-                    res.push(fig);
+                    const figsSeparadas = fig.split('-');
+                    figsSeparadas.forEach((f) => {
+                        res.push(f);
+                    });
                 });
             });
 

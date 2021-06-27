@@ -298,7 +298,6 @@ const generarDictado = (
         if (dictado.length > largoDictado) {
             if (cantRec < 75) {
                 // cantidad de intentos
-                // console.log('a');
                 return generarDictado(
                     notasConfig,
                     notaBase,

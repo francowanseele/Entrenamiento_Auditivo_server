@@ -26,9 +26,10 @@ const permutarConRepeticiones = (permutationOptions, permutationLength) => {
 
 const sumarValores = (compas, denominador) => {
     res = 0;
-    //let denominadorValor = dato.DENOMINADOR[denominador];
-    for (let i = 0; i < compas.length; i++) {
-        res = res + dato.VALOR_DE_NOTA[compas[i]] * denominador;
+    if (compas.length > 0) {
+        for (let i = 0; i < compas.length; i++) {
+            res = res + dato.VALOR_DE_NOTA[compas[i]] * denominador;
+        }
     }
     return res;
 };
@@ -36,54 +37,135 @@ const sumarValores = (compas, denominador) => {
 const filtrarFiguras = (figuras, cantPulsos, denominador) => {
     let compasActual;
     let resFiguras = [];
-    figuras.map((figura) => {
-        compasActual = sumarValores(figura, denominador);
-        if (compasActual == cantPulsos) {
-            resFiguras.push(figura);
-        }
-    });
+    // figuras.map((figura) => {
+    compasActual = sumarValores(figuras, denominador);
+    if (compasActual == cantPulsos) {
+        resFiguras = resFiguras.concat(figuras);
+    }
+    // });
     return resFiguras;
 };
 
-const getFigurasValida = (conjFigs, nroPulsos, denominador) => {
-    let figuras = [];
+const getFigurasValida = (conjFigs, nroPulsos, denominador, numeroCompases) => {
     let figurasRes = [];
-    let figurasResLimpias = [];
-    let multiplicador = 2; // luego debo agregarle este valor en base a la figura con valor mas chico
-    if (conjFigs.includes('fusa')) {
-        multiplicador = 8;
-    }
-    // obtengo todas las posibles combinaciones de figuras
-    for (i = 1; i <= nroPulsos * multiplicador; i++) {
-        figuras.push(permutarConRepeticiones(conjFigs, i));
-    }
-    // filtro segun valor
-    figuras.forEach((figurasActual) => {
-        figurasRes.push(filtrarFiguras(figurasActual, nroPulsos, denominador));
-    });
-    //elimino los arreglos vacios
-    figurasRes.forEach((actual) => {
-        if (actual.length != 0) {
-            figurasResLimpias = figurasResLimpias.concat(actual);
+    let fig;
+    let compasPosible;
+    let compasFiltrado;
+
+    //genero compases hasta completar la cantidad de compases solicitado y filtrando los compases de valores invalidos.
+    do {
+        compasPosible = [];
+        compasFiltrado = [];
+        while (sumarValores(compasPosible, denominador) < nroPulsos) {
+            fig = gral.getRandom(conjFigs);
+            compasPosible.push(fig);
         }
-    });
-    return figurasResLimpias;
+        // console.log(compasFiltrado)
+        compasFiltrado = filtrarFiguras(compasPosible, nroPulsos, denominador);
+        // console.log('despues ==>' ); console.log(compasFiltrado)
+        if (compasFiltrado.length != 0) {
+            figurasRes.push(compasFiltrado);
+        }
+    } while (figurasRes.length < numeroCompases);
+
+    return figurasRes;
 };
 
-// PARAMETROS = ( tarjetas de figuras , cantidad de compases ,numerador , denominador )
+// Genera un dictado ritmico aleatorio  en base al conjunto de figuras que se le pasa, cantidad de compases, numerador, denominador y el tipo de figuras
+// PARAMETROS = ( tarjetas de figuras , cantidad de compases ,numerador / denominador, tipoFiguras )
 const generarDictadoRitmico = (
     tarjetas,
     numeroCompases,
-    numerador,
-    denominador
+    numeradorDenominador,
+    tipoFiguras
 ) => {
-    let res = [];
-    let dictadosValidos = getFigurasValida(tarjetas, numerador, denominador);
-    for (i = 0; i < numeroCompases; i++) {
-        res.push(gral.getRandom(dictadosValidos));
+    let figurasOk = false;
+    if (tipoFiguras == 'simples' && dato.FIGURAS.includes(tarjetas[0].elem)) {
+        figurasOk = true;
+    } else if (
+        tipoFiguras == 'compuestas' &&
+        dato.FIGURAS_COMPUESTAS.includes(tarjetas[0].elem)
+    ) {
+        figurasOk = true;
+    } else {
+        figurasOk = false;
     }
-    return res;
+
+    if (figurasOk) {
+        //gestion tarjetas  COMUNES y prioridades
+        let tarjetasRes = [];
+        for (let j = 0; j < tarjetas.length; j++) {
+            tarjetasRes.push(gral.getElemPrioridad(tarjetas));
+        }
+        //sacar tarjetas repetidas antes de generar los dictados
+        let tarjetasSinRepetir = [];
+        tarjetasRes.forEach((item) => {
+            //pushes only unique element
+            if (!tarjetasSinRepetir.includes(item)) {
+                tarjetasSinRepetir.push(item);
+            }
+        });
+
+        //gestion numerador y denominador
+        let numeradorDenominadorRes = '';
+        numeradorDenominadorRes = gral.getElemPrioridad(numeradorDenominador);
+        let numeradorDenominadorRes2 = numeradorDenominadorRes.split('/');
+        let numerador = numeradorDenominadorRes2[0];
+        let denominador = numeradorDenominadorRes2[1];
+
+        let res = [];
+        // console.log(tarjetasSinRepetir);
+        let dictadosValidos = getFigurasValida(
+            tarjetasSinRepetir,
+            Number(numerador),
+            Number(denominador),
+            numeroCompases
+        );
+        for (i = 0; i < numeroCompases; i++) {
+            res.push(gral.getRandom(dictadosValidos));
+        }
+        // console.log(res)
+        result = {
+            dictadoRitmico: res,
+            numerador: Number(numerador),
+            denominador: Number(denominador),
+        };
+        return result;
+    } else {
+        gral.printError(
+            'Figuras invalidas ingresadas. Ingrese figuras ' + tipoFiguras
+        );
+    }
 };
+
+console.log('generarDictadoRitmico');
+console.log(
+    generarDictadoRitmico(
+        [
+            // {elem:'dq',prioridad:1},
+            // {elem:'q-8',prioridad:1},
+            // {elem:'8-q',prioridad:1},
+            // {elem:'8-8-8',prioridad:1}
+            // {elem:'16-16-16-16',prioridad:0},
+            // {elem:'8-8',prioridad:0},
+            // {elem:'8-16-16',prioridad:0},
+            { elem: '4', prioridad: 1 },
+            { elem: '2', prioridad: 1 },
+            // {elem:'1',prioridad:1},
+            // {elem:'16-8-16',prioridad:1}
+        ],
+        5,
+        [
+            { elem: '4/4', prioridad: 1 },
+            { elem: '3/4', prioridad: 0 },
+            { elem: '2/4', prioridad: 0 },
+            // {elem:'6/8',prioridad:1},
+            // {elem:'9/8',prioridad:1},
+            // {elem:'12/8',prioridad:1}
+        ],
+        'simples'
+    )
+);
 
 module.exports = {
     generarDictadoRitmico,
