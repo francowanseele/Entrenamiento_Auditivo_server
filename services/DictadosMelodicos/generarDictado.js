@@ -326,8 +326,8 @@ const generarDictado = (
         }
 
         // Coregir para que termine en notaFin
-        // const dictadoFinEnNota = finalizarEnNota(dictado, notaFin, notasConfig);
-        const dictadoFinEnNota = dictado;
+        const dictadoFinEnNota = finalizarEnNota(dictado, notaFin, notasConfig);
+        // const dictadoFinEnNota = dictado;
         if (dictadoFinEnNota != null) {
             dictado = dictadoFinEnNota;
         } else {
