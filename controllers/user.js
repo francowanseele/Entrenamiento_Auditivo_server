@@ -4,6 +4,7 @@ const dictadoRitmico = require('../services/DictadosRitmicos/generarDictadosRitm
 const dictadoMelodico = require('../services/DictadosMelodicos/generarDictadosMelodicos');
 const gral = require('../services/funcsGralDictados');
 
+
 const find = (arr, id) => {
     var exist = false;
     arr.forEach((elem) => {
@@ -65,6 +66,45 @@ function addUser(req, res) {
         });
     }
 }
+
+
+// Obtener un usuario de la base a partir de su Correo y pass
+//Datos de entrada: { email: '' , password: '' }
+const  obtenerUsuarioRegistrado = async (req,res) => {
+    try {
+        const {
+            email,           
+            password            
+        } = req.body;
+        Usuario.findOne({"email": email}, (err, result) => {
+            if ( result != null){
+
+                res.status(200).send({
+                    ok: true,
+                    name: result.nombe,
+                    email: result.email,
+                    password: result.password,
+                    esDocente: result.esDocente,
+                    message: 'Usuario encontrado',
+                });
+            }else{
+                res.status(404).send({
+                    ok: false,
+                    message: 'No se ha encontrado el usuario',
+                });
+            }
+        })
+    
+    } catch (err) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+
+
 
 // En services/DictadosMelodicos/generarDictadosMelodicos.js
 // se dice el formato de los datos de entrada,
@@ -333,4 +373,5 @@ module.exports = {
     addUser,
     generateDictation,
     getDictation,
+    obtenerUsuarioRegistrado
 };
