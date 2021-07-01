@@ -3,7 +3,8 @@ const Curso = require('../models/curso');
 const dictadoRitmico = require('../services/DictadosRitmicos/generarDictadosRitmicos');
 const dictadoMelodico = require('../services/DictadosMelodicos/generarDictadosMelodicos');
 const gral = require('../services/funcsGralDictados');
-
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const find = (arr, id) => {
     var exist = false;
@@ -29,42 +30,50 @@ function addUser(req, res) {
             dictateCourseArray,
             inInstituteArray,
         } = req.body;
-        const user = new Usuario();
-        user.nombre = name;
-        user.apellido = lastname;
-        user.email = email;
-        user.password = password;
-        user.esDocente = isTeacher;
-        user.curso_personal = idCoursePersonal;
-        user.cursa_curso = studyCourseArray;
-        user.dicta_curso = dictateCourseArray;
-        user.pertenece_instituto = inInstituteArray;
+        bcrypt.hash(password, saltRounds).then((hashedPassword)=>{
 
-        user.save((err, newUser) => {
-            if (err) {
-                res.status(500).send({
-                    ok: false,
-                    message: 'Error en el servidor',
-                });
-            } else if (!newUser) {
-                res.status(404).send({
-                    ok: false,
-                    message: 'Error al crear el Usuario',
-                });
-            } else {
-                res.status(200).send({
-                    ok: true,
-                    user: newUser,
-                    message: 'Usuario creado correctamente',
-                });
-            }
-        });
-    } catch (error) {
-        res.status(501).send({
-            ok: false,
-            message: error.message,
-        });
-    }
+            // console.log(hashedPassword)
+            const user = new Usuario();
+            user.nombre = name;
+            user.apellido = lastname;
+            user.email = email;
+            user.password = hashedPassword;
+            user.esDocente = isTeacher;
+            user.curso_personal = idCoursePersonal;
+            user.cursa_curso = studyCourseArray;
+            user.dicta_curso = dictateCourseArray;
+            user.pertenece_instituto = inInstituteArray;
+    
+            user.save((err, newUser) => {
+                if (err) {
+                    console.log(err)
+                    res.status(500).send({
+                        ok: false,
+                        message: 'Error en el servidor',
+                    });
+                } else if (!newUser) {
+                    res.status(404).send({
+                        ok: false,
+                        message: 'Error al crear el Usuario',
+                    });
+                } else {
+                    res.status(200).send({
+                        ok: true,
+                        user: newUser,
+                        message: 'Usuario creado correctamente',
+                    });
+                }
+            });
+        })
+        } catch (error) {
+            res.status(501).send({
+                ok: false,
+                message: error.message,
+            });
+        }
+          
+       
+       
 }
 
 
@@ -76,17 +85,30 @@ const  obtenerUsuarioRegistrado = async (req,res) => {
             email,           
             password            
         } = req.body;
+      
         Usuario.findOne({"email": email}, (err, result) => {
             if ( result != null){
 
-                res.status(200).send({
-                    ok: true,
-                    name: result.nombe,
-                    email: result.email,
-                    password: result.password,
-                    esDocente: result.esDocente,
-                    message: 'Usuario encontrado',
+                bcrypt.compare(password, result.password, function(err, resultPass) {
+                    // resultPass == true
+                    if (resultPass){ 
+                        res.status(200).send({
+                            ok: true,
+                            name: result.nombe,
+                            email: result.email,
+                            password: result.password,
+                            esDocente: result.esDocente,
+                            message: 'Usuario encontrado',
+                        });
+                    }else{
+                        res.status(404).send({
+                            ok: false,
+                            message: 'password incorrecta',
+                        });
+                    }
                 });
+
+               
             }else{
                 res.status(404).send({
                     ok: false,
