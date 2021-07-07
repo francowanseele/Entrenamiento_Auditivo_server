@@ -88,27 +88,28 @@ const  obtenerUsuarioRegistrado = async (req,res) => {
       
         Usuario.findOne({"email": email}, (err, result) => {
             if ( result != null){
-
-                bcrypt.compare(password, result.password, function(err, resultPass) {
-                    // resultPass == true
-                    if (resultPass){ 
-                        res.status(200).send({
-                            ok: true,
-                            name: result.nombe,
-                            email: result.email,
-                            password: result.password,
-                            esDocente: result.esDocente,
-                            message: 'Usuario encontrado',
-                        });
-                    }else{
-                        res.status(404).send({
-                            ok: false,
-                            message: 'password incorrecta',
-                        });
-                    }
-                });
-
-               
+                if (!result.esDocente){                
+                    bcrypt.compare(password, result.password, function(err, resultPass) {
+                        // resultPass == true
+                        if (resultPass){ 
+                            res.status(200).send({
+                                ok: true,
+                                personal_course:result.curso_personal,
+                                id_user:result._id,
+                                name: result.nombe,
+                                email: result.email,
+                                password: result.password,
+                                esDocente: result.esDocente,
+                                message: 'Usuario encontrado',
+                            });
+                        }else{
+                            res.status(404).send({
+                                ok: false,
+                                message: 'password incorrecta',
+                            });
+                        }
+                    });
+                }               
             }else{
                 res.status(404).send({
                     ok: false,
