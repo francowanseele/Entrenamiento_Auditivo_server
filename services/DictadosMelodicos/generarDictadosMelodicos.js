@@ -166,14 +166,9 @@ const generarDictadoMelodico = (
         nivelPrioridadRegla,
         0
     );
-
-    // ---------------------------------------------------------------------
-    // console.log('--------------------------');
-    // console.log('Dictado generado:');
-    // console.log(dictadoGenerado);
-    // console.log('--------------------------');
-    // ---------------------------------------------------------------------
-
+    if (!dictadoGenerado) {
+        return [false, 'Dictado null'];
+    }
     if (dictadoGenerado.length == 0) {
         return [false, 'Dictado generado vacío.'];
     }

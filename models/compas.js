@@ -3,7 +3,8 @@ const Schema = mongoose.Schema;
 
 const CompasSchema = Schema({
     numerador: Number,
-    denominador: Number, // Todos los denominadores iguales van a ser equivalentes
+    denominador: Number,
+    simple: Boolean,
 });
 
 module.exports = mongoose.model('Compas', CompasSchema);

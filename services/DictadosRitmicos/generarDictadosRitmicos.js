@@ -46,6 +46,49 @@ const filtrarFiguras = (figuras, cantPulsos, denominador) => {
     return resFiguras;
 };
 
+const quitarTarjeta = (tarjetas, elem) => {
+    var result = [];
+    tarjetas.forEach((t) => {
+        if (t.elem != elem) {
+            result.push(t);
+        }
+    });
+
+    return result;
+};
+
+// Devuelve un array de figuras correspondiente a un compás
+const getPulsoValido = (tarjetas, nroPulsos, denominador, dictadoParcial) => {
+    const valorTotal = sumarValores(dictadoParcial, denominador);
+    if (valorTotal == nroPulsos) return ['ok', dictadoParcial];
+    if (valorTotal > nroPulsos) return ['fail', dictadoParcial];
+
+    var dictado;
+    dictado = dictadoParcial;
+    const tarjetaElem = gral.getElemPrioridad(tarjetas);
+    dictado.push(tarjetaElem);
+    const dictadoResult = getPulsoValido(
+        tarjetas,
+        nroPulsos,
+        denominador,
+        dictado
+    );
+
+    dictado = dictadoResult[1];
+
+    if (dictadoResult[0] == 'ok') return ['ok', dictado];
+
+    // quitar de tarjeta ultimo elem dictado
+    const tarjetasNuevas = quitarTarjeta(tarjetas, dictado[dictado.length - 1]);
+    if (tarjetasNuevas.length == 0) return ['fail', dictado];
+
+    const newTarjetaElem = gral.getElemPrioridad(tarjetasNuevas);
+    // dictado - 1
+    const newDictado = dictado.slice(0, -1);
+    newDictado.push(newTarjetaElem);
+    return getPulsoValido(tarjetasNuevas, nroPulsos, denominador, newDictado);
+};
+
 const getFigurasValida = (conjFigs, nroPulsos, denominador, numeroCompases) => {
     let figurasRes = [];
     let fig;
@@ -60,9 +103,9 @@ const getFigurasValida = (conjFigs, nroPulsos, denominador, numeroCompases) => {
             fig = gral.getRandom(conjFigs);
             compasPosible.push(fig);
         }
-        // console.log(compasFiltrado)
+
         compasFiltrado = filtrarFiguras(compasPosible, nroPulsos, denominador);
-        // console.log('despues ==>' ); console.log(compasFiltrado)
+
         if (compasFiltrado.length != 0) {
             figurasRes.push(compasFiltrado);
         }
@@ -90,7 +133,6 @@ const generarDictadoRitmico = (
     } else {
         figurasOk = false;
     }
-
     if (figurasOk) {
         //gestion tarjetas  COMUNES y prioridades
         let tarjetasRes = [];
@@ -105,32 +147,51 @@ const generarDictadoRitmico = (
                 tarjetasSinRepetir.push(item);
             }
         });
-
         //gestion numerador y denominador
         let numeradorDenominadorRes = '';
         numeradorDenominadorRes = gral.getElemPrioridad(numeradorDenominador);
         let numeradorDenominadorRes2 = numeradorDenominadorRes.split('/');
         let numerador = numeradorDenominadorRes2[0];
         let denominador = numeradorDenominadorRes2[1];
-
         let res = [];
-        // console.log(tarjetasSinRepetir);
-        let dictadosValidos = getFigurasValida(
-            tarjetasSinRepetir,
-            Number(numerador),
-            Number(denominador),
-            numeroCompases
-        );
-        for (i = 0; i < numeroCompases; i++) {
-            res.push(gral.getRandom(dictadosValidos));
+
+        var i = 0;
+        var max_i = 0;
+        while (i < numeroCompases && max_i < 25) {
+            // new function
+            let dictadoValido = getPulsoValido(
+                tarjetas,
+                Number(numerador),
+                Number(denominador),
+                []
+            );
+
+            if (dictadoValido[0] == 'ok') {
+                res.push(dictadoValido[1]);
+                i++;
+            } else {
+                max_i++;
+            }
         }
-        // console.log(res)
-        result = {
+
+        // let dictadosValidos = getFigurasValida(
+        //     tarjetasSinRepetir,
+        //     Number(numerador),
+        //     Number(denominador),
+        //     numeroCompases
+        // );
+
+        // for (i = 0; i < numeroCompases; i++) {
+        //     res.push(gral.getRandom(dictadosValidos));
+        // }
+
+        const dictadoRitmicoResult = {
             dictadoRitmico: res,
             numerador: Number(numerador),
             denominador: Number(denominador),
         };
-        return result;
+
+        return dictadoRitmicoResult;
     } else {
         gral.printError(
             'Figuras invalidas ingresadas. Ingrese figuras ' + tipoFiguras

@@ -114,7 +114,7 @@ const finalizarDictado = (
     notasConfig,
     largoCamino
 ) => {
-    if (largoCamino != null || cantRec < 75) {
+    if (largoCamino != null || cantRec < 10) {
         var elemEncontrado = [];
         for (let i = 0; i < camino.length && elemEncontrado.length == 0; i++) {
             const elem = camino[i];
@@ -244,6 +244,73 @@ const concatenarDictado = (dictadoOriginal, dictadoParcial) => {
     return dictadoResult;
 };
 
+// dictadoOriginal -> arreglo de notas
+// dictadoParcial -> [nota: nota, padre: padre]
+// CONTROL: si llega a nota fin en el largo estipulado devuelve ese dictado
+const concatenarDictadoControlNotaFin = (
+    dictado,
+    dictadoParcial,
+    largoDictado,
+    notaFin,
+    notasConfig
+) => {
+    var dictadoRes = dictado;
+    var encontreCamino = false;
+    for (
+        let i = 1;
+        i < dictadoParcial.length &&
+        !encontreCamino &&
+        dictadoRes.length < largoDictado;
+        i++
+    ) {
+        const notaAgregar = dictadoParcial[i].nota;
+        const camino = finalizarDictado(
+            [{ nota: dictadoRes[dictadoRes.length - 1], padre: null }],
+            notaFin,
+            0,
+            notasConfig,
+            null
+        );
+
+        if (
+            camino != null &&
+            dictadoRes.length + camino.length - 1 == largoDictado
+        ) {
+            for (let i = 1; i < camino.length; i++) {
+                const n = camino[i];
+                dictadoRes.push(n.nota);
+            }
+            encontreCamino = true;
+        } else {
+            dictadoRes.push(notaAgregar);
+        }
+    }
+
+    return dictadoRes;
+};
+
+// Se fija si dictado puede terminar en notaFin en el largo largoDictado
+const terminarEnNota = (dictado, largoDictado, notasConfig, notaFin) => {
+    var dictadoRes = dictado;
+    const camino = finalizarDictado(
+        [{ nota: dictado[dictado.length - 1], padre: null }],
+        notaFin,
+        0,
+        notasConfig,
+        null
+    );
+
+    if (camino != null && dictado.length + camino.length - 1 == largoDictado) {
+        for (let i = 1; i < camino.length; i++) {
+            const n = camino[i];
+            dictadoRes.push(n.nota);
+        }
+        return [true, dictadoRes];
+    } else {
+        return [false, null];
+    }
+};
+
 const generarDictado = (
     notasConfig,
     notaBase,
@@ -287,16 +354,22 @@ const generarDictado = (
                 notasConfig,
                 null
             );
-            dictado = concatenarDictado(dictado, dictadoParcial);
-
+            dictado = concatenarDictadoControlNotaFin(
+                dictado,
+                dictadoParcial,
+                largoDictado,
+                notaFin,
+                notasConfig
+            );
+            // dictado = concatenarDictado(dictado, dictadoParcial);
             notaRef = dictado[dictado.length - 1];
 
             faltantes = notasFaltantes(notasObligatorias, dictado);
-        } while (faltantes.length >= 1 && dictado.length <= largoDictado);
+        } while (faltantes.length >= 1 && dictado.length < largoDictado);
 
         // Control para verificar que no se pasa del largo
         if (dictado.length > largoDictado) {
-            if (cantRec < 75) {
+            if (cantRec < 35) {
                 // cantidad de intentos
                 return generarDictado(
                     notasConfig,
@@ -308,30 +381,57 @@ const generarDictado = (
                     cantRec + 1
                 );
             } else {
-                general.printError('El largo del dictado debería ser mayor');
-                return dictado;
+                // general.printError('El largo del dictado debería ser mayor');
+                return null;
             }
         }
 
         // Completo el dictado
         while (dictado.length < largoDictado) {
-            var notasValidas = getNotasValidasConPrioridad(
-                notaRef,
+            const concat = terminarEnNota(
+                dictado,
+                largoDictado,
                 notasConfig,
-                nivelPrioridad
+                notaFin
             );
-            var nota = general.getRandom(notasValidas); // Obtener random dando mayor probabilidad a una de las reglas
-            dictado.push(nota);
-            notaRef = nota;
+            if (concat[0]) {
+                dictado = concat[1];
+            } else {
+                var notasValidas = getNotasValidasConPrioridad(
+                    notaRef,
+                    notasConfig,
+                    nivelPrioridad
+                );
+                var nota = general.getRandom(notasValidas); // Obtener random dando mayor probabilidad a una de las reglas
+                dictado.push(nota);
+                notaRef = nota;
+            }
         }
 
-        // Coregir para que termine en notaFin
         const dictadoFinEnNota = finalizarEnNota(dictado, notaFin, notasConfig);
-        // const dictadoFinEnNota = dictado;
-        if (dictadoFinEnNota != null) {
+        if (
+            dictadoFinEnNota != null &&
+            dictadoFinEnNota[dictadoFinEnNota.length - 1] == notaFin &&
+            dictadoFinEnNota.length == largoDictado
+        ) {
             dictado = dictadoFinEnNota;
+            return dictado;
         } else {
-            general.printError('No se finalizar el dictado en ' + notaFin);
+            if (cantRec < 25) {
+                // cantidad de intentos
+                return generarDictado(
+                    notasConfig,
+                    notaBase,
+                    notaFin,
+                    largoDictado,
+                    notasObligatorias,
+                    nivelPrioridad,
+                    cantRec + 1
+                );
+            } else {
+                // general.printError('No se finalizar el dictado en ' + notaFin);
+                return null;
+            }
         }
     } else {
         console.log('------------------------------');
@@ -345,3 +445,27 @@ const generarDictado = (
 module.exports = {
     generarDictado,
 };
+
+// console.log(
+//     generarDictado(
+//         [
+//             ['Si4', 'Do5', 'Re4', 'Mi4', 'Fa4', 'Sol4', 'La4'],
+//             ['Si4', 'Re4', 'Do5'],
+//             ['Do5', 'Mi4', 'Re4'],
+//         ],
+//         'La4',
+//         'La4',
+//         4,
+//         [
+//             ['Re4', 'Mi4', 'Fa3', 'Sol3', 'La3', 'Si3', 'Do4'],
+//             ['Re4', 'Fa3', 'Mi4'],
+//             ['Mi4', 'Sol3', 'Fa3'],
+//         ],
+//         [
+//             { regla: 0, prioridad: 1 },
+//             { regla: 1, prioridad: 4 },
+//             { regla: 2, prioridad: 4 },
+//         ],
+//         0
+//     )
+// );

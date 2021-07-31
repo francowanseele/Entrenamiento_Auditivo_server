@@ -35,18 +35,94 @@ function tramsitDictation(req, res) {
 
 function generateDictationFile(req, res) {
     try {
-        const addNotes = (track, dictation, figurasDictado) => {
+        const addNotes = (track, dictation, figurasDictado, bpm) => {
             // const dictadoTrans = funcGralDictado.translateNotes(dictation);
+            const translateToBPM = (figure, bpm) => {
+                if (bpm) {
+                    const bpm_val = parseInt(bpm);
+                    switch (figure) {
+                        case '1':
+                            return 'T'.concat((bpm_val * 4).toString());
+                        case '2':
+                            return 'T'.concat((bpm_val * 2).toString());
+                        case 'd2':
+                            return 'T'.concat(
+                                (bpm_val * 2 + bpm_val * 1).toString()
+                            );
+                        case 'dd2':
+                            return 'T'.concat(
+                                (
+                                    bpm_val * 4 +
+                                    bpm_val * 1 +
+                                    Math.round(bpm_val / 2)
+                                ).toString()
+                            );
+                        case '4':
+                            return 'T'.concat((bpm_val * 1).toString());
+                        case 'd4':
+                            return 'T'.concat(
+                                (
+                                    bpm_val * 1 +
+                                    Math.round(bpm_val / 2)
+                                ).toString()
+                            );
+                        case 'dd4':
+                            return 'T'.concat(
+                                (
+                                    bpm_val * 1 +
+                                    Math.round(bpm_val / 2) +
+                                    Math.round(bpm_val / 4)
+                                ).toString()
+                            );
+                        case '8':
+                            return 'T'.concat(
+                                Math.round(bpm_val / 2).toString()
+                            );
+                        case 'd8':
+                            return 'T'.concat(
+                                (
+                                    Math.round(bpm_val / 2) +
+                                    Math.round(bpm_val / 4)
+                                ).toString()
+                            );
+                        case 'dd8':
+                            return 'T'.concat(
+                                (
+                                    Math.round(bpm_val / 2) +
+                                    Math.round(bpm_val / 4) +
+                                    Math.round(bpm_val / 8)
+                                ).toString()
+                            );
+                        case '16':
+                            return 'T'.concat(
+                                Math.round(bpm_val / 4).toString()
+                            );
+                        case '32':
+                            return 'T'.concat(
+                                Math.round(bpm_val / 8).toString()
+                            );
+                        case '64':
+                            return 'T'.concat(
+                                Math.round(bpm_val / 16).toString()
+                            );
+
+                        default:
+                            figure;
+                            break;
+                    }
+                } else {
+                    return figure;
+                }
+            };
 
             for (let i = 0; i < dictation.length; i++) {
                 const nota = dictation[i];
                 const fig = figurasDictado[i];
-
                 track.addEvent(
                     [
                         new MidiWriter.NoteEvent({
                             pitch: [nota],
-                            duration: fig,
+                            duration: translateToBPM(fig, bpm),
                             velocity: 100,
                         }),
                     ],
@@ -73,7 +149,7 @@ function generateDictationFile(req, res) {
             return res;
         };
 
-        const { dictado, figurasDictado, escalaDiatoica } = req.body;
+        const { dictado, figurasDictado, escalaDiatoica, bpm } = req.body;
         const { id } = req.params;
 
         var track = new MidiWriter.Track();
@@ -84,7 +160,7 @@ function generateDictationFile(req, res) {
             escalaDiatoica
         );
 
-        track = addNotes(track, dictadoConTransformaciones, figuras);
+        track = addNotes(track, dictadoConTransformaciones, figuras, bpm);
 
         var write = new MidiWriter.Writer(track);
         const nameFileMidi = id.toString();

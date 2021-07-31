@@ -39,6 +39,9 @@ function addModule(req, res) {
         const { name, description } = req.body;
         const { id } = req.params;
 
+        // TODO antes de agregar un módulo (hacer push) fijarse si existe otro módulo con mismo nombre y descripción
+        // Si existe tirar { ok: false, repetido: true }
+
         Curso.findByIdAndUpdate(
             { _id: id },
             { $push: { modulo: { nombre: name, descripcion: description } } },
@@ -54,7 +57,11 @@ function addModule(req, res) {
                         message: 'No se ha encontrado el curso',
                     });
                 } else {
-                    res.status(200).send({ ok: true, message: 'Ok' });
+                    res.status(200).send({
+                        ok: true,
+                        course: curseResult,
+                        message: 'Ok',
+                    });
                 }
             }
         );
@@ -139,6 +146,8 @@ function addConfigDictation(req, res) {
             compasRegla,
             simple,
             notaBase,
+            bpm,
+            dictado_ritmico,
         } = req.body;
 
         Curso.findById({ _id: idCourse }, (err, courseData) => {
@@ -181,6 +190,8 @@ function addConfigDictation(req, res) {
                         compas_regla: compasRegla,
                         simple: simple,
                         nota_base: notaBase,
+                        bpm: bpm,
+                        dictado_ritmico: dictado_ritmico,
                     };
                     mod.configuracion_dictado.push(config_dictation);
 

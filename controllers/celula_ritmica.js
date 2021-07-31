@@ -1,30 +1,30 @@
-const Compas = require('../models/compas');
+const CelulaRitmica = require('../models/celula_ritmica');
 
-function addCompas(req, res) {
+function addCelulaRitmica(req, res) {
     try {
-        const { numerador, denominador, simple } = req.body;
+        const { figuras, simple, valor } = req.body;
 
-        const compas = new Compas();
-        compas.numerador = numerador;
-        compas.denominador = denominador;
-        compas.simple = simple;
+        const celulaRitmica = new CelulaRitmica();
+        celulaRitmica.figuras = figuras;
+        celulaRitmica.simple = simple;
+        celulaRitmica.valor = valor;
 
-        compas.save((err, newCompas) => {
+        celulaRitmica.save((err, newCelulaRitmica) => {
             if (err) {
                 res.status(500).send({
                     ok: false,
                     message: 'Error en el servidor',
                 });
-            } else if (!newCompas) {
+            } else if (!newCelulaRitmica) {
                 res.status(404).send({
                     ok: false,
-                    message: 'Error al crear un nuevo Compás',
+                    message: 'Error al crear una nueva célula rítmica',
                 });
             } else {
                 res.status(200).send({
                     ok: true,
-                    compas: newCompas,
-                    message: 'Compás creado correctamente',
+                    compas: newCelulaRitmica,
+                    message: 'Célula rítmica creada correctamente',
                 });
             }
         });
@@ -36,20 +36,20 @@ function addCompas(req, res) {
     }
 }
 
-function getCompas(req, res) {
+function getCelulaRitmica(req, res) {
     try {
         const { simple } = req.params;
 
-        Compas.find({ simple: simple }).then((compases) => {
-            if (!compases) {
+        CelulaRitmica.find({ simple: simple }).then((celulaRitmica) => {
+            if (!celulaRitmica) {
                 res.status(404).send({
                     ok: false,
-                    message: 'No se han encontrado Compases',
+                    message: 'No se han encontrado célula rítmica',
                 });
             } else {
                 res.status(200).send({
                     ok: true,
-                    compases: compases,
+                    celulaRitmica: celulaRitmica,
                     message: 'Ok',
                 });
             }
@@ -63,6 +63,6 @@ function getCompas(req, res) {
 }
 
 module.exports = {
-    addCompas,
-    getCompas,
+    addCelulaRitmica,
+    getCelulaRitmica,
 };

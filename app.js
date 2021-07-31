@@ -10,6 +10,8 @@ const courseRoutes = require('./routers/course');
 const giroMelodicoRoutes = require('./routers/giro_melodico');
 const compasRoutes = require('./routers/compas');
 const userRoutes = require('./routers/user');
+const celulaRitmicaRoutes = require('./routers/celula_ritmica');
+const instituteRoutes = require('./routers/institute');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -37,6 +39,8 @@ app.use(`/api`, courseRoutes);
 app.use(`/api`, giroMelodicoRoutes);
 app.use(`/api`, compasRoutes);
 app.use(`/api`, userRoutes);
+app.use(`/api`, celulaRitmicaRoutes);
+app.use(`/api`, instituteRoutes);
 
 // Export
 module.exports = app;

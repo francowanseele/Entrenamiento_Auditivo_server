@@ -54,6 +54,8 @@ const UsuarioSchema = Schema({
                     nota: Number,
                 },
             ],
+            bpm: Number,
+            dictado_ritmico: Boolean,
         },
     ],
 });

@@ -138,6 +138,8 @@ function generateDictation(req, res) {
             nivelPrioridadClave,
             escalaDiatonicaRegla,
             notaBase,
+            bpm,
+            dictado_ritmico,
         } = req.body;
         const { id } = req.params;
         const { idCourse, idModule, idConfigDictation, cantDictation } =
@@ -152,41 +154,54 @@ function generateDictation(req, res) {
         var res_dictation = [];
         const nroDic = parseInt(cantDictation);
         var i = 0;
+        var error_generateDictationMelodic = false;
 
-        while (i < nroDic) {
+        while (i < nroDic && !error_generateDictationMelodic) {
             const dateNow = Date.now();
-            // Rhythmic
-            const res_generarDictadoRitmico =
-                dictadoRitmico.generarDictadoRitmico(
-                    tarjetas,
-                    nroCompases,
-                    compas,
-                    simple
-                );
-            const dictadoRitmico_Compases =
-                res_generarDictadoRitmico.dictadoRitmico;
-            const numeradorDictadoRitmico = res_generarDictadoRitmico.numerador;
-            const denominadorDictadoRitmico =
-                res_generarDictadoRitmico.denominador;
-            const figurasDictado = getFiguras(dictadoRitmico_Compases);
-            const largoDictadoMelodico = figurasDictado.length;
 
-            // Melodic
-            const res_dictadoMelodico = dictadoMelodico.generarDictadoMelodico(
-                notasRegla_trad,
-                nivelPrioridadRegla,
-                intervaloNotas_trad,
-                notasBase_trad,
-                notasFin_trad,
-                nivelPrioridadClave,
-                largoDictadoMelodico,
-                escalaDiatonicaRegla
-            );
+            var generateOk = false;
+            var cantRecMax = 35;
+            var cantRec = 0;
+            while (!generateOk && cantRec < cantRecMax) {
+                // Rhythmic
+                var res_generarDictadoRitmico =
+                    dictadoRitmico.generarDictadoRitmico(
+                        tarjetas,
+                        nroCompases,
+                        compas,
+                        simple
+                    );
+
+                var dictadoRitmico_Compases =
+                    res_generarDictadoRitmico.dictadoRitmico;
+                var numeradorDictadoRitmico =
+                    res_generarDictadoRitmico.numerador;
+                var denominadorDictadoRitmico =
+                    res_generarDictadoRitmico.denominador;
+                var figurasDictado = getFiguras(dictadoRitmico_Compases);
+                var largoDictadoMelodico = figurasDictado.length;
+
+                // Melodic
+                var res_dictadoMelodico =
+                    dictadoMelodico.generarDictadoMelodico(
+                        notasRegla_trad,
+                        nivelPrioridadRegla,
+                        intervaloNotas_trad,
+                        notasBase_trad,
+                        notasFin_trad,
+                        nivelPrioridadClave,
+                        largoDictadoMelodico,
+                        escalaDiatonicaRegla
+                    );
+                generateOk = res_dictadoMelodico[0];
+                cantRec++;
+            }
 
             if (!res_dictadoMelodico[0]) {
-                // retornar error -> mensaje res_dictadoMelodico[1]
+                error_generateDictationMelodic = true;
                 return res.status(404).send({
                     ok: false,
+                    issueConfig: true,
                     message: res_dictadoMelodico[1],
                 });
             } else {
@@ -207,6 +222,8 @@ function generateDictation(req, res) {
                     numerador: numeradorDictadoRitmico,
                     denominador: denominadorDictadoRitmico,
                     resuelto: [],
+                    bpm: bpm,
+                    dictado_ritmico: dictado_ritmico,
                 };
 
                 res_dictation.push(dictation);
@@ -217,6 +234,7 @@ function generateDictation(req, res) {
         if (res_dictation.length == 0) {
             return res.status(400).send({
                 ok: false,
+                issueConfig: true,
                 message: 'No se generó ningún dictado.',
             });
         } else {
@@ -224,11 +242,13 @@ function generateDictation(req, res) {
                 if (err) {
                     res.status(500).send({
                         ok: false,
+                        issueConfig: false,
                         message: 'Error del servidor.',
                     });
                 } else if (!courseData) {
                     res.status(404).send({
                         ok: false,
+                        issueConfig: false,
                         message: 'No se ha encontrado el curso',
                     });
                 } else {
@@ -238,6 +258,7 @@ function generateDictation(req, res) {
                     if (!existModule) {
                         return res.status(404).send({
                             ok: false,
+                            issueConfig: false,
                             message:
                                 'No se ha encontrado el módulo dentro del curso',
                         });
@@ -249,17 +270,20 @@ function generateDictation(req, res) {
                                 if (err) {
                                     res.status(500).send({
                                         ok: false,
+                                        issueConfig: false,
                                         message: 'Error del servidor',
                                     });
                                 } else if (!userData) {
                                     res.status(404).send({
                                         ok: false,
+                                        issueConfig: false,
                                         message:
                                             'No se ha encontrado al estudiante',
                                     });
                                 } else {
                                     res.status(200).send({
                                         ok: true,
+                                        issueConfig: false,
                                         message: 'Ok',
                                         dictations: getDictationsFilter(
                                             userData.dictados,
