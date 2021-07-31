@@ -80,6 +80,7 @@ function addUser(req, res) {
 // Obtener un usuario de la base a partir de su Correo y pass
 //Datos de entrada: { email: '' , password: '' }
 const  obtenerUsuarioRegistrado = async (req,res) => {
+    console.log('entro al obtener')
     try {
         const {
             email,           
