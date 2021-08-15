@@ -80,7 +80,7 @@ function addUser(req, res) {
 // Obtener un usuario de la base a partir de su Correo y pass
 //Datos de entrada: { email: '' , password: '' }
 const  obtenerUsuarioRegistrado = async (req,res) => {
-    console.log('entro al obtener')
+    // console.log('entro al obtener')
     try {
         const {
             email,           
@@ -417,7 +417,58 @@ function getDictation(req, res) {
     }
 }
 
+// Guarda en la base la autoevaluacion del usuario
+// datos que recibe: 
+// {
+//     "email":"martin@hotmail.com", 
+//     "id_dictado":"60da1135017a8f1f875dd686", (debe existir en la base)
+//     "resuelto": {"fecha": "2021-06-28T18:13:09.041+00:00", "nota":12, "tipoError": [ritmico,armonico,ambos] }
+// }
+const agregarNuevoResultado = async (req,res) => {
+    // console.log(req.body)
+    try {
+        const {
+            email,           
+            id_dictado,
+            resuelto
+        } = req.body;        
+        // busco el usuario implicado, le agrego al dictado correspondiente su nueva autoevaluacion
+        // luego hago un save de ese usuario
+        Usuario.findOne({"email": email}, (err, userActual) => {
+            if ( userActual != null){                                   
+                    dictadoActual = userActual.dictados.find(element => element._id == id_dictado)
+                    if (dictadoActual != null){
+                        dictadoActual.resuelto.push(resuelto)  
+                        userActual.save()                                            
+                        res.status(200).send({
+                            ok: true,                           
+                            message: 'Rsultado guardado',
+                        });
+                    }else {
+                        res.status(404).send({
+                            ok: false,
+                            message: 'No se ha encontrado el dictado',
+                        });    
+                    }                                                                
+            }else{
+            
+                res.status(404).send({
+                    ok: false,
+                    message: 'No se ha encontrado el usuario',
+                });            
+            }
+        })    
+     }catch (error) {
+            res.status(501).send({
+                ok: false,
+                message: error.message,
+            });
+     }        
+                
+}
+
 module.exports = {
+    agregarNuevoResultado,
     addUser,
     generateDictation,
     getDictation,

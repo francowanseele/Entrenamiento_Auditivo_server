@@ -7,6 +7,8 @@ api.put('/add-user', UserController.addUser);
 api.put('/get-user', UserController.obtenerUsuarioRegistrado);
 api.post('/add-dictation-user/:id', UserController.generateDictation);
 api.get('/get-dictation/:id', UserController.getDictation);
+api.post('/set-nuevo-resultado', UserController.agregarNuevoResultado);
+
 
 
 module.exports = api;

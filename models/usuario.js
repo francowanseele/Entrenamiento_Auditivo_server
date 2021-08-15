@@ -52,6 +52,7 @@ const UsuarioSchema = Schema({
                 {
                     fecha: Date,
                     nota: Number,
+                    tipoError: String,
                 },
             ],
             bpm: Number,
