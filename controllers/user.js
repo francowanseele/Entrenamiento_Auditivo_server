@@ -30,8 +30,7 @@ function addUser(req, res) {
             dictateCourseArray,
             inInstituteArray,
         } = req.body;
-        bcrypt.hash(password, saltRounds).then((hashedPassword)=>{
-
+        bcrypt.hash(password, saltRounds).then((hashedPassword) => {
             // console.log(hashedPassword)
             const user = new Usuario();
             user.nombre = name;
@@ -43,10 +42,9 @@ function addUser(req, res) {
             user.cursa_curso = studyCourseArray;
             user.dicta_curso = dictateCourseArray;
             user.pertenece_instituto = inInstituteArray;
-    
+
             user.save((err, newUser) => {
                 if (err) {
-                    console.log(err)
                     res.status(500).send({
                         ok: false,
                         message: 'Error en el servidor',
@@ -64,62 +62,8 @@ function addUser(req, res) {
                     });
                 }
             });
-        })
-        } catch (error) {
-            res.status(501).send({
-                ok: false,
-                message: error.message,
-            });
-        }
-          
-       
-       
-}
-
-
-// Obtener un usuario de la base a partir de su Correo y pass
-//Datos de entrada: { email: '' , password: '' }
-const  obtenerUsuarioRegistrado = async (req,res) => {
-    console.log('entro al obtener')
-    try {
-        const {
-            email,           
-            password            
-        } = req.body;
-      
-        Usuario.findOne({"email": email}, (err, result) => {
-            if ( result != null){
-                if (!result.esDocente){                
-                    bcrypt.compare(password, result.password, function(err, resultPass) {
-                        // resultPass == true
-                        if (resultPass){ 
-                            res.status(200).send({
-                                ok: true,
-                                personal_course:result.curso_personal,
-                                id_user:result._id,
-                                name: result.nombe,
-                                email: result.email,
-                                password: result.password,
-                                esDocente: result.esDocente,
-                                message: 'Usuario encontrado',
-                            });
-                        }else{
-                            res.status(404).send({
-                                ok: false,
-                                message: 'password incorrecta',
-                            });
-                        }
-                    });
-                }               
-            }else{
-                res.status(404).send({
-                    ok: false,
-                    message: 'No se ha encontrado el usuario',
-                });
-            }
-        })
-    
-    } catch (err) {
+        });
+    } catch (error) {
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -127,8 +71,55 @@ const  obtenerUsuarioRegistrado = async (req,res) => {
     }
 }
 
+// Obtener un usuario de la base a partir de su Correo y pass
+//Datos de entrada: { email: '' , password: '' }
+const obtenerUsuarioRegistrado = async (req, res) => {
+    console.log('entro al obtener');
+    try {
+        const { email, password } = req.body;
 
-
+        Usuario.findOne({ email: email }, (err, result) => {
+            if (result != null) {
+                if (!result.esDocente) {
+                    bcrypt.compare(
+                        password,
+                        result.password,
+                        function (err, resultPass) {
+                            // resultPass == true
+                            if (resultPass) {
+                                res.status(200).send({
+                                    ok: true,
+                                    personal_course: result.curso_personal,
+                                    id_user: result._id,
+                                    name: result.nombe,
+                                    email: result.email,
+                                    password: result.password,
+                                    esDocente: result.esDocente,
+                                    message: 'Usuario encontrado',
+                                });
+                            } else {
+                                res.status(404).send({
+                                    ok: false,
+                                    message: 'password incorrecta',
+                                });
+                            }
+                        }
+                    );
+                }
+            } else {
+                res.status(404).send({
+                    ok: false,
+                    message: 'No se ha encontrado el usuario',
+                });
+            }
+        });
+    } catch (err) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+};
 
 // En services/DictadosMelodicos/generarDictadosMelodicos.js
 // se dice el formato de los datos de entrada,
@@ -206,14 +197,20 @@ function generateDictation(req, res) {
             dictado_ritmico,
         } = req.body;
         const { id } = req.params;
-        const { idCourse, idModule, idConfigDictation, cantDictation } =
-            req.query;
+        const {
+            idCourse,
+            idModule,
+            idConfigDictation,
+            cantDictation,
+            onlyValidation,
+        } = req.query;
 
         // Translate to my notas cod (ex: Sol4)
         const notasRegla_trad = translateNotasRegla(notasRegla);
         const intervaloNotas_trad = transalteIntervalo(intervaloNotas);
         const notasBase_trad = gral.translateToMyNotes(notasBase);
         const notasFin_trad = gral.translateToMyNotes(notasFin);
+        const notaReferencia_trad = gral.translateToMyNotes([notaBase])[0];
 
         var res_dictation = [];
         const nroDic = parseInt(cantDictation);
@@ -255,7 +252,8 @@ function generateDictation(req, res) {
                         notasFin_trad,
                         nivelPrioridadClave,
                         largoDictadoMelodico,
-                        escalaDiatonicaRegla
+                        escalaDiatonicaRegla,
+                        notaReferencia_trad
                     );
                 generateOk = res_dictadoMelodico[0];
                 cantRec++;
@@ -272,6 +270,7 @@ function generateDictation(req, res) {
                 const dictadoMelodico_traducido = res_dictadoMelodico[1];
                 const clave = res_dictadoMelodico[2];
                 const escala_diatonica = res_dictadoMelodico[3];
+                const notaRefTrans = res_dictadoMelodico[5][0];
 
                 const dictation = {
                     curso: idCourse,
@@ -282,11 +281,11 @@ function generateDictation(req, res) {
                     figuras: dictadoRitmico_Compases, // con compás
                     clave: clave,
                     escala_diatonica: escala_diatonica,
-                    nota_base: notaBase,
+                    nota_base: notaRefTrans,
                     numerador: numeradorDictadoRitmico,
                     denominador: denominadorDictadoRitmico,
                     resuelto: [],
-                    bpm: bpm,
+                    bpm: gral.getBPMRandom(bpm),
                     dictado_ritmico: dictado_ritmico,
                 };
 
@@ -302,64 +301,77 @@ function generateDictation(req, res) {
                 message: 'No se generó ningún dictado.',
             });
         } else {
-            Curso.findById({ _id: idCourse }, (err, courseData) => {
-                if (err) {
-                    res.status(500).send({
-                        ok: false,
-                        issueConfig: false,
-                        message: 'Error del servidor.',
-                    });
-                } else if (!courseData) {
-                    res.status(404).send({
-                        ok: false,
-                        issueConfig: false,
-                        message: 'No se ha encontrado el curso',
-                    });
-                } else {
-                    let course = courseData;
-
-                    const existModule = find(course.modulo, idModule);
-                    if (!existModule) {
-                        return res.status(404).send({
+            if (onlyValidation == 'false') {
+                Curso.findById({ _id: idCourse }, (err, courseData) => {
+                    if (err) {
+                        res.status(500).send({
                             ok: false,
                             issueConfig: false,
-                            message:
-                                'No se ha encontrado el módulo dentro del curso',
+                            message: 'Error del servidor.',
+                        });
+                    } else if (!courseData) {
+                        res.status(404).send({
+                            ok: false,
+                            issueConfig: false,
+                            message: 'No se ha encontrado el curso',
                         });
                     } else {
-                        Usuario.findByIdAndUpdate(
-                            { _id: id },
-                            { $push: { dictados: { $each: res_dictation } } },
-                            (err, userData) => {
-                                if (err) {
-                                    res.status(500).send({
-                                        ok: false,
-                                        issueConfig: false,
-                                        message: 'Error del servidor',
-                                    });
-                                } else if (!userData) {
-                                    res.status(404).send({
-                                        ok: false,
-                                        issueConfig: false,
-                                        message:
-                                            'No se ha encontrado al estudiante',
-                                    });
-                                } else {
-                                    res.status(200).send({
-                                        ok: true,
-                                        issueConfig: false,
-                                        message: 'Ok',
-                                        dictations: getDictationsFilter(
-                                            userData.dictados,
-                                            idConfigDictation
-                                        ),
-                                    });
+                        let course = courseData;
+
+                        const existModule = find(course.modulo, idModule);
+                        if (!existModule) {
+                            return res.status(404).send({
+                                ok: false,
+                                issueConfig: false,
+                                message:
+                                    'No se ha encontrado el módulo dentro del curso',
+                            });
+                        } else {
+                            Usuario.findByIdAndUpdate(
+                                { _id: id },
+                                {
+                                    $push: {
+                                        dictados: { $each: res_dictation },
+                                    },
+                                },
+                                (err, userData) => {
+                                    if (err) {
+                                        res.status(500).send({
+                                            ok: false,
+                                            issueConfig: false,
+                                            message: 'Error del servidor',
+                                        });
+                                    } else if (!userData) {
+                                        res.status(404).send({
+                                            ok: false,
+                                            issueConfig: false,
+                                            message:
+                                                'No se ha encontrado al estudiante',
+                                        });
+                                    } else {
+                                        res.status(200).send({
+                                            ok: true,
+                                            issueConfig: false,
+                                            message: 'Ok',
+                                            dictations: getDictationsFilter(
+                                                userData.dictados,
+                                                idConfigDictation
+                                            ),
+                                        });
+                                    }
                                 }
-                            }
-                        );
+                            );
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                // endpoint is called to know if I can generate any dictation
+                return res.status(200).send({
+                    ok: true,
+                    issueConfig: false,
+                    message: 'Se puede generar dictados con la configuración.',
+                });
+            }
         }
     } catch (error) {
         res.status(501).send({
@@ -421,5 +433,5 @@ module.exports = {
     addUser,
     generateDictation,
     getDictation,
-    obtenerUsuarioRegistrado
+    obtenerUsuarioRegistrado,
 };

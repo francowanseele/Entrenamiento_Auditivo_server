@@ -29,6 +29,7 @@ const pruebadictados = () => {
         notasBase,
         notasFin,
         nivelPrioridadClave
+        // falta un parámetro
     );
 };
 

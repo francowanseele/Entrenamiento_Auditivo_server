@@ -1,5 +1,5 @@
-const IP_SERVER = '10.0.2.2';
-// const IP_SERVER = '127.0.0.2';
+//const IP_SERVER = '10.0.2.2';
+const IP_SERVER = 'localhost';
 const PORT_DB = 27017;
 const NAME_DATABASE = 'Entrenamiento_Auditivo';
 const user = 'ProyectoGrado2';

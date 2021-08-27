@@ -80,7 +80,10 @@ const CursoSchema = Schema({
                     ],
                     simple: Boolean,
                     nota_base: String,
-                    bpm: Number,
+                    bpm: {
+                        menor: Number,
+                        mayor: Number,
+                    },
                     dictado_ritmico: Boolean,
                 },
             ],

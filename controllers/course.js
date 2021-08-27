@@ -174,7 +174,6 @@ function addConfigDictation(req, res) {
                 } else {
                     var modules = arrModules[0];
                     var mod = arrModules[1];
-
                     const config_dictation = {
                         creado: idUserCreate,
                         nombre: name,

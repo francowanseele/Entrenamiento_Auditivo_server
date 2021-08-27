@@ -39,7 +39,8 @@ const generarDictadoMelodico = (
     notasFin,
     nivelPrioridadClave,
     cantDictado,
-    escalaDiatonicaRegla
+    escalaDiatonicaRegla,
+    notaReferencia
 ) => {
     // Notas de comienzo y fin
     const notaBase = gral.getRandom(notasBase);
@@ -139,6 +140,11 @@ const generarDictadoMelodico = (
         escalaDiatonicaRDM
     )[0];
 
+    var notaReferenciaTransformada = transformar.transformarAEscalaDiatonica(
+        [notaReferencia],
+        escalaDiatonicaRDM
+    )[0];
+
     // Muevo las nota base y fin dentro del intervalo
     notaBaseTransformada = transformar.modificarAlturaNotas(
         [[notaBaseTransformada]],
@@ -146,6 +152,10 @@ const generarDictadoMelodico = (
     )[0][0];
     notaFinTransformada = transformar.modificarAlturaNotas(
         [[notaFinTransformada]],
+        modificarAltura
+    )[0][0];
+    notaReferenciaTransformada = transformar.modificarAlturaNotas(
+        [[notaReferenciaTransformada]],
         modificarAltura
     )[0][0];
 
@@ -188,12 +198,17 @@ const generarDictadoMelodico = (
     let dictadoGeneradoTraducido =
         funcsGeralDictado.translateNotes(dictadoGenerado);
 
+    const notaReferenciaTraducida = funcsGeralDictado.translateNotes([
+        notaReferenciaTransformada,
+    ]);
+
     return [
         true,
         dictadoGeneradoTraducido,
         clave,
         escalaDiatonicaRDM,
         dictadoGenerado, // Lo devuelvo a modo de control
+        notaReferenciaTraducida,
     ];
 };
 

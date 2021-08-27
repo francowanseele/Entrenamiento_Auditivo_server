@@ -138,8 +138,21 @@ const applyTransformation = (notas, escala) => {
     }
 };
 
+// bpm = {menor: Number, mayor: Number}
+const getBPMRandom = (bpm) => {
+    const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
+    const dif = Math.abs(bpm.mayor - bpm.menor + 1);
+
+    if (bpm.mayor > bpm.menor) {
+        return bpm.menor + (rdm % dif);
+    } else {
+        return bpm.mayor + (rdm % dif);
+    }
+};
+
 module.exports = {
     translateNotes,
     translateToMyNotes,
     applyTransformation,
+    getBPMRandom,
 };
