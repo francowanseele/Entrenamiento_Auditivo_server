@@ -33,6 +33,32 @@ function tramsitDictation(req, res) {
     }
 }
 
+function tramsitNoteReference(req, res) {
+    try {
+        const { id } = req.params;
+        const nameFileMidi = id.toString();
+        const nameFileMp3 = nameFileMidi + '_note_ref_out';
+
+        const filePath = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mp3`;
+
+        fs.exists(filePath, (exists) => {
+            if (!exists) {
+                res.status(404).send({
+                    ok: false,
+                    message: 'El archivo no existe',
+                });
+            } else {
+                res.sendFile(path.resolve(filePath));
+            }
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 function generateDictationFile(req, res) {
     try {
         const addNotes = (track, dictation, figurasDictado, bpm) => {
@@ -149,23 +175,48 @@ function generateDictationFile(req, res) {
             return res;
         };
 
-        const { dictado, figurasDictado, escalaDiatoica, bpm } = req.body;
+        const { dictado, figurasDictado, escalaDiatoica, bpm, nota_base } =
+            req.body;
         const { id } = req.params;
 
+        // Dictation
         var track = new MidiWriter.Track();
-        // track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 9 }));
         const figuras = getFigurasALL(figurasDictado);
         const dictadoConTransformaciones = funcGralDictado.applyTransformation(
             dictado,
             escalaDiatoica
         );
-
         track = addNotes(track, dictadoConTransformaciones, figuras, bpm);
 
         var write = new MidiWriter.Writer(track);
         const nameFileMidi = id.toString();
         const nameFileMp3 = nameFileMidi + '_out';
         write.saveMIDI(`${cte.LOCATION_MUSIC_FILE}${nameFileMidi}`);
+        // END generate dictation
+
+        // Reference note
+        var trackNoteRef = new MidiWriter.Track();
+        // trackNoteRef.addEvent(
+        //     new MidiWriter.ProgramChangeEvent({ instrument: 13 })
+        // );
+        const nota_base_transformada = funcGralDictado.applyTransformation(
+            [nota_base],
+            escalaDiatoica
+        );
+        trackNoteRef = addNotes(
+            trackNoteRef,
+            nota_base_transformada,
+            ['1'],
+            '128'
+        );
+
+        var writeNoteRef = new MidiWriter.Writer(trackNoteRef);
+        const nameFileMidiNoteRef = id.toString() + '_note_ref';
+        const nameFileMp3NoteRef = nameFileMidiNoteRef + '_out';
+        writeNoteRef.saveMIDI(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidiNoteRef}`
+        );
+        // END generate dictation
 
         // if exists -> delete file nameFileMp3.mp3
         const filePathMp3 = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mp3`;
@@ -175,9 +226,24 @@ function generateDictationFile(req, res) {
             }
         });
 
+        // if exists -> delete file nameFileMp3NoteRef.mp3
+        const filePathMp3NoteRef = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3NoteRef}.mp3`;
+        fs.exists(filePathMp3NoteRef, (exists) => {
+            if (exists) {
+                fs.unlinkSync(filePathMp3NoteRef);
+            }
+        });
+
         // convert midi to mp3
         const comand = comands.miditomp3(nameFileMidi, nameFileMp3);
         exec(comand);
+
+        // convert midi to mp3 Note Ref
+        const comandNoteRef = comands.miditomp3(
+            nameFileMidiNoteRef,
+            nameFileMp3NoteRef
+        );
+        exec(comandNoteRef);
 
         res.status(200).send({
             ok: true,
@@ -186,6 +252,7 @@ function generateDictationFile(req, res) {
                 'Generación correcta de los dictados en archivos .mid y .mp3.',
         });
     } catch (error) {
+        console.log(error.message);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -196,4 +263,5 @@ function generateDictationFile(req, res) {
 module.exports = {
     generateDictationFile,
     tramsitDictation,
+    tramsitNoteReference,
 };
