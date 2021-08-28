@@ -59,6 +59,8 @@ const UsuarioSchema = Schema({
             dictado_ritmico: Boolean,
         },
     ],
+    admin: Boolean,
+    edicion_config_dictado: Boolean,
 });
 
 module.exports = mongoose.model('Usuario', UsuarioSchema);

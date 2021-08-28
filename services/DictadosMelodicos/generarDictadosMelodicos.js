@@ -75,6 +75,7 @@ const generarDictadoMelodico = (
     var escalasDiatonicasDato = cte_dictados.ESCALAS_DIATONICAS;
     var notasTransformadas = []; // notasRegla transformadas a una escala diatónica
     var modificarAltura = null; // cuantas alturas debo modificar las notas para que entre dentro del intervalo
+    var modificarAlturaNotaRef = null;
     var escalaDiatonicaRegla_var = escalaDiatonicaRegla;
 
     // Pruebo transformar a las notas de configuración a diferentes escálas diatónicas
@@ -90,6 +91,12 @@ const generarDictadoMelodico = (
 
         modificarAltura = transformar.cuantasModificar(
             notasTransformadas,
+            notaMenor,
+            notaMayor
+        );
+
+        modificarAlturaNotaRef = transformar.cuantasModificar(
+            [[notaReferencia]],
             notaMenor,
             notaMayor
         );
@@ -156,7 +163,7 @@ const generarDictadoMelodico = (
     )[0][0];
     notaReferenciaTransformada = transformar.modificarAlturaNotas(
         [[notaReferenciaTransformada]],
-        modificarAltura
+        modificarAlturaNotaRef
     )[0][0];
 
     // ---------------------------------------------------------------------
