@@ -76,11 +76,12 @@ function addUser(req, res) {
 const obtenerUsuarioRegistrado = async (req, res) => {
     // console.log('entro al obtener')
     try {
-        const { email, password } = req.body;
+        const { email, password, isTeacher } = req.body;
 
-        Usuario.findOne({ email: email }, (err, result) => {
-            if (result != null) {
-                if (!result.esDocente) {
+        Usuario.findOne(
+            { email: email, esDocente: isTeacher },
+            (err, result) => {
+                if (result != null) {
                     bcrypt.compare(
                         password,
                         result.password,
@@ -105,14 +106,14 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                             }
                         }
                     );
+                } else {
+                    res.status(404).send({
+                        ok: false,
+                        message: 'No se ha encontrado el usuario',
+                    });
                 }
-            } else {
-                res.status(404).send({
-                    ok: false,
-                    message: 'No se ha encontrado el usuario',
-                });
             }
-        });
+        );
     } catch (err) {
         res.status(501).send({
             ok: false,

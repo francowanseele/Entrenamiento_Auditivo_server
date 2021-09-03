@@ -6,7 +6,6 @@ function addCourse(req, res) {
         const curso = new Curso();
         curso.nombre = name;
         curso.descripcion = description;
-        curso.personal = personal;
 
         curso.save((err, newCourse) => {
             if (err) {
@@ -22,6 +21,7 @@ function addCourse(req, res) {
             } else {
                 res.status(200).send({
                     ok: true,
+                    course: newCourse,
                     message: 'Curso creado correctamente',
                 });
             }
