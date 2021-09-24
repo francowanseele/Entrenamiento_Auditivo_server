@@ -78,7 +78,7 @@ function generateDictationFile(req, res) {
                         case 'dd2':
                             return 'T'.concat(
                                 (
-                                    bpm_val * 4 +
+                                    bpm_val * 2 +
                                     bpm_val * 1 +
                                     Math.round(bpm_val / 2)
                                 ).toString()
