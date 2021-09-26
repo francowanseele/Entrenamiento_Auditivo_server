@@ -7,5 +7,5 @@ api.post('/add-course', CourseController.addCourse);
 api.post('/update-module/:id', CourseController.addModule);
 api.get('/get-module-by-curse/:id', CourseController.getModules);
 api.put('/add-config-dictation-module', CourseController.addConfigDictation);
-
+api.get('/get_califications',CourseController.getCalificacionPorCursoYNotasPromedios)
 module.exports = api;
