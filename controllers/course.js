@@ -269,7 +269,6 @@ const getCalificacionPorCursoYNotasPromedios = (req, res) => {
         }else return 'no especifica'
     }
     try {
-    console.log('entra a la func')
     const { idUser } = req.body;
     usuario.findById({ _id: idUser }, (err, userData) => {
         if (err) {
