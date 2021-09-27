@@ -286,10 +286,14 @@ const getCalificacionPorCursoYNotasPromedios = (req, res) => {
             let notaPromedioActual;
             let nombreCursoActual;
             let errorMasComun;
+            let idModulo_actual;
+            let idConfig_actual;
             const userDictations = userData.dictados;
             let  resFinal = [];
             for (let i=0; i<userDictations.length; i++){
-                idCursoActual = userDictations[i].curso
+                idCursoActual = userDictations[i].curso;
+                idConfig_actual = userDictations[i].configuracion_dictado;
+                idModulo_actual = userDictations[i].modulo;
                 if (userDictations[i].resuelto.length>0) { 
                     notaPromedioActual = getNotaPromedio(userDictations[i].resuelto)
                     errorMasComun = getErrorMasComun(userDictations[i].resuelto)
@@ -308,6 +312,8 @@ const getCalificacionPorCursoYNotasPromedios = (req, res) => {
                     } else if (userDictations[i].resuelto.length>0){
                         nombreCursoActual = curseData.nombre
                         resFinal.push({
+                            idModulo:idModulo_actual,
+                            idConfig:idConfig_actual,
                             nombreCurso:nombreCursoActual,
                             promedio:notaPromedioActual,
                             errorMasComun: errorMasComun,
