@@ -232,15 +232,31 @@ function addConfigDictation(req, res) {
     }
 }
 
-const getCalificacionPorCursoYNotasPromedios = (req, res) => {
+
+async function  getCalificacionPorCursoYNotasPromedios(req, res){
+
+    async function getCursoById(idCourse){
+        return await curso.findById({_id:idCourse}, (err, curseData) =>{
+            if (err) {
+               return 'error del servidor'
+            } else if (!curseData) {
+                return 'no se ha encontrado el curso'
+            } else {
+                return curseData
+               
+            }
+        })
+        
+    }
     const getNotaPromedio = (resueltosArray) => {
-        notaTotal = 0;
+        let notaTotal = 0;
         for (let i=0;i<resueltosArray.length; i++){
             if (resueltosArray[i] && resueltosArray[i].nota) {
                 notaTotal = notaTotal + parseInt(resueltosArray[i].nota);
             }
         }
-        return (notaTotal / resueltosArray.length)
+        const notaRes =(notaTotal / resueltosArray.length)
+        return notaRes
     }
     const getErrorMasComun = (resueltosArray) => {
         let ambos = 0;
@@ -248,12 +264,12 @@ const getCalificacionPorCursoYNotasPromedios = (req, res) => {
         let melodicos = 0;
         for (let i=0;i<resueltosArray.length; i++){
             if (resueltosArray[i] && resueltosArray[i].tipoError) {
-                if (tipoError = 'ritmico'){
+                if (resueltosArray[i].tipoError == 'ritmico'){
                     ritmicos = ritmicos + 1;
-                }else if (tipoError = 'melodico'){
+                }else if (resueltosArray[i].tipoError == 'melodico'){
                     melodicos = melodicos +1;
                 }
-                else if (tipoError == 'ambos'){
+                else if (resueltosArray[i].tipoError == 'ambos'){
                     ambos = ambos + 1;
                 }
             }
@@ -268,9 +284,32 @@ const getCalificacionPorCursoYNotasPromedios = (req, res) => {
             }
         }else return 'no especifica'
     }
+
+    async function getNameCourseCalifs(resFinal){
+        // console.log(resFinal)
+        resCurrent = [];
+        for (calif in resFinal){
+            await getCursoById(resFinal[calif].idCurso).then((currentCurso)=>{
+            resCurrent.push({
+                nombreCurso: currentCurso.nombre,
+                idModulo:resFinal[calif].idModulo,
+                idConfing:resFinal[calif].idConfig,
+                promedio: resFinal[calif].promedio,
+                errorMasComun: resFinal[calif].errorMasComun,
+                notas:resFinal[calif].notas
+
+            })
+            })
+        }
+        return resCurrent
+    }
+
     try {
+
     const { idUser } = req.body;
-    usuario.findById({ _id: idUser }, (err, userData) => {
+    
+    let  resFinal = [];
+    await usuario.findById({ _id: idUser }, (err, userData) => {
         if (err) {
             res.status(500).send({
                 ok: false,
@@ -284,63 +323,41 @@ const getCalificacionPorCursoYNotasPromedios = (req, res) => {
         } else if (userData.dictados.length>0){
             let idCursoActual;
             let notaPromedioActual;
-            let nombreCursoActual;
             let errorMasComun;
             let idModulo_actual;
             let idConfig_actual;
             const userDictations = userData.dictados;
-            let  resFinal = [];
-            for (let i=0; i<userDictations.length; i++){
-                idCursoActual = userDictations[i].curso;
-                idConfig_actual = userDictations[i].configuracion_dictado;
-                idModulo_actual = userDictations[i].modulo;
-                if (userDictations[i].resuelto.length>0) { 
-                    notaPromedioActual = getNotaPromedio(userDictations[i].resuelto)
-                    errorMasComun = getErrorMasComun(userDictations[i].resuelto)
+            let notasRes = [];
+            for (dictation of userDictations) {
+                errorMasComun = '';
+                notaPromedioActual = 0;
+                notaRes=[];
+                idCursoActual = dictation.curso;
+                idConfig_actual = dictation.configuracion_dictado;
+                idModulo_actual = dictation.modulo;
+                if (dictation.resuelto.length>0) {
+                    notaPromedioActual =  getNotaPromedio(dictation.resuelto)
+                    errorMasComun = getErrorMasComun(dictation.resuelto)
+                    notasRes = dictation.resuelto;
+                    resFinal.push({
+                        idCurso: dictation.curso,
+                        idModulo:idModulo_actual,
+                        idConfig:idConfig_actual,
+                        promedio:notaPromedioActual,
+                        errorMasComun: errorMasComun,
+                        notas:notasRes,
+                    })
                 }
-                curso.findById({_id:idCursoActual}, (err, curseData) =>{
-                    if (err) {
-                        res.status(500).send({
-                            ok: false,
-                            message: 'Error del servidor',
-                        });
-                    } else if (!userData) {
-                        res.status(404).send({
-                            ok: false,
-                            message: 'No se ha encontrado el curso',
-                        });
-                    } else if (userDictations[i].resuelto.length>0){
-                        nombreCursoActual = curseData.nombre
-                        resFinal.push({
-                            idModulo:idModulo_actual,
-                            idConfig:idConfig_actual,
-                            nombreCurso:nombreCursoActual,
-                            promedio:notaPromedioActual,
-                            errorMasComun: errorMasComun,
-                            notas:userDictations[i].resuelto
-                        })
-                        if ( i == userDictations.length -1){
-                            res.status(200).send({
-                                ok: true,
-                                calificaciones: resFinal,
-                                message: 'Ok',
-                            });
-                        }
-                    } else if ( i == userDictations.length -1){
-                        res.status(200).send({
-                            ok: true,
-                            calificaciones: resFinal,
-                            message: 'Ok',
-                        });
-                    }
-                })
-                   
-                
-                
             }
-           
         }
     });
+    getNameCourseCalifs(resFinal).then((resF)=>{
+        res.status(200).send({
+            ok: true,
+            calificaciones: resF,
+            message: 'Ok',
+        });
+    })
 
     } catch (error) {
     res.status(501).send({
