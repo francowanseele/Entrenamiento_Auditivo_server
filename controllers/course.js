@@ -290,15 +290,16 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
         resCurrent = [];
         for (calif in resFinal){
             await getCursoById(resFinal[calif].idCurso).then((currentCurso)=>{
-            resCurrent.push({
-                nombreCurso: currentCurso.nombre,
-                idModulo:resFinal[calif].idModulo,
-                idConfing:resFinal[calif].idConfig,
-                promedio: resFinal[calif].promedio,
-                errorMasComun: resFinal[calif].errorMasComun,
-                notas:resFinal[calif].notas
+                resCurrent.push({
+                    idDictado:resFinal[calif].idDictado,
+                    nombreCurso: currentCurso.nombre,
+                    idModulo:resFinal[calif].idModulo,
+                    idConfing:resFinal[calif].idConfig,
+                    promedio: resFinal[calif].promedio,
+                    errorMasComun: resFinal[calif].errorMasComun,
+                    notas:resFinal[calif].notas
 
-            })
+                })
             })
         }
         return resCurrent
@@ -340,6 +341,7 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
                     errorMasComun = getErrorMasComun(dictation.resuelto)
                     notasRes = dictation.resuelto;
                     resFinal.push({
+                        idDictado:dictation._id,
                         idCurso: dictation.curso,
                         idModulo:idModulo_actual,
                         idConfig:idConfig_actual,
