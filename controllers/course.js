@@ -286,30 +286,42 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
     }
 
     async function getNameCourseCalifs(resFinal){
-        // console.log(resFinal)
-        resCurrent = [];
-        for (calif in resFinal){
-            await getCursoById(resFinal[calif].idCurso).then((currentCurso)=>{
-                resCurrent.push({
-                    idDictado:resFinal[calif].idDictado,
-                    nombreCurso: currentCurso.nombre,
-                    idModulo:resFinal[calif].idModulo,
-                    idConfing:resFinal[calif].idConfig,
-                    promedio: resFinal[calif].promedio,
-                    errorMasComun: resFinal[calif].errorMasComun,
-                    notas:resFinal[calif].notas
+        let nombreModulo;
+        currentModulos = [];
+        for (course in resFinal){
+            console.log()
+            await getCursoById(course).then((currentCurso)=>{
+                    currentModulos = currentCurso.modulo;
+                    nombreModulo = '';
+                    for (moduleCurrent in resFinal[course].modulos){
+                        //obtener nombre modulo
+                        for ( currmod in currentModulos ){
+                            if((currentModulos[currmod]._id) == (moduleCurrent)  ){
+                                nombreModulo = currentModulos[currmod].nombre
+                                for (conf in resFinal[course].modulos[moduleCurrent].configuraciones){
+                                    for (confBase in currentModulos[currmod].configuracion_dictado){
+                                        if (currentModulos[currmod].configuracion_dictado[confBase]._id == conf){
+                                            resFinal[course].modulos[moduleCurrent].configuraciones[conf].nombre_configuracion = currentModulos[currmod].configuracion_dictado[confBase].nombre 
+                                        }
+                                    }
+                                } 
+                            }
+                        }
+                        resFinal[course].modulos[moduleCurrent].nombre_modulo = nombreModulo;
 
-                })
+                    }
+                    resFinal[course].nombre_curso = currentCurso.nombre;
+                  
             })
         }
-        return resCurrent
+        return resFinal
     }
 
     try {
 
     const { idUser } = req.body;
     
-    let  resFinal = [];
+    let  resFinal = {};
     await usuario.findById({ _id: idUser }, (err, userData) => {
         if (err) {
             res.status(500).send({
@@ -329,26 +341,41 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
             let idConfig_actual;
             const userDictations = userData.dictados;
             let notasRes = [];
+            let moduloNuevo;
             for (dictation of userDictations) {
                 errorMasComun = '';
                 notaPromedioActual = 0;
                 notaRes=[];
-                idCursoActual = dictation.curso;
+                idCurso_actual = dictation.curso;
                 idConfig_actual = dictation.configuracion_dictado;
                 idModulo_actual = dictation.modulo;
                 if (dictation.resuelto.length>0) {
-                    notaPromedioActual =  getNotaPromedio(dictation.resuelto)
-                    errorMasComun = getErrorMasComun(dictation.resuelto)
                     notasRes = dictation.resuelto;
-                    resFinal.push({
-                        idDictado:dictation._id,
-                        idCurso: dictation.curso,
-                        idModulo:idModulo_actual,
-                        idConfig:idConfig_actual,
-                        promedio:notaPromedioActual,
-                        errorMasComun: errorMasComun,
-                        notas:notasRes,
-                    })
+                    if (!resFinal.hasOwnProperty(idCurso_actual)){
+                        resFinal[idCurso_actual] = {
+                            nombre_curso: 'no_asignado',
+                            modulos: {},
+                        }
+                    }
+                    if (!resFinal[idCurso_actual].modulos.hasOwnProperty(idModulo_actual)){
+                        resFinal[idCurso_actual].modulos[idModulo_actual] = {
+                            nombre_modulo:'no_asignado',
+                            configuraciones:{},
+                        }
+                    }
+                    if (resFinal[idCurso_actual].modulos && 
+                        !resFinal[idCurso_actual].modulos[idModulo_actual].configuraciones.hasOwnProperty(idConfig_actual)){
+                            resFinal[idCurso_actual].modulos[idModulo_actual].configuraciones[idConfig_actual] = {
+                                nombre_configuracion:'no_asignado',
+                                notas:[],
+                            }
+                    }
+                    for (elem in notasRes){
+                        resFinal[idCurso_actual].modulos[idModulo_actual].configuraciones[idConfig_actual].notas.push(
+                                notasRes[elem]
+                            )
+                        }
+                   
                 }
             }
         }
@@ -360,7 +387,6 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
             message: 'Ok',
         });
     })
-
     } catch (error) {
     res.status(501).send({
         ok: false,
