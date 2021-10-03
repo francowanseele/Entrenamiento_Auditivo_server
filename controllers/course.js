@@ -287,9 +287,9 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
 
     async function getNameCourseCalifs(resFinal){
         let nombreModulo;
+        let resCurrent = [];
         currentModulos = [];
-        for (course in resFinal){
-            console.log()
+        for(let course in resFinal){
             await getCursoById(course).then((currentCurso)=>{
                     currentModulos = currentCurso.modulo;
                     nombreModulo = '';
@@ -308,13 +308,15 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
                             }
                         }
                         resFinal[course].modulos[moduleCurrent].nombre_modulo = nombreModulo;
-
                     }
                     resFinal[course].nombre_curso = currentCurso.nombre;
                   
+            }).then(()=>{
+                resCurrent = resFinal
             })
         }
-        return resFinal
+        console.log(resCurrent)
+        return resCurrent
     }
 
     try {
@@ -334,8 +336,6 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
                 message: 'No se ha encontrado el usuario',
             });
         } else if (userData.dictados.length>0){
-            let idCursoActual;
-            let notaPromedioActual;
             let errorMasComun;
             let idModulo_actual;
             let idConfig_actual;
