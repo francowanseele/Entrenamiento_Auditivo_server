@@ -285,8 +285,9 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
         }else return 'no especifica'
     }
 
-    async function getNameCourseCalifs(resFinal){
+    async function getNameCourseCalifs(resParam){
         let nombreModulo;
+        let resFinal = resParam;
         let resCurrent = [];
         currentModulos = [];
         for(let course in resFinal){
@@ -315,7 +316,6 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
                 resCurrent = resFinal
             })
         }
-        console.log(resCurrent)
         return resCurrent
     }
 
@@ -341,7 +341,6 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
             let idConfig_actual;
             const userDictations = userData.dictados;
             let notasRes = [];
-            let moduloNuevo;
             for (dictation of userDictations) {
                 errorMasComun = '';
                 notaPromedioActual = 0;
@@ -374,19 +373,21 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
                         resFinal[idCurso_actual].modulos[idModulo_actual].configuraciones[idConfig_actual].notas.push(
                                 notasRes[elem]
                             )
-                        }
-                   
+                    }
+                    notaPromedioActual = getNotaPromedio(resFinal[idCurso_actual].modulos[idModulo_actual].configuraciones[idConfig_actual].notas)
+                    resFinal[idCurso_actual].modulos[idModulo_actual].configuraciones[idConfig_actual].promedio = notaPromedioActual;
                 }
             }
+            getNameCourseCalifs(resFinal).then((resF)=>{
+                res.status(200).send({
+                    ok: true,
+                    calificaciones: resF,
+                    message: 'Ok',
+                });
+            })
         }
     });
-    getNameCourseCalifs(resFinal).then((resF)=>{
-        res.status(200).send({
-            ok: true,
-            calificaciones: resF,
-            message: 'Ok',
-        });
-    })
+   
     } catch (error) {
     res.status(501).send({
         ok: false,
