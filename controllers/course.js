@@ -290,28 +290,39 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
         let resFinal = resParam;
         let resCurrent = [];
         currentModulos = [];
+        let totalNotasModulo = 0;
+        let cantConfiguraciones = 0;
+        let totalNotasCurso = 0;
+        let cantModulos = 0;
         for(let course in resFinal){
             await getCursoById(course).then((currentCurso)=>{
                     currentModulos = currentCurso.modulo;
                     nombreModulo = '';
+                    totalNotasCurso = 0;
                     for (moduleCurrent in resFinal[course].modulos){
-                        //obtener nombre modulo
+                        cantModulos = cantModulos + 1;
+                        totalNotasModulo = 0;
+                        cantConfiguraciones = 0;
                         for ( currmod in currentModulos ){
                             if((currentModulos[currmod]._id) == (moduleCurrent)  ){
-                                nombreModulo = currentModulos[currmod].nombre
+                                nombreModulo = currentModulos[currmod].nombre;
                                 for (conf in resFinal[course].modulos[moduleCurrent].configuraciones){
+                                    cantConfiguraciones = cantConfiguraciones + 1;
+                                    totalNotasModulo = totalNotasModulo + resFinal[course].modulos[moduleCurrent].configuraciones[conf].promedio;
                                     for (confBase in currentModulos[currmod].configuracion_dictado){
                                         if (currentModulos[currmod].configuracion_dictado[confBase]._id == conf){
                                             resFinal[course].modulos[moduleCurrent].configuraciones[conf].nombre_configuracion = currentModulos[currmod].configuracion_dictado[confBase].nombre 
                                         }
                                     }
-                                } 
+                                }
                             }
                         }
+                        resFinal[course].modulos[moduleCurrent].promedio = (totalNotasModulo / cantConfiguraciones)
                         resFinal[course].modulos[moduleCurrent].nombre_modulo = nombreModulo;
+                        totalNotasCurso = totalNotasCurso + (totalNotasModulo / cantConfiguraciones)
                     }
                     resFinal[course].nombre_curso = currentCurso.nombre;
-                  
+                    resFinal[course].promedio = (totalNotasCurso / cantModulos )
             }).then(()=>{
                 resCurrent = resFinal
             })
