@@ -1,6 +1,6 @@
 const curso = require('../models/curso');
 const Curso = require('../models/curso');
-const usuario = require('../models/usuario');
+const Usuario = require('../models/usuario');
 
 function addCourse(req, res) {
     try {
@@ -335,7 +335,7 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
     const { idUser } = req.body;
     
     let  resFinal = {};
-    await usuario.findById({ _id: idUser }, (err, userData) => {
+    await Usuario.findById({ _id: idUser }, (err, userData) => {
         if (err) {
             res.status(500).send({
                 ok: false,
@@ -405,6 +405,36 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
         message: error.message,
     });
     }
+
+}
+
+    async function getStudentsByIdCourse(req,res){
+        const { idCourse } = req.body;
+        try {
+            var query = {cursa_curso:{ $elemMatch:{curso_cursado:idCourse}}};
+            await Usuario.find(query).then((result) => {
+                let newResult = [];
+                let currentUser = {}
+                for (user in result){
+                    currentUser = {
+                        id:result[user]._id,
+                        nombre:result[user].nombre,
+                        apellido:result[user].apellido,
+                    }
+                    newResult.push(currentUser)
+                }
+                res.status(200).send({
+                    ok: true,
+                    estudiantes: newResult,
+                    message: 'Ok',
+                });
+            });
+        } catch (err) {
+            res.status(501).send({
+                ok: false,
+                message: err.message,
+            });
+        }
 }
 
 module.exports = {
@@ -412,5 +442,6 @@ module.exports = {
     addModule,
     getModules,
     addConfigDictation,
-    getCalificacionPorCursoYNotasPromedios
+    getCalificacionPorCursoYNotasPromedios,
+    getStudentsByIdCourse
 };
