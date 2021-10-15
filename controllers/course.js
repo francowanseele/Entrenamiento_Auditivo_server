@@ -437,11 +437,30 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
         }
 }
 
+async function getTeacherCourses(req,res){
+    const { idUser } = req.body;
+    try {
+        await Usuario.find({_id:idUser}).then((result) => {
+            res.status(200).send({
+                ok: true,
+                cursos: result[0].dicta_curso,
+                message: 'Ok',
+            });
+        });
+    } catch (err) {
+        res.status(501).send({
+            ok: false,
+            message: err.message,
+        });
+    }
+}
+
 module.exports = {
     addCourse,
     addModule,
     getModules,
     addConfigDictation,
     getCalificacionPorCursoYNotasPromedios,
-    getStudentsByIdCourse
+    getStudentsByIdCourse,
+    getTeacherCourses
 };
