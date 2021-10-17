@@ -10,4 +10,5 @@ api.put('/add-config-dictation-module', CourseController.addConfigDictation);
 api.post('/get_califications',CourseController.getCalificacionPorCursoYNotasPromedios)
 api.post('/get_students_course',CourseController.getStudentsByIdCourse);
 api.post('/get_teacher_courses',CourseController.getTeacherCourses);
+api.get('/get-all-courses', CourseController.getAllCourse);
 module.exports = api;

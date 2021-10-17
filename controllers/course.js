@@ -36,6 +36,38 @@ function addCourse(req, res) {
     }
 }
 
+function getAllCourse(req, res) {
+    try {
+        Curso.find({}, {modulo:0} ,(err, courseData) => {
+            if (err) {
+                res.status(500).send({
+                    ok: false,
+                    message: 'Error del servidor',
+                });
+            } else if (!courseData) {
+                res.status(404).send({
+                    ok: false,
+                    message: 'No se ha encontrado el curso',
+                });
+            } else {
+                let course = courseData;
+
+                res.status(200).send({
+                    ok: true,
+                    cursos: courseData,
+                    message: 'Ok',
+                });
+            }
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+
 function addModule(req, res) {
     try {
         const { name, description } = req.body;
@@ -457,6 +489,7 @@ async function getTeacherCourses(req,res){
 
 module.exports = {
     addCourse,
+    getAllCourse,
     addModule,
     getModules,
     addConfigDictation,
