@@ -35,6 +35,36 @@ function addCourse(req, res) {
         });
     }
 }
+function getCoursesCursaStudent(req,res) {
+
+    const { idUser} = req.body;
+    try {
+        Usuario.find({_id:idUser} ,(err, userData) => {
+            if (err) {
+                res.status(500).send({
+                    ok: false,
+                    message: 'Error del servidor',
+                });
+            } else if (!userData) {
+                res.status(404).send({
+                    ok: false,
+                    message: 'No se ha encontrado el curso',
+                });
+            } else {
+                    res.status(200).send({
+                        ok: true,
+                        cursos: userData[0].cursa_curso,
+                        message: 'Ok',
+                    });
+            }
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
 
 function getAllCourse(req, res) {
     try {
@@ -278,7 +308,6 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
                
             }
         })
-        
     }
     const getNotaPromedio = (resueltosArray) => {
         let notaTotal = 0;
@@ -492,6 +521,7 @@ module.exports = {
     getAllCourse,
     addModule,
     getModules,
+    getCoursesCursaStudent,
     addConfigDictation,
     getCalificacionPorCursoYNotasPromedios,
     getStudentsByIdCourse,

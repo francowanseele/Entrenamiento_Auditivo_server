@@ -11,4 +11,5 @@ api.post('/get_califications',CourseController.getCalificacionPorCursoYNotasProm
 api.post('/get_students_course',CourseController.getStudentsByIdCourse);
 api.post('/get_teacher_courses',CourseController.getTeacherCourses);
 api.get('/get-all-courses', CourseController.getAllCourse);
+api.get('/get-cursa-student',CourseController.getCoursesCursaStudent)
 module.exports = api;
