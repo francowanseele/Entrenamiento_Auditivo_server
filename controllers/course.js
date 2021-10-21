@@ -1,6 +1,9 @@
 const curso = require('../models/curso');
 const Curso = require('../models/curso');
+const usuario = require('../models/usuario');
 const Usuario = require('../models/usuario');
+
+
 
 function addCourse(req, res) {
     try {
@@ -35,8 +38,45 @@ function addCourse(req, res) {
         });
     }
 }
-function getCoursesCursaStudent(req,res) {
 
+function addStudentToCourse(req, res){
+    try {
+        const { idUser, idCourse } = req.body;
+        const fecha = new Date();
+
+        Usuario.findByIdAndUpdate(
+            { _id: idUser },
+            { $push: { cursa_curso: { curso_cursado: idCourse, fecha_inscripcion:fecha } } },
+            (err, userResult) => {
+                if (err) {
+                    res.status(500).send({
+                        ok: false,
+                        message: 'Error del servidor',
+                    });
+                } else if (!userResult) {
+                    res.status(404).send({
+                        ok: false,
+                        message: 'No se ha encontrado el curso',
+                    });
+                } else {
+                    res.status(200).send({
+                        ok: true,
+                        course: userResult,
+                        message: 'Ok',
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+
+function getCoursesCursaStudent(req,res) {
     const { idUser} = req.body;
     try {
         Usuario.find({_id:idUser} ,(err, userData) => {
@@ -525,5 +565,6 @@ module.exports = {
     addConfigDictation,
     getCalificacionPorCursoYNotasPromedios,
     getStudentsByIdCourse,
-    getTeacherCourses
+    getTeacherCourses,
+    addStudentToCourse
 };
