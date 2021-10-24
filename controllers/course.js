@@ -137,6 +137,36 @@ function getAllCourse(req, res) {
     }
 }
 
+function getPersonalCourse(req, res) {
+    const { idUser} = req.body;
+    try {
+        Usuario.find({_id:idUser}, {dictados:0} ,(err, userData) => {
+            if (err) {
+                res.status(500).send({
+                    ok: false,
+                    message: 'Error del servidor',
+                });
+            } else if (!userData) {
+                res.status(404).send({
+                    ok: false,
+                    message: 'No se ha encontrado el curso',
+                });
+            } else {
+                res.status(200).send({
+                    ok: true,
+                    curso_personal: userData[0].curso_personal,
+                    message: 'Ok',
+                });
+            }
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 
 function addModule(req, res) {
     try {
@@ -566,5 +596,6 @@ module.exports = {
     getCalificacionPorCursoYNotasPromedios,
     getStudentsByIdCourse,
     getTeacherCourses,
-    addStudentToCourse
+    addStudentToCourse,
+    getPersonalCourse
 };

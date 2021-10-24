@@ -13,4 +13,5 @@ api.post('/get_teacher_courses',CourseController.getTeacherCourses);
 api.get('/get-all-courses', CourseController.getAllCourse);
 api.post('/get-cursa-student',CourseController.getCoursesCursaStudent);
 api.put('/add-student-course',CourseController.addStudentToCourse);
+api.post('/get-curso-personal',CourseController.getPersonalCourse)
 module.exports = api;
