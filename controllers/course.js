@@ -3,7 +3,40 @@ const Curso = require('../models/curso');
 const usuario = require('../models/usuario');
 const Usuario = require('../models/usuario');
 
+function addCourseToDictaTeacher(req, res) {
+    try {
+        const { idUser, idCourse } = req.body;
 
+        Usuario.findByIdAndUpdate(
+            { _id: idUser },
+            { $push: { dicta_curso: { curso: idCourse, responsable:true } } },
+            (err, userResult) => {
+                if (err) {
+                    res.status(500).send({
+                        ok: false,
+                        message: 'Error del servidor',
+                    });
+                } else if (!userResult) {
+                    res.status(404).send({
+                        ok: false,
+                        message: 'No se ha encontrado el curso',
+                    });
+                } else {
+                    res.status(200).send({
+                        ok: true,
+                        course: userResult,
+                        message: 'Ok',
+                    });
+                }
+            }
+        );
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
 
 function addCourse(req, res) {
     try {
@@ -588,6 +621,7 @@ async function getTeacherCourses(req,res){
 
 module.exports = {
     addCourse,
+    addCourseToDictaTeacher,
     getAllCourse,
     addModule,
     getModules,
