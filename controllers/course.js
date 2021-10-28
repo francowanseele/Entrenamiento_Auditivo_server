@@ -44,6 +44,7 @@ function addCourse(req, res) {
         const curso = new Curso();
         curso.nombre = name;
         curso.descripcion = description;
+        curso.personal = personal;
 
         curso.save((err, newCourse) => {
             if (err) {

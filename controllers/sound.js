@@ -41,13 +41,20 @@ function tramsitNoteReference(req, res) {
 
         const filePath = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mp3`;
 
+        // const nameFileMp3 = nameFileMidi + '_note_ref';
+
+        // const filePath = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mid`;
+
         fs.exists(filePath, (exists) => {
+            console.log('LOG nro 1');
             if (!exists) {
+                console.log('NOT EXISTE MIDI FILE');
                 res.status(404).send({
                     ok: false,
                     message: 'El archivo no existe',
                 });
             } else {
+                console.log('EXISTE MIDI FILE');
                 res.sendFile(path.resolve(filePath));
             }
         });
