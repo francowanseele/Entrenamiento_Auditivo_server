@@ -9,7 +9,7 @@ function addCourseToDictaTeacher(req, res) {
 
         Usuario.findByIdAndUpdate(
             { _id: idUser },
-            { $push: { dicta_curso: { curso: idCourse, responsable:true } } },
+            { $push: { dicta_curso: { curso: idCourse, responsable: true } } },
             (err, userResult) => {
                 if (err) {
                     res.status(500).send({
@@ -73,14 +73,21 @@ function addCourse(req, res) {
     }
 }
 
-function addStudentToCourse(req, res){
+function addStudentToCourse(req, res) {
     try {
         const { idUser, idCourse } = req.body;
         const fecha = new Date();
 
         Usuario.findByIdAndUpdate(
             { _id: idUser },
-            { $push: { cursa_curso: { curso_cursado: idCourse, fecha_inscripcion:fecha } } },
+            {
+                $push: {
+                    cursa_curso: {
+                        curso_cursado: idCourse,
+                        fecha_inscripcion: fecha,
+                    },
+                },
+            },
             (err, userResult) => {
                 if (err) {
                     res.status(500).send({
@@ -109,11 +116,10 @@ function addStudentToCourse(req, res){
     }
 }
 
-
-function getCoursesCursaStudent(req,res) {
-    const { idUser} = req.body;
+function getCoursesCursaStudent(req, res) {
+    const { idUser } = req.body;
     try {
-        Usuario.find({_id:idUser} ,(err, userData) => {
+        Usuario.find({ _id: idUser }, (err, userData) => {
             if (err) {
                 res.status(500).send({
                     ok: false,
@@ -125,11 +131,11 @@ function getCoursesCursaStudent(req,res) {
                     message: 'No se ha encontrado el curso',
                 });
             } else {
-                    res.status(200).send({
-                        ok: true,
-                        cursos: userData[0].cursa_curso,
-                        message: 'Ok',
-                    });
+                res.status(200).send({
+                    ok: true,
+                    cursos: userData[0].cursa_curso,
+                    message: 'Ok',
+                });
             }
         });
     } catch (error) {
@@ -473,8 +479,8 @@ async function getCalificacionPorCursoYNotasPromedios(req, res) {
         let totalNotasCurso = 0;
         let cantModulos = 0;
         for (let course in resFinal) {
-            await getCursoById(course)
-                .then((currentCurso) => {
+            await getCursoById(course).then((currentCurso) => {
+                if (currentCurso) {
                     currentModulos = currentCurso.modulo;
                     nombreModulo = '';
                     totalNotasCurso = 0;
@@ -526,10 +532,11 @@ async function getCalificacionPorCursoYNotasPromedios(req, res) {
                     }
                     resFinal[course].nombre_curso = currentCurso.nombre;
                     resFinal[course].promedio = totalNotasCurso / cantModulos;
-                })
-                .then(() => {
-                    resCurrent = resFinal;
-                });
+                }
+            });
+            // .then(() => {
+            //     resCurrent = resFinal;
+            // });
         }
         return resCurrent;
     }
@@ -628,39 +635,41 @@ async function getCalificacionPorCursoYNotasPromedios(req, res) {
     }
 }
 
-    async function getStudentsByIdCourse(req,res){
-        const { idCourse } = req.body;
-        try {
-            var query = {cursa_curso:{ $elemMatch:{curso_cursado:idCourse}}};
-            await Usuario.find(query).then((result) => {
-                let newResult = [];
-                let currentUser = {}
-                for (user in result){
-                    currentUser = {
-                        id:result[user]._id,
-                        nombre:result[user].nombre,
-                        apellido:result[user].apellido,
-                    }
-                    newResult.push(currentUser)
-                }
-                res.status(200).send({
-                    ok: true,
-                    estudiantes: newResult,
-                    message: 'Ok',
-                });
+async function getStudentsByIdCourse(req, res) {
+    const { idCourse } = req.body;
+    try {
+        var query = {
+            cursa_curso: { $elemMatch: { curso_cursado: idCourse } },
+        };
+        await Usuario.find(query).then((result) => {
+            let newResult = [];
+            let currentUser = {};
+            for (user in result) {
+                currentUser = {
+                    id: result[user]._id,
+                    nombre: result[user].nombre,
+                    apellido: result[user].apellido,
+                };
+                newResult.push(currentUser);
+            }
+            res.status(200).send({
+                ok: true,
+                estudiantes: newResult,
+                message: 'Ok',
             });
-        } catch (err) {
-            res.status(501).send({
-                ok: false,
-                message: err.message,
-            });
-        }
+        });
+    } catch (err) {
+        res.status(501).send({
+            ok: false,
+            message: err.message,
+        });
+    }
 }
 
-async function getTeacherCourses(req,res){
+async function getTeacherCourses(req, res) {
     const { idUser } = req.body;
     try {
-        await Usuario.find({_id:idUser}).then((result) => {
+        await Usuario.find({ _id: idUser }).then((result) => {
             res.status(200).send({
                 ok: true,
                 cursos: result[0].dicta_curso,
@@ -687,5 +696,5 @@ module.exports = {
     getStudentsByIdCourse,
     getTeacherCourses,
     addStudentToCourse,
-    getPersonalCourse
+    getPersonalCourse,
 };

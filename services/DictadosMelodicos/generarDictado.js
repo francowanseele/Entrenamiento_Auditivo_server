@@ -344,28 +344,36 @@ const generarDictado = (
         faltantes = notasFaltantes(notasObligatorias, dictado);
 
         // Agrego al dictado las notas faltantes
-        do {
-            const notaDestino = elegirFaltante(faltantes, notasConfig, notaRef);
+        if (elegirFaltante(faltantes, notasConfig, notaRef) != null) {
+            // No entra en el if en caso de que en los giros melódicos solamente haya una única nota
+            do {
+                const notaDestino = elegirFaltante(
+                    faltantes,
+                    notasConfig,
+                    notaRef
+                );
 
-            const dictadoParcial = finalizarDictado(
-                [{ nota: notaRef, padre: null }],
-                notaDestino,
-                0,
-                notasConfig,
-                null
-            );
-            dictado = concatenarDictadoControlNotaFin(
-                dictado,
-                dictadoParcial,
-                largoDictado,
-                notaFin,
-                notasConfig
-            );
-            // dictado = concatenarDictado(dictado, dictadoParcial);
-            notaRef = dictado[dictado.length - 1];
+                const dictadoParcial = finalizarDictado(
+                    [{ nota: notaRef, padre: null }],
+                    notaDestino,
+                    0,
+                    notasConfig,
+                    null
+                );
 
-            faltantes = notasFaltantes(notasObligatorias, dictado);
-        } while (faltantes.length >= 1 && dictado.length < largoDictado);
+                dictado = concatenarDictadoControlNotaFin(
+                    dictado,
+                    dictadoParcial,
+                    largoDictado,
+                    notaFin,
+                    notasConfig
+                );
+                // dictado = concatenarDictado(dictado, dictadoParcial);
+                notaRef = dictado[dictado.length - 1];
+
+                faltantes = notasFaltantes(notasObligatorias, dictado);
+            } while (faltantes.length >= 1 && dictado.length < largoDictado);
+        }
 
         // Control para verificar que no se pasa del largo
         if (dictado.length > largoDictado) {
@@ -394,6 +402,7 @@ const generarDictado = (
                 notasConfig,
                 notaFin
             );
+
             if (concat[0]) {
                 dictado = concat[1];
             } else {

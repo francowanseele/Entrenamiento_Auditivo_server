@@ -233,7 +233,6 @@ function generateDictation(req, res) {
                         compas,
                         simple
                     );
-
                 var dictadoRitmico_Compases =
                     res_generarDictadoRitmico.dictadoRitmico;
                 var numeradorDictadoRitmico =
