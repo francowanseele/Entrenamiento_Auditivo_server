@@ -443,7 +443,7 @@ const agregarNuevoResultado = async (req, res) => {
         // luego hago un save de ese usuario
         Usuario.findOne({ email: email }, (err, userActual) => {
             if (userActual != null) {
-                dictadoActual = userActual.dictados.find(
+                dictadoActual = userActual.dictados.find( 
                     (element) => element._id == id_dictado
                 );
                 if (dictadoActual != null) {
