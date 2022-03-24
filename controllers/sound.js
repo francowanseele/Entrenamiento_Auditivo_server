@@ -46,7 +46,6 @@ function tramsitNoteReference(req, res) {
         // const filePath = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mid`;
 
         fs.exists(filePath, (exists) => {
-            console.log('LOG nro 1');
             if (!exists) {
                 console.log('NOT EXISTE MIDI FILE');
                 res.status(404).send({
@@ -193,6 +192,7 @@ function generateDictationFile(req, res) {
             dictado,
             escalaDiatoica
         );
+
         track = addNotes(track, dictadoConTransformaciones, figuras, bpm);
 
         var write = new MidiWriter.Writer(track);
