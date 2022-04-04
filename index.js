@@ -1,13 +1,6 @@
 const mongoose = require('mongoose');
 const app = require('./app');
-const {
-    IP_SERVER,
-    PORT_DB,
-    NAME_DATABASE,
-    CONECTION_STRING,
-    CONECTION_STRING_LOCAL_FRANCO,
-} = require('./config');
-const port = process.env.PORT || 3977;
+const { CONECTION_STRING, host, port, sql } = require('./config');
 
 mongoose.set('useFindAndModify', false);
 
@@ -23,7 +16,7 @@ mongoose.connect(
                 console.log('------ API REST -------');
                 console.log('-----------------------');
 
-                console.log(`http://${IP_SERVER}:${port}/api/`);
+                console.log(`http://${host}:${port}/api/`);
             });
         }
     }
