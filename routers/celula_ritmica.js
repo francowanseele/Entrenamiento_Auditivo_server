@@ -8,5 +8,6 @@ api.get(
     '/get-celula-ritmica/:simple',
     CelulaRitmicaController.getCelulaRitmica
 );
+api.post('/create-celula-ritmica',CelulaRitmicaController.CreateCelulaRitmica);
 
 module.exports = api;
