@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { Midi } = require('@tonejs/midi');
 const MidiWriter = require('midi-writer-js');
 const { exec } = require('child_process');
 
@@ -67,106 +68,6 @@ function tramsitNoteReference(req, res) {
 
 function generateDictationFile(req, res) {
     try {
-        const addNotes = (track, dictation, figurasDictado, bpm) => {
-            // const dictadoTrans = funcGralDictado.translateNotes(dictation);
-            const translateToBPM = (figure, bpm) => {
-                if (bpm) {
-                    const bpm_val = parseInt(bpm);
-                    switch (figure) {
-                        case '1':
-                            return 'T'.concat((bpm_val * 4).toString());
-                        case '2':
-                            return 'T'.concat((bpm_val * 2).toString());
-                        case 'd2':
-                            return 'T'.concat(
-                                (bpm_val * 2 + bpm_val * 1).toString()
-                            );
-                        case 'dd2':
-                            return 'T'.concat(
-                                (
-                                    bpm_val * 2 +
-                                    bpm_val * 1 +
-                                    Math.round(bpm_val / 2)
-                                ).toString()
-                            );
-                        case '4':
-                            return 'T'.concat((bpm_val * 1).toString());
-                        case 'd4':
-                            return 'T'.concat(
-                                (
-                                    bpm_val * 1 +
-                                    Math.round(bpm_val / 2)
-                                ).toString()
-                            );
-                        case 'dd4':
-                            return 'T'.concat(
-                                (
-                                    bpm_val * 1 +
-                                    Math.round(bpm_val / 2) +
-                                    Math.round(bpm_val / 4)
-                                ).toString()
-                            );
-                        case '8':
-                            return 'T'.concat(
-                                Math.round(bpm_val / 2).toString()
-                            );
-                        case 'd8':
-                            return 'T'.concat(
-                                (
-                                    Math.round(bpm_val / 2) +
-                                    Math.round(bpm_val / 4)
-                                ).toString()
-                            );
-                        case 'dd8':
-                            return 'T'.concat(
-                                (
-                                    Math.round(bpm_val / 2) +
-                                    Math.round(bpm_val / 4) +
-                                    Math.round(bpm_val / 8)
-                                ).toString()
-                            );
-                        case '16':
-                            return 'T'.concat(
-                                Math.round(bpm_val / 4).toString()
-                            );
-                        case '32':
-                            return 'T'.concat(
-                                Math.round(bpm_val / 8).toString()
-                            );
-                        case '64':
-                            return 'T'.concat(
-                                Math.round(bpm_val / 16).toString()
-                            );
-
-                        default:
-                            figure;
-                            break;
-                    }
-                } else {
-                    return figure;
-                }
-            };
-
-            for (let i = 0; i < dictation.length; i++) {
-                const nota = dictation[i];
-                const fig = figurasDictado[i];
-                track.addEvent(
-                    [
-                        new MidiWriter.NoteEvent({
-                            pitch: [nota],
-                            duration: translateToBPM(fig, bpm),
-                            velocity: 100,
-                        }),
-                    ],
-                    function (event, index) {
-                        return { sequential: true };
-                    }
-                );
-            }
-
-            return track;
-        };
-
         const getFigurasALL = (conjuntoFiguras) => {
             var res = [];
             conjuntoFiguras.forEach((figuras) => {
@@ -181,51 +82,133 @@ function generateDictationFile(req, res) {
             return res;
         };
 
-        const { dictado, figurasDictado, escalaDiatoica, bpm, nota_base } =
-            req.body;
+        const trackStickSound = (track, numerador, pulsoSec, timeStart) => {
+            track.addNote({
+                midi: 120,
+                time: 0,
+                duration: timeStart,
+            });
+
+            for (let i = 0; i < numerador; i++) {
+                track.addNote({
+                    midi: 31,
+                    time: timeStart + pulsoSec * i,
+                    duration: pulsoSec,
+                });
+            }
+
+            trackSticks.channel = 9;
+            trackSticks.instrument.number = 9;
+
+            return track;
+        };
+
+        const trackDictationSound = (
+            figurasDictadoSec,
+            notasDictado,
+            track,
+            timeStart
+        ) => {
+            var timePartialSec = 0;
+            for (let i = 0; i < notasDictado.length; i++) {
+                const nota = notasDictado[i];
+                const figuraSec = figurasDictadoSec[i];
+
+                track.addNote({
+                    name: nota,
+                    time: timeStart + timePartialSec,
+                    duration: figuraSec,
+                });
+
+                timePartialSec += figuraSec;
+            }
+
+            return track;
+        };
+
+        const {
+            dictado,
+            figurasDictado,
+            escalaDiatoica,
+            bpm,
+            nota_base,
+            numerador,
+            denominador,
+        } = req.body;
         const { id } = req.params;
 
-        // Dictation
-        var track = new MidiWriter.Track();
-        const figuras = getFigurasALL(figurasDictado);
-        const dictadoConTransformaciones = funcGralDictado.applyTransformation(
+        //#region VAR
+        // ----------------------------------------------
+        const notasDictado = funcGralDictado.applyTransformation(
             dictado,
             escalaDiatoica
         );
+        const negraSec = funcGralDictado.bpmToSec(bpm);
+        const pulsoSec = funcGralDictado.translateFigToSec(
+            denominador,
+            negraSec
+        );
+        const compasSec = funcGralDictado.getCompasSec(numerador, pulsoSec);
+        const dictadoFigurasSec = funcGralDictado.translateDictadoFigToSec(
+            getFigurasALL(figurasDictado),
+            negraSec
+        );
+        // ----------------------------------------------
+        //#endregion
 
-        track = addNotes(track, dictadoConTransformaciones, figuras, bpm);
+        //#region Generate TRACKS
+        // ----------------------------------------------
+        var midi = new Midi();
+        var trackSticks = midi.addTrack();
+        trackSticks = trackStickSound(
+            trackSticks,
+            numerador,
+            pulsoSec,
+            compasSec
+        );
 
-        var write = new MidiWriter.Writer(track);
-        const nameFileMidi = id.toString();
-        const nameFileMp3 = nameFileMidi + '_out';
-        write.saveMIDI(`${cte.LOCATION_MUSIC_FILE}${nameFileMidi}`);
-        // END generate dictation
+        var trackDictation = midi.addTrack();
+        trackDictation = trackDictationSound(
+            dictadoFigurasSec,
+            notasDictado,
+            trackDictation,
+            compasSec * 2
+        );
+        // ----------------------------------------------
+        //#endregion
 
-        // Reference note
-        var trackNoteRef = new MidiWriter.Track();
-        // trackNoteRef.addEvent(
-        //     new MidiWriter.ProgramChangeEvent({ instrument: 13 })
-        // );
-        const nota_base_transformada = funcGralDictado.applyTransformation(
+        //#region Reference Note
+        // ----------------------------------------------
+        const referenceNoteTransformed = funcGralDictado.applyTransformation(
             [nota_base],
             escalaDiatoica
         );
-        trackNoteRef = addNotes(
-            trackNoteRef,
-            nota_base_transformada,
+
+        var midiReference = new Midi();
+        var trackReferenceNote = midiReference.addTrack();
+        trackReferenceNote = trackDictationSound(
             ['1'],
-            '128'
+            referenceNoteTransformed,
+            trackReferenceNote,
+            0
+        );
+        // ----------------------------------------------
+        //#endregion
+
+        //#region Generate File
+        // ----------------------------------------------
+
+        // -------------
+        // Dictado
+        // -------------
+        const nameFileMidi = id.toString();
+        const nameFileMp3 = nameFileMidi + '_out';
+        fs.writeFileSync(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidi}.mid`,
+            new Buffer(midi.toArray())
         );
 
-        var writeNoteRef = new MidiWriter.Writer(trackNoteRef);
-        const nameFileMidiNoteRef = id.toString() + '_note_ref';
-        const nameFileMp3NoteRef = nameFileMidiNoteRef + '_out';
-        writeNoteRef.saveMIDI(
-            `${cte.LOCATION_MUSIC_FILE}${nameFileMidiNoteRef}`
-        );
-        // END generate dictation
-
-        // if exists -> delete file nameFileMp3.mp3
+        // Dictado -> if exist file mp3 DELETE
         const filePathMp3 = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mp3`;
         fs.exists(filePathMp3, (exists) => {
             if (exists) {
@@ -233,7 +216,21 @@ function generateDictationFile(req, res) {
             }
         });
 
-        // if exists -> delete file nameFileMp3NoteRef.mp3
+        // Dictado -> Midi to mp3
+        const comand = comands.miditomp3(nameFileMidi, nameFileMp3);
+        exec(comand);
+
+        // -------------
+        // Reference note
+        // -------------
+        const nameFileMidiNoteRef = id.toString() + '_note_ref';
+        const nameFileMp3NoteRef = nameFileMidiNoteRef + '_out';
+        fs.writeFileSync(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidiNoteRef}.mid`,
+            new Buffer(midiReference.toArray())
+        );
+
+        // Reference note -> if exist file mp3 DELETE
         const filePathMp3NoteRef = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3NoteRef}.mp3`;
         fs.exists(filePathMp3NoteRef, (exists) => {
             if (exists) {
@@ -241,10 +238,7 @@ function generateDictationFile(req, res) {
             }
         });
 
-        // convert midi to mp3
-        const comand = comands.miditomp3(nameFileMidi, nameFileMp3);
-        exec(comand);
-
+        // Reference note -> Midi to mp3
         // convert midi to mp3 Note Ref
         const comandNoteRef = comands.miditomp3(
             nameFileMidiNoteRef,
@@ -252,9 +246,12 @@ function generateDictationFile(req, res) {
         );
         exec(comandNoteRef);
 
+        // ----------------------------------------------
+        //#endregion
+
         res.status(200).send({
             ok: true,
-            dictadoTransformado: dictadoConTransformaciones,
+            dictadoTransformado: notasDictado,
             message:
                 'Generación correcta de los dictados en archivos .mid y .mp3.',
         });
