@@ -5,6 +5,8 @@ const dictadoMelodico = require('../services/DictadosMelodicos/generarDictadosMe
 const gral = require('../services/funcsGralDictados');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const db = require('../data/knex');
+const { GroupByIdAndShortByOrder } = require('../services/formatData');
 
 const find = (arr, id) => {
     var exist = false;
@@ -17,51 +19,41 @@ const find = (arr, id) => {
     return exist;
 };
 
-function addUser(req, res) {
+async function addUser(req, res) {
     try {
-        const {
-            name,
-            lastname,
-            email,
-            password,
-            isTeacher,
-            idCoursePersonal,
-            studyCourseArray,
-            dictateCourseArray,
-            inInstituteArray,
-        } = req.body;
-        bcrypt.hash(password, saltRounds).then((hashedPassword) => {
-            // console.log(hashedPassword)
-            const user = new Usuario();
-            user.nombre = name;
-            user.apellido = lastname;
-            user.email = email;
-            user.password = hashedPassword;
-            user.esDocente = isTeacher;
-            user.curso_personal = idCoursePersonal;
-            user.cursa_curso = studyCourseArray;
-            user.dicta_curso = dictateCourseArray;
-            user.pertenece_instituto = inInstituteArray;
+        const { name, lastname, email, password, isTeacher, idCoursePersonal } =
+            req.body;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-            user.save((err, newUser) => {
-                if (err) {
-                    res.status(500).send({
-                        ok: false,
-                        message: 'Error en el servidor',
-                    });
-                } else if (!newUser) {
-                    res.status(404).send({
-                        ok: false,
-                        message: 'Error al crear el Usuario',
-                    });
-                } else {
-                    res.status(200).send({
-                        ok: true,
-                        user: newUser,
-                        message: 'Usuario creado correctamente',
-                    });
-                }
-            });
+        const usrs = await db
+            .knex('Usuario')
+            .insert({
+                Nombre: name,
+                Apellido: lastname,
+                Email: email.toLowerCase(),
+                Password: hashedPassword,
+                EsDocente: isTeacher,
+                CursoPersonalId: idCoursePersonal,
+            })
+            .returning([
+                'id',
+                'Nombre',
+                'Apellido',
+                'Email',
+                'EsDocente',
+                'CursoPersonalId',
+            ]);
+
+        await db.knex('UsuarioCursa_Curso').insert({
+            CursoId: idCoursePersonal,
+            UsuarioId: usrs[0].id,
+            FechaInscripcion: Date.now(),
+        });
+
+        res.status(200).send({
+            ok: true,
+            user: usrs[0],
+            message: 'Usuario creado correctamente',
         });
     } catch (error) {
         res.status(501).send({
@@ -74,46 +66,50 @@ function addUser(req, res) {
 // Obtener un usuario de la base a partir de su Correo y pass
 //Datos de entrada: { email: '' , password: '' }
 const obtenerUsuarioRegistrado = async (req, res) => {
-    // console.log('entro al obtener')
     try {
         const { email, password, isTeacher } = req.body;
 
-        Usuario.findOne(
-            { email: email, esDocente: isTeacher },
-            (err, result) => {
-                if (result != null) {
-                    bcrypt.compare(
-                        password,
-                        result.password,
-                        function (err, resultPass) {
-                            // resultPass == true
-                            if (resultPass) {
-                                res.status(200).send({
-                                    ok: true,
-                                    personal_course: result.curso_personal,
-                                    id_user: result._id,
-                                    name: result.nombe,
-                                    email: result.email,
-                                    password: result.password,
-                                    esDocente: result.esDocente,
-                                    message: 'Usuario encontrado',
-                                });
-                            } else {
-                                res.status(404).send({
-                                    ok: false,
-                                    message: 'password incorrecta',
-                                });
-                            }
-                        }
-                    );
+        const users = await db
+            .knex('Usuario')
+            .where({ Email: email.toLowerCase(), EsDocente: isTeacher })
+            .select(
+                'id',
+                'Nombre',
+                'Apellido',
+                'Email',
+                'Password',
+                'EsDocente',
+                'CursoPersonalId'
+            );
+
+        if (users.length == 1) {
+            const usr = users[0];
+            bcrypt.compare(password, usr.Password, function (err, resultPass) {
+                if (resultPass) {
+                    res.status(200).send({
+                        ok: true,
+                        personal_course: usr.CursoPersonalId,
+                        id_user: usr.id,
+                        name: usr.Nombre,
+                        lastname: usr.Apellido,
+                        email: usr.Email,
+                        password: usr.Password,
+                        esDocente: usr.EsDocente,
+                        message: 'Usuario encontrado',
+                    });
                 } else {
                     res.status(404).send({
                         ok: false,
-                        message: 'No se ha encontrado el usuario',
+                        message: 'password incorrecta',
                     });
                 }
-            }
-        );
+            });
+        } else {
+            res.status(404).send({
+                ok: false,
+                message: 'No se ha encontrado el usuario',
+            });
+        }
     } catch (err) {
         res.status(501).send({
             ok: false,
@@ -125,7 +121,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
 // En services/DictadosMelodicos/generarDictadosMelodicos.js
 // se dice el formato de los datos de entrada,
 // (cómo tienen que venir en el req.body)
-function generateDictation(req, res) {
+async function generateDictation(req, res) {
     try {
         const getFiguras = (dictado) => {
             var figuras = [];
@@ -198,13 +194,14 @@ function generateDictation(req, res) {
             dictado_ritmico,
         } = req.body;
         const { id } = req.params;
-        const {
-            idCourse,
-            idModule,
-            idConfigDictation,
-            cantDictation,
-            onlyValidation,
-        } = req.query;
+        const { idConfigDictation, cantDictation, onlyValidation } = req.query;
+
+        console.log(
+            'acaaaa------------------------------------ Generate dictation'
+        );
+        console.log(req.body);
+        console.log(req.params);
+        console.log(req.query);
 
         // Translate to my notas cod (ex: Sol4)
         const notasRegla_trad = translateNotasRegla(notasRegla);
@@ -214,6 +211,9 @@ function generateDictation(req, res) {
         const notaReferencia_trad = gral.translateToMyNotes([notaBase])[0];
 
         var res_dictation = [];
+        let dictationInsert = [];
+        let dictationNoteInsert = [];
+        let dictationCRInsert = [];
         const nroDic = parseInt(cantDictation);
         var i = 0;
         var error_generateDictationMelodic = false;
@@ -271,29 +271,57 @@ function generateDictation(req, res) {
                 const escala_diatonica = res_dictadoMelodico[3];
                 const notaRefTrans = res_dictadoMelodico[5][0];
 
-                const dictation = {
-                    curso: idCourse,
-                    modulo: idModule,
-                    configuracion_dictado: idConfigDictation,
-                    fecha_generado: dateNow,
-                    notas: dictadoMelodico_traducido, // ya trducidas
-                    figuras: dictadoRitmico_Compases, // con compás
-                    clave: clave,
-                    escala_diatonica: escala_diatonica,
-                    nota_base: notaRefTrans,
-                    numerador: numeradorDictadoRitmico,
-                    denominador: denominadorDictadoRitmico,
-                    resuelto: [],
-                    bpm: gral.getBPMRandom(bpm),
-                    dictado_ritmico: dictado_ritmico,
-                };
+                const compasId = await db
+                    .knex('Compas')
+                    .where({
+                        Nombre:
+                            numeradorDictadoRitmico +
+                            '/' +
+                            denominadorDictadoRitmico,
+                    })
+                    .select('id');
 
-                res_dictation.push(dictation);
+                // Insert Dictado
+                dictationInsert.push({
+                    NotaReferencia: notaRefTrans,
+                    Tonalidad: escala_diatonica,
+                    Clave: clave,
+                    CompasId: compasId[0].id,
+                    Bpm: gral.getBPMRandom(bpm),
+                    DictadoRitmico: dictado_ritmico,
+                    CreadorUsuarioId: id,
+                    ConfiguracionDictadoId: idConfigDictation,
+                });
+
+                // Insert Dictado_Nota
+                let notes = '';
+                for (let i = 0; i < dictadoMelodico_traducido.length; i++) {
+                    const nota = dictadoMelodico_traducido[i];
+                    if (i == dictadoMelodico_traducido.length - 1) {
+                        notes = notes + nota;
+                    } else {
+                        notes = notes + nota + '|';
+                    }
+                }
+                dictationNoteInsert.push(notes);
+
+                // Insert Dictado_CelulaRitmica
+                let dictationCRAux = [];
+                for (let i = 0; i < dictadoRitmico_Compases.length; i++) {
+                    const figs = dictadoRitmico_Compases[i];
+                    dictationCRAux.push({
+                        // DictadoId -> set after insert dictationInsert
+                        Orden: i,
+                        Figuras: figs,
+                    });
+                }
+                dictationCRInsert.push(dictationCRAux);
+
                 i++;
             }
         }
 
-        if (res_dictation.length == 0) {
+        if (dictationInsert.length == 0) {
             return res.status(400).send({
                 ok: false,
                 issueConfig: true,
@@ -301,67 +329,64 @@ function generateDictation(req, res) {
             });
         } else {
             if (onlyValidation == 'false') {
-                Curso.findById({ _id: idCourse }, (err, courseData) => {
-                    if (err) {
-                        res.status(500).send({
-                            ok: false,
-                            issueConfig: false,
-                            message: 'Error del servidor.',
-                        });
-                    } else if (!courseData) {
-                        res.status(404).send({
-                            ok: false,
-                            issueConfig: false,
-                            message: 'No se ha encontrado el curso',
-                        });
-                    } else {
-                        let course = courseData;
+                let dicts = [];
+                await db.knex.transaction(async (trx) => {
+                    for (let i = 0; i < dictationInsert.length; i++) {
+                        const dict = dictationInsert[i];
 
-                        const existModule = find(course.modulo, idModule);
-                        if (!existModule) {
-                            return res.status(404).send({
-                                ok: false,
-                                issueConfig: false,
-                                message:
-                                    'No se ha encontrado el módulo dentro del curso',
-                            });
-                        } else {
-                            Usuario.findByIdAndUpdate(
-                                { _id: id },
-                                {
-                                    $push: {
-                                        dictados: { $each: res_dictation },
-                                    },
-                                },
-                                (err, userData) => {
-                                    if (err) {
-                                        res.status(500).send({
-                                            ok: false,
-                                            issueConfig: false,
-                                            message: 'Error del servidor',
-                                        });
-                                    } else if (!userData) {
-                                        res.status(404).send({
-                                            ok: false,
-                                            issueConfig: false,
-                                            message:
-                                                'No se ha encontrado al estudiante',
-                                        });
-                                    } else {
-                                        res.status(200).send({
-                                            ok: true,
-                                            issueConfig: false,
-                                            message: 'Ok',
-                                            dictations: getDictationsFilter(
-                                                userData.dictados,
-                                                idConfigDictation
-                                            ),
-                                        });
-                                    }
-                                }
-                            );
+                        const dictRes = await db
+                            .knex('Dictado')
+                            .insert(dict)
+                            .returning(['id'])
+                            .transacting(trx);
+                        const dictId = dictRes[0].id;
+                        dicts.push(dictId);
+
+                        let dictationNoteInsertFinal = [];
+                        dictationNoteInsertFinal.push({
+                            Notas: dictationNoteInsert[i],
+                            Orden: 0,
+                            DictadoId: dictId,
+                        });
+
+                        let dictationCRInsertFinal = [];
+                        let order = 0;
+                        for (let j = 0; j < dictationCRInsert[i].length; j++) {
+                            for (
+                                let k = 0;
+                                k < dictationCRInsert[i][j].Figuras.length;
+                                k++
+                            ) {
+                                const fig = dictationCRInsert[i][j].Figuras[k];
+                                dictationCRInsertFinal.push({
+                                    Orden: order,
+                                    OrdenPulsos: dictationCRInsert[i][j].Orden,
+                                    Figuras: dictationCRInsert[i][j].Figuras[k],
+                                    DictadoId: dictId,
+                                });
+                                order++;
+                            }
                         }
+
+                        const aa = await db
+                            .knex('Dictado_CelulaRitmica')
+                            .insert(dictationCRInsertFinal)
+                            .returning(['id'])
+                            .transacting(trx);
+
+                        const bb = await db
+                            .knex('Dictado_Nota')
+                            .insert(dictationNoteInsertFinal)
+                            .returning(['id'])
+                            .transacting(trx);
                     }
+
+                    res.status(200).send({
+                        ok: true,
+                        issueConfig: false,
+                        message: 'Ok',
+                        dictations: dicts,
+                    });
                 });
             } else {
                 // endpoint is called to know if I can generate any dictation
@@ -380,45 +405,95 @@ function generateDictation(req, res) {
     }
 }
 
-function getDictation(req, res) {
+async function getDictation(req, res) {
     try {
-        const getDictation_ConfigDictation = (dict, idConfig) => {
-            var res = [];
-            dict.forEach((d) => {
-                if (d.configuracion_dictado == idConfig) {
-                    res.push(d);
-                }
-            });
-
-            return res;
-        };
-
         const { id } = req.params; // user id
         const { idConfigDictation } = req.query;
 
-        Usuario.findById({ _id: id }, (err, userData) => {
-            if (err) {
-                res.status(500).send({
-                    ok: false,
-                    message: 'Error del servidor.',
-                });
-            } else if (!userData) {
-                res.status(404).send({
-                    ok: false,
-                    message: 'No se ha encontrado Usuario.',
-                });
-            } else {
-                let user = userData;
-                // TODO -> order by fecha
-                const dictadosFilter = getDictation_ConfigDictation(
-                    user.dictados,
-                    idConfigDictation
-                );
-                res.status(200).send({
-                    ok: true,
-                    dictations: dictadosFilter,
-                });
-            }
+        const dicts = await db
+            .knex('Dictado')
+            .where({
+                'Dictado.ConfiguracionDictadoId': idConfigDictation,
+                'Dictado.CreadorUsuarioId': id,
+            })
+            .join(
+                'Dictado_CelulaRitmica',
+                'Dictado_CelulaRitmica.DictadoId',
+                '=',
+                'Dictado.id'
+            )
+            .join('Dictado_Nota', 'Dictado_Nota.DictadoId', '=', 'Dictado.id')
+            .join('Compas', 'Compas.id', '=', 'Dictado.CompasId')
+            .select(
+                'Dictado.id',
+                'Dictado_CelulaRitmica.Orden',
+                'Dictado_CelulaRitmica.OrdenPulsos',
+                'Dictado_CelulaRitmica.Figuras',
+                'Dictado_Nota.Notas',
+                'Dictado.created_at',
+                'Dictado.Clave',
+                'Dictado.Tonalidad',
+                'Dictado.NotaReferencia',
+                'Compas.Nombre',
+                'Dictado.Bpm',
+                'Dictado.DictadoRitmico'
+            );
+
+        const califications = await db
+            .knex('Dictado')
+            .where({
+                'Dictado.ConfiguracionDictadoId': idConfigDictation,
+                'Dictado.CreadorUsuarioId': id,
+            })
+            .join(
+                'Dictado_Calificacion',
+                'Dictado_Calificacion.DictadoId',
+                '=',
+                'Dictado.id'
+            )
+            .select(
+                'Dictado.id',
+                'Dictado_Calificacion.Calificacion',
+                'Dictado_Calificacion.TipoError',
+                'Dictado_Calificacion.created_at'
+            );
+
+        const dictations = [];
+        const dictsGrouped = GroupByIdAndShortByOrder(dicts);
+        dictsGrouped.forEach((d) => {
+            let figuras = [];
+            let figurasPulso = [];
+            let orderP = d[0].OrdenPulsos;
+            d.forEach((figs) => {
+                if (figs.OrdenPulsos != orderP) {
+                    orderP = figs.OrdenPulsos;
+                    figuras.push(figurasPulso);
+                    figurasPulso = [];
+                }
+
+                figurasPulso.push(figs.Figuras);
+            });
+            figuras.push(figurasPulso);
+            dictations.push({
+                id: d[0].id,
+                figuras: figuras,
+                configuracion_dictado: idConfigDictation,
+                fecha_generado: d[0].created_at,
+                notas: d[0].Notas.split('|'),
+                clave: d[0].Clave,
+                escala_diatonica: d[0].Tonalidad,
+                nota_base: d[0].NotaReferencia,
+                numerador: d[0].Nombre.split('/')[0],
+                denominador: d[0].Nombre.split('/')[1],
+                resuelto: califications.filter((c) => c.id === d[0].id),
+                bpm: d[0].Bpm,
+                dictado_ritmico: d[0].DictadoRitmico,
+            });
+        });
+
+        res.status(200).send({
+            ok: true,
+            dictations: dictations,
         });
     } catch (error) {
         res.status(501).send({

@@ -1,31 +1,19 @@
 const Instituto = require('../models/instituto');
 const Curso = require('../models/curso');
+const db = require('../data/knex');
 
-function addInstitute(req, res) {
+async function addInstitute(req, res) {
     try {
-        const { name, courses } = req.body;
-        const institute = new Instituto();
-        institute.nombre = name;
-        institute.curso = courses;
+        const { name } = req.body;
+        const ins = await db
+            .knex('Instituto')
+            .insert({ Nombre: name })
+            .returning(['id', 'Nombre']);
 
-        institute.save((err, newInstitute) => {
-            if (err) {
-                res.status(500).send({
-                    ok: false,
-                    message: 'Error en el servidor',
-                });
-            } else if (!newInstitute) {
-                res.status(404).send({
-                    ok: false,
-                    message: 'Error al crear el Instituto',
-                });
-            } else {
-                res.status(200).send({
-                    ok: true,
-                    institute: newInstitute,
-                    message: 'Instituto creado correctamente',
-                });
-            }
+        res.status(200).send({
+            ok: true,
+            institute: ins[0],
+            message: 'Instituto creado correctamente',
         });
     } catch (error) {
         res.status(501).send({
@@ -40,29 +28,35 @@ function addCourse(req, res) {
         const { id } = req.params;
         const { idCourse } = req.body;
 
-        Instituto.findByIdAndUpdate(
-            { _id: id },
-            { $push: { curso: idCourse } },
-            (err, instituteResult) => {
-                if (err) {
-                    res.status(500).send({
-                        ok: false,
-                        message: 'Error del servidor',
-                    });
-                } else if (!instituteResult) {
-                    res.status(404).send({
-                        ok: false,
-                        message: 'No se ha encontrado el Instituto',
-                    });
-                } else {
-                    res.status(200).send({
-                        ok: true,
-                        institute: instituteResult,
-                        message: 'Ok',
-                    });
-                }
-            }
-        );
+        res.status(200).send({
+            ok: true,
+            institute: [],
+            message: 'Ok',
+        });
+
+        // Instituto.findByIdAndUpdate(
+        //     { _id: id },
+        //     { $push: { curso: idCourse } },
+        //     (err, instituteResult) => {
+        //         if (err) {
+        //             res.status(500).send({
+        //                 ok: false,
+        //                 message: 'Error del servidor',
+        //             });
+        //         } else if (!instituteResult) {
+        //             res.status(404).send({
+        //                 ok: false,
+        //                 message: 'No se ha encontrado el Instituto',
+        //             });
+        //         } else {
+        //             res.status(200).send({
+        //                 ok: true,
+        //                 institute: instituteResult,
+        //                 message: 'Ok',
+        //             });
+        //         }
+        //     }
+        // );
     } catch (error) {
         res.status(501).send({
             ok: false,
@@ -71,47 +65,25 @@ function addCourse(req, res) {
     }
 }
 
-function getCourses(req, res) {
+async function getCourses(req, res) {
     try {
         const { id } = req.params;
 
-        Instituto.findById({ _id: id }, (err, instituteResult) => {
-            if (err) {
-                res.status(500).send({
-                    ok: false,
-                    message: 'Error del servidor',
-                });
-            } else if (!instituteResult) {
-                res.status(404).send({
-                    ok: false,
-                    message: 'No se ha encontrado el Instituto',
-                });
-            } else {
-                Curso.find(
-                    { _id: { $in: instituteResult.curso } },
-                    { nombre: 1, descripcion: 1 },
-                    (err, courses) => {
-                        if (err) {
-                            res.status(500).send({
-                                ok: false,
-                                message: 'Error del servidor',
-                            });
-                        } else if (!courses) {
-                            res.status(404).send({
-                                ok: false,
-                                message:
-                                    'No se ha encontrado cursos en el instituto',
-                            });
-                        } else {
-                            res.status(200).send({
-                                ok: true,
-                                courses: courses,
-                                message: 'Ok',
-                            });
-                        }
-                    }
-                );
-            }
+        const cursos = await db
+            .knex('Instituto')
+            .where({ 'Instituto.id': id })
+            .select(
+                'Curso.id',
+                'Curso.Nombre',
+                'Curso.Descripcion',
+                'Curso.Personal'
+            )
+            .join('Curso', 'Instituto.id', '=', 'Curso.InstitutoId');
+
+        res.status(200).send({
+            ok: true,
+            courses: cursos,
+            message: 'Ok',
         });
     } catch (error) {
         res.status(501).send({
@@ -121,29 +93,15 @@ function getCourses(req, res) {
     }
 }
 
-function getInstitute(req, res) {
+async function getInstitute(req, res) {
     try {
-        Instituto.find()
-            .sort({ nombre: 'asc' })
-            .exec((err, institutesResult) => {
-                if (err) {
-                    res.status(500).send({
-                        ok: false,
-                        message: 'Error en el servidor',
-                    });
-                } else if (!institutesResult) {
-                    res.status(404).send({
-                        ok: false,
-                        message: 'No se ha encontrado ningún instituto',
-                    });
-                } else {
-                    res.status(200).send({
-                        ok: true,
-                        institutes: institutesResult,
-                        message: 'Ok',
-                    });
-                }
-            });
+        const institutos = await db.knex('Instituto').select('id', 'Nombre');
+
+        res.status(200).send({
+            ok: true,
+            institutes: institutos,
+            message: 'Ok',
+        });
     } catch (error) {
         res.status(501).send({
             ok: false,

@@ -6,6 +6,11 @@ const api = express.Router();
 api.post('/add-course', CourseController.addCourse);
 api.post('/update-module/:id', CourseController.addModule);
 api.get('/get-module-by-curse/:id', CourseController.getModules);
+api.get('/get-config-dictation/:id', CourseController.getConfigDictation);
+api.get(
+    '/get-configs-dictations/:idModule',
+    CourseController.getConfigsDictations
+);
 api.put('/add-config-dictation-module', CourseController.addConfigDictation);
 api.post('/get_califications',CourseController.getCalificacionPorCursoYNotasPromedios)
 api.post('/get_students_course',CourseController.getStudentsByIdCourse);
