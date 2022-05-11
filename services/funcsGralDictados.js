@@ -150,9 +150,70 @@ const getBPMRandom = (bpm) => {
     }
 };
 
+// given a bpm, returns the time in seconds
+const bpmToSec = (bpm) => {
+    const sec = 60 / bpm;
+    return parseFloat(sec.toFixed(4));
+}
+
+// given a figure (4, 8, d4..) and the time in seconds of negraSec
+// returns time in second of fig
+const translateFigToSec = (fig, negraSec) => {
+    switch (fig.toString()) {
+        case '1':
+            return negraSec * 4;
+        case '2':
+            return negraSec * 2;
+        case 'd2':
+            return negraSec * 2 + negraSec * 1;
+        case 'dd2':
+            return negraSec * 2 + negraSec * 1 + negraSec / 2;
+        case '4':
+            return negraSec * 1;
+        case 'd4':
+            return negraSec * 1 + negraSec / 2;
+        case 'dd4':
+            return negraSec * 1 + negraSec / 2 + negraSec / 4;
+        case '8':
+            return negraSec / 2;
+        case 'd8':
+            return negraSec / 2 + negraSec / 4;
+        case 'dd8':
+            return negraSec / 2 + negraSec / 4 + negraSec / 8;
+        case '16':
+            return negraSec / 4;
+        case '32':
+            return negraSec / 8;
+        case '64':
+            return negraSec / 16;
+
+        default:
+            return null;
+    }
+};
+
+// given a figurasDictado ([4, 8, 8, 16]) and the time in second of negraSec
+// return a dictation with each figure in seconds
+const translateDictadoFigToSec = (figurasDictado, negraSec) => {
+    let dictadoSec = figurasDictado.map((fig) => {
+        return translateFigToSec(fig, negraSec);
+    }); 
+
+    return dictadoSec;
+}
+
+// returns the time in seconds of the compas
+const getCompasSec = (numerador, pulsoSec) => {
+    return pulsoSec * numerador;
+}
+
 module.exports = {
     translateNotes,
     translateToMyNotes,
     applyTransformation,
     getBPMRandom,
+    bpmToSec,
+    translateDictadoFigToSec, 
+    getCompasSec,
+    translateFigToSec,
 };
