@@ -196,12 +196,31 @@ async function generateDictation(req, res) {
         const { id } = req.params;
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
 
-        console.log(
-            'acaaaa------------------------------------ Generate dictation'
-        );
-        console.log(req.body);
-        console.log(req.params);
-        console.log(req.query);
+        console.log('TARJETAS');
+        console.log(req.body.tarjetas);
+
+        // ----------------------------------------------------
+
+        const ligaduras = [
+            {
+                elem: {
+                    first: '8-8',
+                    second: '8-16-16',
+                },
+                priority: 1,
+                must: false,
+            },
+            {
+                elem: {
+                    first: '2',
+                    second: '8-8',
+                },
+                priority: 1,
+                must: false,
+            },
+        ];
+
+        // ----------------------------------------------------
 
         // Translate to my notas cod (ex: Sol4)
         const notasRegla_trad = translateNotasRegla(notasRegla);
@@ -229,10 +248,18 @@ async function generateDictation(req, res) {
                 var res_generarDictadoRitmico =
                     dictadoRitmico.generarDictadoRitmico(
                         tarjetas,
+                        ligaduras,
                         nroCompases,
                         compas,
                         simple
                     );
+
+                console.log('nroCompases');
+                console.log(nroCompases);
+                console.log('compas');
+                console.log(compas);
+                console.log('DICTADO GENERADO');
+                console.log(res_generarDictadoRitmico);
                 var dictadoRitmico_Compases =
                     res_generarDictadoRitmico.dictadoRitmico;
                 var numeradorDictadoRitmico =
@@ -254,6 +281,16 @@ async function generateDictation(req, res) {
                         escalaDiatonicaRegla,
                         notaReferencia_trad
                     );
+
+                console.log('MELODICO:');
+                console.log(' - Clave');
+                console.log(res_dictadoMelodico[2]);
+                console.log(' - Tonalidad: (Se muestra sin alteraciones)');
+                console.log(res_dictadoMelodico[3]);
+                console.log(' - Dictado:');
+                console.log(res_dictadoMelodico[1]);
+                console.log(res_dictadoMelodico[4]);
+                console.log('------------------------');
                 generateOk = res_dictadoMelodico[0];
                 cantRec++;
             }

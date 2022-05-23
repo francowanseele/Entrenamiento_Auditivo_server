@@ -623,6 +623,7 @@ async function getConfigDictation(req, res) {
  * notaBase:
  * bpm:
  * dictado_ritmico:
+ * ligaduraRegla
  */
 async function addConfigDictation(req, res) {
     try {

@@ -172,7 +172,7 @@ function generateDictationFile(req, res) {
             dictadoFigurasSec,
             notasDictado,
             trackDictation,
-            compasSec * 2
+            compasSec * 2 // indica que arranque luego del sonido de los sticks (que tiene una duración de 1 compasSec)
         );
         // ----------------------------------------------
         //#endregion
