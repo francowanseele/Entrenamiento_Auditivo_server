@@ -319,118 +319,6 @@ async function getConfigDictation(req, res) {
 
         const { id } = req.params;
 
-        // const configs = await db
-        //     .knex('ConfiguracionDictado')
-        //     .where({ 'ConfiguracionDictado.id': id })
-        //     // .select()
-        //     .select(
-        //         'ConfiguracionDictado.id as ConfigDictId',
-        //         'ConfiguracionDictado_GiroMelodico.id as ConfigDict_GMId',
-        //         'GiroMelodico.id as GMId',
-        //         'GiroMelodico_Nota.id as GM_NotaId',
-        //         'GiroMelodico_Nota.Nota',
-        //         'Tesitura.id as TesituraId',
-        //         'ConfiguracionDictado_NotaInicio.id as ConfigDict_NotaInicioId',
-        //         'ConfiguracionDictado_NotaFin.id as ConfigDict_NotaFinId',
-        //         'ConfiguracionDictado_Tonalidad.id as ConfigDict_TonId',
-        //         'ConfiguracionDictado_CelulaRitmica.id as ConfigDict_CRId',
-        //         'CelulaRitmica.id as CRId',
-        //         'CelulaRitmica_Figura.id as CR_FigId',
-        //         'ConfiguracionDictado_Compas.id as ConfigDict_CompasId',
-        //         'Compas.id as CompasId'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_GiroMelodico',
-        //         'ConfiguracionDictado_GiroMelodico.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'GiroMelodico',
-        //         'GiroMelodico.Id',
-        //         '=',
-        //         'ConfiguracionDictado_GiroMelodico.GiroMelodicoId'
-        //     )
-        //     .join(
-        //         'GiroMelodico_Nota',
-        //         'GiroMelodico_Nota.GiroMelodicoId',
-        //         '=',
-        //         'GiroMelodico.id'
-        //     )
-        //     .join('Tesitura', function () {
-        //         this.on(
-        //             'ConfiguracionDictado.TesituraClaveSolId',
-        //             '=',
-        //             'Tesitura.id'
-        //         ).orOn(
-        //             'ConfiguracionDictado.TesituraClaveFaId',
-        //             '=',
-        //             'Tesitura.id'
-        //         );
-        //     })
-        //     .join(
-        //         'ConfiguracionDictado_NotaInicio',
-        //         'ConfiguracionDictado_NotaInicio.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_NotaFin',
-        //         'ConfiguracionDictado_NotaFin.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_Tonalidad',
-        //         'ConfiguracionDictado_Tonalidad.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_CelulaRitmica',
-        //         'ConfiguracionDictado_CelulaRitmica.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'CelulaRitmica',
-        //         'CelulaRitmica.id',
-        //         '=',
-        //         'ConfiguracionDictado_CelulaRitmica.CelulaRitmicaId'
-        //     )
-        //     .join(
-        //         'CelulaRitmica_Figura',
-        //         'CelulaRitmica_Figura.CelulaRitmicaId',
-        //         '=',
-        //         'CelulaRitmica.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_Compas',
-        //         'ConfiguracionDictado_Compas.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'Compas',
-        //         'Compas.id',
-        //         '=',
-        //         'ConfiguracionDictado_Compas.CompasId'
-        //     );
-
-        // var hash = configs.reduce(
-        //     (previous, current) => (
-        //         previous[current.ConfigDictId]
-        //             ? previous[current.ConfigDictId].push(current)
-        //             : (previous[current.ConfigDictId] = [current]),
-        //         previous
-        //     ),
-        //     {}
-        // );
-        // var newData = Object.keys(hash).map((k) => ({
-        //     configuracion_ditado: k,
-        //     giro_melodico_regla: hash[k],
-        // }));
-
         const configs = await db
             .knex('ConfiguracionDictado')
             .where({ 'ConfiguracionDictado.id': id })
@@ -864,6 +752,7 @@ async function addConfigDictation(req, res) {
             bpm,
             dictado_ritmico,
             mayor,
+            ligaduraRegla,
         } = req.body;
 
         // Tesitura

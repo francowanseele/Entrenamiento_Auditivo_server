@@ -192,6 +192,7 @@ async function generateDictation(req, res) {
             notaBase,
             bpm,
             dictado_ritmico,
+            ligaduraRegla,
         } = req.body;
         const { id } = req.params;
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
@@ -248,7 +249,7 @@ async function generateDictation(req, res) {
                 var res_generarDictadoRitmico =
                     dictadoRitmico.generarDictadoRitmico(
                         tarjetas,
-                        ligaduras,
+                        ligaduraRegla,
                         nroCompases,
                         compas,
                         simple
