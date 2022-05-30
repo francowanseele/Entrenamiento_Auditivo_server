@@ -2,6 +2,8 @@ const CelulaRitmica = require('../models/celula_ritmica');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const fs = require('fs');
+const dato = require('./../services/DictadosRitmicos/datosRitmicos');
+
 
 
 async function addCelulaRitmica(req, res) {
@@ -96,16 +98,20 @@ async function getCelulaRitmica(req, res) {
 async function CreateCelulaRitmica(req,res) {
     try {
         const { profileImage,valor,simple } = req.body;
-        console.log(valor,simple)
-        let valorTodb = ''; // TENGO QUE CALCULARLO
+
+        let valorTodb = 0; 
+        valor.forEach((val)=>{
+            valorTodb = valorTodb + dato.VALOR_DE_NOTA[val]
+        })
         const celRitAdded = await db.knex('CelulaRitmica').insert({
                 Simple: simple,
-                Valor:'valorTodb',
+                Valor:valorTodb,
                 Imagen: profileImage
-            });
+            }).returning(['id', 'Simple', 'Valor']);
+
         valor.forEach(async (val,index)=>{
             await db.knex('CelulaRitmica_figura').insert({
-                CelulaRitmicaId:celRitAdded,
+                CelulaRitmicaId:celRitAdded[0].id,
                 Figura:val,
                 Orden:index,
             })
