@@ -1,6 +1,8 @@
 const CelulaRitmica = require('../models/celula_ritmica');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
+const fs = require('fs');
+
 
 async function addCelulaRitmica(req, res) {
     try {
@@ -90,49 +92,40 @@ async function getCelulaRitmica(req, res) {
     }
 }
 
-function CreateCelulaRitmica(req,res) {
-    try {
-        const { figuras, simple, photo } = req.body;
-        const celulaRitmica = new CelulaRitmica();
-        celulaRitmica.figuras = figuras;
-        celulaRitmica.Simple = simple;
-        celulaRitmica.image = photo
-        // console.log(req.body.file)
-        // console.log(req)
-        // req.files.forEach((e) => {
-        //     console.log(e.filename);
-        //     });
-        celulaRitmica.imagen = {
-                data: fs.readFileSync(path.join(__dirname + '/uploads/' + image.celula_photo.filename)),
-                contentType: 'image/png'
-        }
 
-        // celulaRitmica.save((err, newCelulaRitmica) => {
-        //     if (err) {
-        //         res.status(500).send({
-        //             ok: false,
-        //             message: 'Error en el servidor',
-        //         });
-        //     } else if (!newCelulaRitmica) {
-        //         res.status(404).send({
-        //             ok: false,
-        //             message: 'Error al crear una nueva célula rítmica',
-        //         });
-        //     } else {
-        //         res.status(200).send({
-        //             ok: true,
-        //             compas: newCelulaRitmica,
-        //             message: 'Célula rítmica creada correctamente',
-        //         });
-        //     }
-        // });
+async function CreateCelulaRitmica(req,res) {
+    try {
+        const { profileImage,valor,simple } = req.body;
+        console.log(valor,simple)
+        let valorTodb = ''; // TENGO QUE CALCULARLO
+        const celRitAdded = await db.knex('CelulaRitmica').insert({
+                Simple: simple,
+                Valor:'valorTodb',
+                Imagen: profileImage
+            });
+        valor.forEach(async (val,index)=>{
+            await db.knex('CelulaRitmica_figura').insert({
+                CelulaRitmicaId:celRitAdded,
+                Figura:val,
+                Orden:index,
+            })
+        })  
+
+        res.status(200).send({
+            ok: true,
+            compas: celRitAdded,
+            message: 'Célula rítmica creada correctamente',
+        });
     } catch (error) {
+        console.log(error)
         res.status(501).send({
             ok: false,
             message: error.message,
         });
     }
 }
+
+
 
 module.exports = {
     addCelulaRitmica,

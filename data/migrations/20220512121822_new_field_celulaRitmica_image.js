@@ -4,7 +4,8 @@
  */
  exports.up = function (knex) {
     return knex.schema.alterTable('CelulaRitmica', (table) => {
-        table.binary('image');
+        table.text('Imagen');
+        table.string('Valor').alter()
     });
 };
 
@@ -14,6 +15,6 @@
  */
 exports.down = function (knex) {
     return knex.schema.alterTable('CelulaRitmica', (table) => {
-        table.dropColumn('image');
+        table.dropColumn('Imagen');
     });
 };
