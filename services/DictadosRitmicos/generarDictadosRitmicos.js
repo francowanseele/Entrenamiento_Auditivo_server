@@ -34,7 +34,9 @@ const sumarValores = (compas, denominador) => {
                 // las separo y sumo el valor de cada CR
                 const crs = compas[i].split('_');
                 crs.forEach((cr) => {
-                    res = res + dato.VALOR_DE_NOTA[cr] * denominador;
+                    if (cr != '') {
+                        res = res + dato.VALOR_DE_NOTA[cr] * denominador;
+                    }
                 });
             } else {
                 res = res + dato.VALOR_DE_NOTA[compas[i]] * denominador;
@@ -70,40 +72,38 @@ const quitarTarjeta = (tarjetas, elem) => {
 // A partir de cr selecciono una ligadura (si es que existe)
 // En base a una prioridad
 const getLigaduraPrioridad = (cr, ligaduras) => {
-    const ligadurasPosibles = ligaduras.filter(
+    let ligadurasPosibles = ligaduras.filter(
         (ligadura) => ligadura.elem.first == cr
     );
     if (ligadurasPosibles.length == 0) {
         return '';
     } else {
-        const ligaduraMust = ligadurasPosibles.find(
-            (ligadura) => ligadura.must == true
-        );
-        if (ligaduraMust) {
-            // Si debe ir la ligadura si o si
-            return '_' + ligaduraMust.elem.second;
+        let ligaduraElemPrioridad = [];
+        const ligadurasMust = ligadurasPosibles.filter((l) => l.must == true);
+        if (ligadurasMust.length > 0) {
+            ligadurasPosibles = ligadurasMust;
         } else {
-            // selecciono en base a la prioridad
-            let ligaduraElemPrioridad = [
-                {
-                    elem: '',
-                    prioridad: 1,
-                },
-            ];
-            ligadurasPosibles.forEach((l) => {
-                ligaduraElemPrioridad.push({
-                    elem: l.elem.second,
-                    prioridad: l.priority,
-                });
+            // Agrego la posibilidad de que no haya ninguna ligadura
+            ligaduraElemPrioridad.push({
+                elem: '',
+                prioridad: 1,
             });
+        }
 
-            const ligaduraResult = gral.getElemPrioridad(ligaduraElemPrioridad);
+        // selecciono en base a la prioridad
+        ligadurasPosibles.forEach((l) => {
+            ligaduraElemPrioridad.push({
+                elem: l.elem.second,
+                prioridad: l.priority,
+            });
+        });
 
-            if (ligaduraResult == '') {
-                return ligaduraResult;
-            } else {
-                return '_' + ligaduraResult;
-            }
+        const ligaduraResult = gral.getElemPrioridad(ligaduraElemPrioridad);
+
+        if (ligaduraResult == '') {
+            return ligaduraResult;
+        } else {
+            return '_' + ligaduraResult;
         }
     }
 };
@@ -117,17 +117,44 @@ const getLastCR = (cr) => {
     }
 };
 
+// retorna true si cr si o si tiene que llevar una ligadura
+const mustToHaveLigadura = (cr, ligaduras) => {
+    const lastCR = getLastCR(cr);
+    let ligadurasPosibles = ligaduras.filter(
+        (ligadura) => ligadura.elem.first == lastCR
+    );
+
+    const ligadurasMust = ligadurasPosibles.filter((l) => l.must == true);
+
+    return ligadurasMust.length > 0;
+};
+
 // Devuelve un array de figuras correspondiente a un compás
 const getPulsoValido = (
     tarjetas,
     ligaduras,
     nroPulsos,
     denominador,
-    dictadoParcial
+    dictadoParcial,
+    compasesAnterior,
+    ultimoCompas
 ) => {
     try {
         const valorTotal = sumarValores(dictadoParcial, denominador);
-        if (valorTotal == nroPulsos) return ['ok', dictadoParcial];
+        if (valorTotal == nroPulsos) {
+            // chequeo si la ultima CR del dictado debe llevar ligadura
+            if (
+                ultimoCompas &&
+                mustToHaveLigadura(
+                    dictadoParcial[dictadoParcial.length - 1],
+                    ligaduras
+                )
+            ) {
+                return ['fail', dictadoParcial];
+            } else {
+                return ['ok', dictadoParcial];
+            }
+        }
         if (valorTotal > nroPulsos) return ['fail', dictadoParcial];
 
         var dictado;
@@ -135,7 +162,19 @@ const getPulsoValido = (
         let tarjetaElem = '';
 
         if (dictado.length == 0) {
-            tarjetaElem = gral.getElemPrioridad(tarjetas);
+            if (compasesAnterior.length == 0) {
+                tarjetaElem = gral.getElemPrioridad(tarjetas);
+            } else {
+                const lastCompas =
+                    compasesAnterior[compasesAnterior.length - 1];
+                const lastCR = getLastCR(lastCompas[lastCompas.length - 1]);
+                const l = getLigaduraPrioridad(lastCR, ligaduras);
+                if (l == '') {
+                    tarjetaElem = gral.getElemPrioridad(tarjetas);
+                } else {
+                    tarjetaElem = l;
+                }
+            }
         } else {
             const lastCR = getLastCR(dictado[dictado.length - 1]);
             const l = getLigaduraPrioridad(lastCR, ligaduras);
@@ -147,16 +186,15 @@ const getPulsoValido = (
             }
         }
 
-        // tarjetaElem = gral.getElemPrioridad(tarjetas);
-        // tarjetaElem += getLigaduraPrioridad(tarjetaElem, ligaduras);
-
         dictado.push(tarjetaElem);
         const dictadoResult = getPulsoValido(
             tarjetas,
             ligaduras,
             nroPulsos,
             denominador,
-            dictado
+            dictado,
+            compasesAnterior,
+            ultimoCompas
         );
 
         dictado = dictadoResult[1];
@@ -181,7 +219,9 @@ const getPulsoValido = (
             ligaduras,
             nroPulsos,
             denominador,
-            newDictado
+            newDictado,
+            compasesAnterior,
+            ultimoCompas
         );
     } catch (error) {
         console.log('ERROR');
@@ -254,13 +294,16 @@ const generarDictadoRitmico = (
     var i = 0;
     var max_i = 0;
     while (i < numeroCompases && max_i < 25) {
+        const ultimoCompas = i == numeroCompases - 1;
         // new function
         let dictadoValido = getPulsoValido(
             tarjetas,
             ligaduras,
             Number(numerador),
             Number(denominador),
-            []
+            [],
+            res,
+            ultimoCompas
         );
 
         if (dictadoValido[0] == 'ok') {

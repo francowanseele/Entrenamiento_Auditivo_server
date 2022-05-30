@@ -129,8 +129,21 @@ async function generateDictation(req, res) {
             dictado.forEach((compas) => {
                 compas.forEach((tarjeta) => {
                     const fgs = tarjeta.split('-');
+                    let firstFiguras = true;
                     fgs.forEach((fig) => {
-                        figuras.push(fig);
+                        if (
+                            firstFiguras &&
+                            fig.indexOf('_') == 0 &&
+                            figuras.length > 0
+                        ) {
+                            const lastFigure = figuras[figuras.length - 1];
+                            figuras.pop();
+                            const newFigure = lastFigure + fig;
+                            figuras.push(newFigure);
+                        } else {
+                            figuras.push(fig);
+                        }
+                        firstFiguras = false;
                     });
                 });
             });
@@ -198,7 +211,9 @@ async function generateDictation(req, res) {
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
 
         console.log('TARJETAS');
-        console.log(req.body.tarjetas);
+        console.log(tarjetas);
+        console.log('LIGADURAS:');
+        console.log(ligaduraRegla);
 
         // ----------------------------------------------------
 
@@ -255,12 +270,6 @@ async function generateDictation(req, res) {
                         simple
                     );
 
-                console.log('nroCompases');
-                console.log(nroCompases);
-                console.log('compas');
-                console.log(compas);
-                console.log('DICTADO GENERADO');
-                console.log(res_generarDictadoRitmico);
                 var dictadoRitmico_Compases =
                     res_generarDictadoRitmico.dictadoRitmico;
                 var numeradorDictadoRitmico =
@@ -283,15 +292,6 @@ async function generateDictation(req, res) {
                         notaReferencia_trad
                     );
 
-                console.log('MELODICO:');
-                console.log(' - Clave');
-                console.log(res_dictadoMelodico[2]);
-                console.log(' - Tonalidad: (Se muestra sin alteraciones)');
-                console.log(res_dictadoMelodico[3]);
-                console.log(' - Dictado:');
-                console.log(res_dictadoMelodico[1]);
-                console.log(res_dictadoMelodico[4]);
-                console.log('------------------------');
                 generateOk = res_dictadoMelodico[0];
                 cantRec++;
             }

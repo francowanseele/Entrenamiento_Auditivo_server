@@ -317,6 +317,135 @@ async function getConfigDictation(req, res) {
             return res;
         };
 
+        const getLigadurasFormat = (ligaduras) => {
+            let ligaduraData = [];
+
+            const ligadurasIdsAux = ligaduras.map((l) => {
+                return l.id;
+            });
+
+            // Get ConfiguracionDictado_Ligadura ids without repetition
+            const ligadurasIds = ligadurasIdsAux.filter((l, index) => {
+                return ligadurasIdsAux.indexOf(l) === index;
+            });
+
+            /**
+             *  {
+             *      firstId
+             *      firstFigura
+             *      prioridad
+             *      must
+             *      order
+             *  }
+             */
+            ligadurasIds.forEach((lId) => {
+                let resFirst = [];
+                let resSecond = [];
+
+                ligaduras.forEach((l) => {
+                    if (l.id == lId) {
+                        let found = false;
+                        resFirst.forEach((f) => {
+                            if (
+                                f.firstId == l.FirstCRId &&
+                                f.firstFigura == l.FirstCRFigura &&
+                                f.order == l.FirstCROrden
+                            ) {
+                                found = true;
+                            }
+                        });
+
+                        if (!found) {
+                            resFirst.push({
+                                firstId: l.FirstCRId,
+                                firstFigura: l.FirstCRFigura,
+                                prioridad: l.Prioridad,
+                                must: l.Must,
+                                order: l.FirstCROrden,
+                            });
+                        }
+
+                        found = false;
+                        resSecond.forEach((s) => {
+                            if (
+                                s.secondId == l.SecondCRId &&
+                                s.secondFigura == l.SecondCRFigura &&
+                                s.order == l.SecondCROrden
+                            ) {
+                                found = true;
+                            }
+                        });
+
+                        if (!found) {
+                            resSecond.push({
+                                secondId: l.SecondCRId,
+                                secondFigura: l.SecondCRFigura,
+                                prioridad: l.Prioridad,
+                                must: l.Must,
+                                order: l.SecondCROrden,
+                            });
+                        }
+                    }
+                });
+
+                ligaduraData.push({
+                    ligaduraId: lId,
+                    Prioridad: resFirst[0].prioridad,
+                    Must: resFirst[0].must,
+                    firstCR: resFirst,
+                    secondCR: resSecond,
+                });
+            });
+
+            let res = [];
+            ligaduraData.forEach((data) => {
+                let firstCROrded;
+                let secondCROrded;
+
+                firstCROrded = data.firstCR.sort((x, y) =>
+                    x.order > y.order ? 1 : -1
+                );
+                secondCROrded = data.secondCR.sort((x, y) =>
+                    x.order > y.order ? 1 : -1
+                );
+
+                let first = '';
+                let second = '';
+                for (let i = 0; i < firstCROrded.length; i++) {
+                    const f = firstCROrded[i];
+
+                    if (i != 0) {
+                        first = first.concat('-', f.firstFigura);
+                    } else {
+                        first = first.concat(f.firstFigura);
+                    }
+                }
+
+                for (let i = 0; i < secondCROrded.length; i++) {
+                    const s = secondCROrded[i];
+                    if (i != 0) {
+                        second = second.concat('-', s.secondFigura);
+                    } else {
+                        second = second.concat(s.secondFigura);
+                    }
+                }
+
+                res.push({
+                    elem: {
+                        first: first,
+                        firstId: firstCROrded[0].firstId,
+                        second: second,
+                        secondId: secondCROrded[0].secondId,
+                    },
+                    priority: data.Prioridad,
+                    must: data.Must,
+                    id: data.ligaduraId,
+                });
+            });
+
+            return res;
+        };
+
         const { id } = req.params;
 
         const configs = await db
@@ -446,6 +575,48 @@ async function getConfigDictation(req, res) {
                 'ConfiguracionDictado_Compas.CompasId'
             );
 
+        const ligaduras = await db
+            .knex('ConfiguracionDictado_Ligadura')
+            .where({
+                'ConfiguracionDictado_Ligadura.ConfiguracionDictadoId':
+                    config.id,
+            })
+            .select(
+                'ConfiguracionDictado_Ligadura.id',
+                'ConfiguracionDictado_Ligadura.Prioridad',
+                'ConfiguracionDictado_Ligadura.Must',
+                'FirstCR.id as FirstCRId',
+                'FirstCR_Fig.Figura as FirstCRFigura',
+                'FirstCR_Fig.Orden as FirstCROrden',
+                'SecondCR.id as SecondCRId',
+                'SecondCR_Fig.Figura as SecondCRFigura',
+                'SecondCR_Fig.Orden as SecondCROrden'
+            )
+            .join(
+                'CelulaRitmica as FirstCR',
+                'FirstCR.Id',
+                '=',
+                'ConfiguracionDictado_Ligadura.FirstCelulaRitmicaId'
+            )
+            .join(
+                'CelulaRitmica as SecondCR',
+                'SecondCR.Id',
+                '=',
+                'ConfiguracionDictado_Ligadura.SecondCelulaRitmicaId'
+            )
+            .join(
+                'CelulaRitmica_Figura as FirstCR_Fig',
+                'FirstCR_Fig.CelulaRitmicaId',
+                '=',
+                'FirstCR.id'
+            )
+            .join(
+                'CelulaRitmica_Figura as SecondCR_Fig',
+                'SecondCR_Fig.CelulaRitmicaId',
+                '=',
+                'SecondCR.id'
+            );
+
         res.status(200).send({
             ok: true,
             config: {
@@ -482,6 +653,7 @@ async function getConfigDictation(req, res) {
                     mayor: config.BpmMayor,
                 },
                 dictado_ritmico: config.DictadoRitmico,
+                ligaduraRegla: getLigadurasFormat(ligaduras),
             },
             message: 'Ok',
         });
@@ -734,6 +906,23 @@ async function addConfigDictation(req, res) {
             return objectToInsert;
         };
 
+        // Given ligaduraRegla ([{elem: {first: '8-8', firstId: 1, second: '8-16-16', secondId: 2}, priority: 1, must: false}, {...}, ... ])
+        // return object array of type ConfiguracionDictado_Ligadura to insert
+        const getConfigDictLigaduraInsert = (ligaduraRegla, configDictId) => {
+            let res = [];
+            ligaduraRegla.forEach((l) => {
+                res.push({
+                    ConfiguracionDictadoId: configDictId,
+                    FirstCelulaRitmicaId: l.elem.firstId,
+                    SecondCelulaRitmicaId: l.elem.secondId,
+                    Prioridad: l.priority,
+                    Must: l.must,
+                });
+            });
+
+            return res;
+        };
+
         const { idModule, idUserCreate } = req.query;
         const {
             name,
@@ -851,6 +1040,13 @@ async function addConfigDictation(req, res) {
             await db
                 .knex('ConfiguracionDictado_GiroMelodico')
                 .insert(aa)
+                .transacting(trx);
+
+            await db
+                .knex('ConfiguracionDictado_Ligadura')
+                .insert(
+                    getConfigDictLigaduraInsert(ligaduraRegla, configDictId)
+                )
                 .transacting(trx);
         });
 
