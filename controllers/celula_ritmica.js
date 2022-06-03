@@ -52,7 +52,8 @@ async function getCelulaRitmica(req, res) {
                 'CelulaRitmica.Valor',
                 'CelulaRitmica_Figura.Figura',
                 'CelulaRitmica_Figura.Orden',
-                'CelulaRitmica.Simple'
+                'CelulaRitmica.Simple',
+                'CelulaRitmica.Imagen'
             )
             .join(
                 'CelulaRitmica_Figura',
@@ -78,6 +79,7 @@ async function getCelulaRitmica(req, res) {
                 figuras: figura,
                 simple: crs[0].Simple,
                 valor: crs[0].Valor,
+                imagen:crs[0].Imagen
             });
         });
 
