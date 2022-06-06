@@ -10,9 +10,20 @@ const pertenece = (nota, notasConfig) => {
 };
 
 // Devuelve un arreglo de posibles movimientos a partir de 'nota'
-const getNotasValidas = (nota, notasConfig) => {
+const getNotasValidas = (nota, notasConfig, nivelPrioridad) => {
     var notasValidas = [];
-    notasConfig.forEach((notas) => {
+    for (let i = 0; i < notasConfig.length; i++) {
+        const notas = notasConfig[i];
+
+        var lecturaAmbasDirecciones = false;
+        nivelPrioridad.forEach((prioridadRegla) => {
+            if (prioridadRegla.regla == i) {
+                lecturaAmbasDirecciones = prioridadRegla.lecturaAmbasDirecciones
+                    ? true
+                    : false;
+            }
+        });
+
         var indices = [];
         var idx = notas.indexOf(nota);
         while (idx != -1) {
@@ -24,10 +35,12 @@ const getNotasValidas = (nota, notasConfig) => {
             var notaAnterior = notas[i - 1];
             var notaPosterior = notas[i + 1];
 
-            notaAnterior && notasValidas.push(notaAnterior);
+            notaAnterior &&
+                lecturaAmbasDirecciones &&
+                notasValidas.push(notaAnterior);
             notaPosterior && notasValidas.push(notaPosterior);
         });
-    });
+    }
 
     return notasValidas;
 };
@@ -43,16 +56,19 @@ const getNotasValidasConPrioridad = (nota, notasConfig, nivelPrioridad) => {
 
         return notasRes;
     };
-
     var notasValidas = [];
     for (let i = 0; i < notasConfig.length; i++) {
         const notas = notasConfig[i];
 
         // Defino la prioridad por regla
         var prioridad = 1;
+        var lecturaAmbasDirecciones = false;
         nivelPrioridad.forEach((prioridadRegla) => {
             if (prioridadRegla.regla == i) {
                 prioridad = prioridadRegla.prioridad;
+                lecturaAmbasDirecciones = prioridadRegla.lecturaAmbasDirecciones
+                    ? true
+                    : false;
             }
         });
 
@@ -69,7 +85,7 @@ const getNotasValidasConPrioridad = (nota, notasConfig, nivelPrioridad) => {
             var notaAnterior = notas[i - 1];
             var notaPosterior = notas[i + 1];
 
-            if (notaAnterior) {
+            if (notaAnterior && lecturaAmbasDirecciones) {
                 notasValidas = agregarConPrioridad(
                     notasValidas,
                     notaAnterior,
@@ -90,10 +106,14 @@ const getNotasValidasConPrioridad = (nota, notasConfig, nivelPrioridad) => {
 };
 
 // Obtiene movimientos válidos para cada una de las notas pertenecientes a 'camino'
-const obtenerMovimientosCamino = (camino, notasConfig) => {
+const obtenerMovimientosCamino = (camino, notasConfig, nivelPrioridad) => {
     var notas = [];
     camino.forEach((elem) => {
-        const unCamino = getNotasValidas(elem.nota, notasConfig);
+        const unCamino = getNotasValidas(
+            elem.nota,
+            notasConfig,
+            nivelPrioridad
+        );
         unCamino.forEach((notaMov) => {
             notas.push({ nota: notaMov, padre: elem.nota });
         });
@@ -112,9 +132,10 @@ const finalizarDictado = (
     notaFin,
     cantRec,
     notasConfig,
-    largoCamino
+    largoCamino,
+    nivelPrioridad
 ) => {
-    if (largoCamino != null || cantRec < 10) {
+    if (largoCamino != null && cantRec < 10) {
         var elemEncontrado = [];
         for (let i = 0; i < camino.length && elemEncontrado.length == 0; i++) {
             const elem = camino[i];
@@ -131,13 +152,18 @@ const finalizarDictado = (
         if (elemEncontrado.length != 0) {
             return elemEncontrado;
         } else {
-            const movimientos = obtenerMovimientosCamino(camino, notasConfig);
+            const movimientos = obtenerMovimientosCamino(
+                camino,
+                notasConfig,
+                nivelPrioridad
+            );
             var notas = finalizarDictado(
                 movimientos,
                 notaFin,
                 cantRec + 1,
                 notasConfig,
-                largoCamino
+                largoCamino,
+                nivelPrioridad
             );
             if (notas == null) {
                 return null;
@@ -161,14 +187,19 @@ const finalizarDictado = (
         }
     } else {
         general.printError(
-            'Error en "finalizarDictado", camino a la nota fin no encontrada'
+            'Function "finalizarDictado": camino a la nota fin no encontrada'
         );
     }
 };
 
 // Elige una nota de 'faltantes' con prioridad las que estén a mayor distancia de 'notaBase'
-const elegirFaltante = (faltantes, notasConfig, notaBase) => {
-    const distancia = (notaRef, notasDestino, notasConfiguracion) => {
+const elegirFaltante = (faltantes, notasConfig, notaBase, nivelPrioridad) => {
+    const distancia = (
+        notaRef,
+        notasDestino,
+        notasConfiguracion,
+        nivelPrioridad
+    ) => {
         var distancias = [];
         notasDestino.forEach((notaFin) => {
             const camino = finalizarDictado(
@@ -176,7 +207,8 @@ const elegirFaltante = (faltantes, notasConfig, notaBase) => {
                 notaFin,
                 0,
                 notasConfiguracion,
-                null
+                null,
+                nivelPrioridad
             );
 
             distancias.push([notaFin, camino.length]);
@@ -187,7 +219,7 @@ const elegirFaltante = (faltantes, notasConfig, notaBase) => {
 
     // retorna un arreglo y cada elemento es una tupla
     // 1º elem de la tupla dice la nota final y 2º dice la distancia de ese elemento a notaBase
-    const dist = distancia(notaBase, faltantes, notasConfig);
+    const dist = distancia(notaBase, faltantes, notasConfig, nivelPrioridad);
 
     var elemsConProbabilidad = [];
     dist.forEach((elem) => {
@@ -200,7 +232,7 @@ const elegirFaltante = (faltantes, notasConfig, notaBase) => {
 };
 
 // Retorna 'dictado' modificado de tal forma que termine en la nota 'notaFin'
-const finalizarEnNota = (dictado, notaFin, notasConfig) => {
+const finalizarEnNota = (dictado, notaFin, notasConfig, nivelPrioridad) => {
     if (dictado[dictado.length - 1] == notaFin) {
         return dictado;
     }
@@ -215,7 +247,8 @@ const finalizarEnNota = (dictado, notaFin, notasConfig) => {
             notaFin,
             0,
             notasConfig,
-            largoCamino
+            largoCamino,
+            nivelPrioridad
         );
 
         if (dictadoParcial != null) {
@@ -252,7 +285,8 @@ const concatenarDictadoControlNotaFin = (
     dictadoParcial,
     largoDictado,
     notaFin,
-    notasConfig
+    notasConfig,
+    nivelPrioridad
 ) => {
     var dictadoRes = dictado;
     var encontreCamino = false;
@@ -269,7 +303,8 @@ const concatenarDictadoControlNotaFin = (
             notaFin,
             0,
             notasConfig,
-            null
+            null,
+            nivelPrioridad
         );
 
         if (
@@ -290,14 +325,21 @@ const concatenarDictadoControlNotaFin = (
 };
 
 // Se fija si dictado puede terminar en notaFin en el largo largoDictado
-const terminarEnNota = (dictado, largoDictado, notasConfig, notaFin) => {
+const terminarEnNota = (
+    dictado,
+    largoDictado,
+    notasConfig,
+    notaFin,
+    nivelPrioridad
+) => {
     var dictadoRes = dictado;
     const camino = finalizarDictado(
         [{ nota: dictado[dictado.length - 1], padre: null }],
         notaFin,
         0,
         notasConfig,
-        null
+        null,
+        nivelPrioridad
     );
 
     if (camino != null && dictado.length + camino.length - 1 == largoDictado) {
@@ -335,22 +377,28 @@ const generarDictado = (
         return faltantes;
     };
 
-    var notaRef = notaBase;
-    var dictado = [];
-    dictado.push(notaRef);
+    try {
+        var notaRef = notaBase;
+        var dictado = [];
+        dictado.push(notaRef);
 
-    if (pertenece(notaRef, notasConfig)) {
-        var faltantes = [];
-        faltantes = notasFaltantes(notasObligatorias, dictado);
+        if (pertenece(notaRef, notasConfig)) {
+            var faltantes = [];
+            faltantes = notasFaltantes(notasObligatorias, dictado);
 
-        // Agrego al dictado las notas faltantes
-        if (elegirFaltante(faltantes, notasConfig, notaRef) != null) {
+            // Agrego al dictado las notas faltantes
+            // -------------------------------------
+            // TODO: COMENTADO -> definir si dejarlo o no
+            // -------------------------------------
+            /*
+        if (elegirFaltante(faltantes, notasConfig, notaRef, nivelPrioridad) != null) {
             // No entra en el if en caso de que en los giros melódicos solamente haya una única nota
             do {
                 const notaDestino = elegirFaltante(
                     faltantes,
                     notasConfig,
-                    notaRef
+                    notaRef,
+                    nivelPrioridad
                 );
 
                 const dictadoParcial = finalizarDictado(
@@ -358,7 +406,8 @@ const generarDictado = (
                     notaDestino,
                     0,
                     notasConfig,
-                    null
+                    null,
+                    nivelPrioridad
                 );
 
                 dictado = concatenarDictadoControlNotaFin(
@@ -366,7 +415,8 @@ const generarDictado = (
                     dictadoParcial,
                     largoDictado,
                     notaFin,
-                    notasConfig
+                    notasConfig,
+                    nivelPrioridad
                 );
                 // dictado = concatenarDictado(dictado, dictadoParcial);
                 notaRef = dictado[dictado.length - 1];
@@ -374,81 +424,94 @@ const generarDictado = (
                 faltantes = notasFaltantes(notasObligatorias, dictado);
             } while (faltantes.length >= 1 && dictado.length < largoDictado);
         }
+        */
 
-        // Control para verificar que no se pasa del largo
-        if (dictado.length > largoDictado) {
-            if (cantRec < 35) {
-                // cantidad de intentos
-                return generarDictado(
-                    notasConfig,
-                    notaBase,
-                    notaFin,
-                    largoDictado,
-                    notasObligatorias,
-                    nivelPrioridad,
-                    cantRec + 1
-                );
-            } else {
-                // general.printError('El largo del dictado debería ser mayor');
-                return null;
+            // Control para verificar que no se pasa del largo
+            if (dictado.length > largoDictado) {
+                if (cantRec < 35) {
+                    // cantidad de intentos
+                    return generarDictado(
+                        notasConfig,
+                        notaBase,
+                        notaFin,
+                        largoDictado,
+                        notasObligatorias,
+                        nivelPrioridad,
+                        cantRec + 1
+                    );
+                } else {
+                    // general.printError('El largo del dictado debería ser mayor');
+                    return null;
+                }
             }
-        }
 
-        // Completo el dictado
-        while (dictado.length < largoDictado) {
-            const concat = terminarEnNota(
-                dictado,
-                largoDictado,
-                notasConfig,
-                notaFin
-            );
-
-            if (concat[0]) {
-                dictado = concat[1];
-            } else {
-                var notasValidas = getNotasValidasConPrioridad(
-                    notaRef,
+            // Completo el dictado
+            while (dictado.length < largoDictado) {
+                const concat = terminarEnNota(
+                    dictado,
+                    largoDictado,
                     notasConfig,
+                    notaFin,
                     nivelPrioridad
                 );
-                var nota = general.getRandom(notasValidas); // Obtener random dando mayor probabilidad a una de las reglas
-                dictado.push(nota);
-                notaRef = nota;
-            }
-        }
 
-        const dictadoFinEnNota = finalizarEnNota(dictado, notaFin, notasConfig);
-        if (
-            dictadoFinEnNota != null &&
-            dictadoFinEnNota[dictadoFinEnNota.length - 1] == notaFin &&
-            dictadoFinEnNota.length == largoDictado
-        ) {
-            dictado = dictadoFinEnNota;
-            return dictado;
-        } else {
-            if (cantRec < 25) {
-                // cantidad de intentos
-                return generarDictado(
-                    notasConfig,
-                    notaBase,
-                    notaFin,
-                    largoDictado,
-                    notasObligatorias,
-                    nivelPrioridad,
-                    cantRec + 1
-                );
+                if (concat[0]) {
+                    dictado = concat[1];
+                } else {
+                    var notasValidas = getNotasValidasConPrioridad(
+                        notaRef,
+                        notasConfig,
+                        nivelPrioridad
+                    );
+                    var nota = general.getRandom(notasValidas); // Obtener random dando mayor probabilidad a una de las reglas
+                    dictado.push(nota);
+                    notaRef = nota;
+                }
+            }
+
+            const dictadoFinEnNota = finalizarEnNota(
+                dictado,
+                notaFin,
+                notasConfig,
+                nivelPrioridad
+            );
+
+            if (
+                dictadoFinEnNota != null &&
+                dictadoFinEnNota[dictadoFinEnNota.length - 1] == notaFin &&
+                dictadoFinEnNota.length == largoDictado
+            ) {
+                dictado = dictadoFinEnNota;
+                return dictado;
             } else {
-                // general.printError('No se finalizar el dictado en ' + notaFin);
-                return null;
+                if (cantRec < 25) {
+                    // cantidad de intentos
+                    return generarDictado(
+                        notasConfig,
+                        notaBase,
+                        notaFin,
+                        largoDictado,
+                        notasObligatorias,
+                        nivelPrioridad,
+                        cantRec + 1
+                    );
+                } else {
+                    // general.printError('No se finalizar el dictado en ' + notaFin);
+                    return null;
+                }
             }
+        } else {
+            console.log('------------------------------');
+            console.log('Error de entrada de datos');
+            console.log('------------------------------');
         }
-    } else {
-        console.log('------------------------------');
-        console.log('Error de entrada de datos');
-        console.log('------------------------------');
-    }
 
-    return dictado;
+        return dictado;
+    } catch (error) {
+        console.log('Error ------ Generar Dictado');
+        console.log(error);
+        return null;
+    }
 };
 
 module.exports = {

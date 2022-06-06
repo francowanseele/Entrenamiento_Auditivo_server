@@ -215,28 +215,10 @@ async function generateDictation(req, res) {
         console.log('LIGADURAS:');
         console.log(ligaduraRegla);
 
-        // ----------------------------------------------------
-
-        const ligaduras = [
-            {
-                elem: {
-                    first: '8-8',
-                    second: '8-16-16',
-                },
-                priority: 1,
-                must: false,
-            },
-            {
-                elem: {
-                    first: '2',
-                    second: '8-8',
-                },
-                priority: 1,
-                must: false,
-            },
-        ];
-
-        // ----------------------------------------------------
+        console.log('Notas Regla');
+        console.log(notasRegla);
+        console.log('Nivel prioridad regla');
+        console.log(nivelPrioridadRegla);
 
         // Translate to my notas cod (ex: Sol4)
         const notasRegla_trad = translateNotasRegla(notasRegla);
@@ -257,7 +239,7 @@ async function generateDictation(req, res) {
             const dateNow = Date.now();
 
             var generateOk = false;
-            var cantRecMax = 35;
+            var cantRecMax = 50;
             var cantRec = 0;
             while (!generateOk && cantRec < cantRecMax) {
                 // Rhythmic

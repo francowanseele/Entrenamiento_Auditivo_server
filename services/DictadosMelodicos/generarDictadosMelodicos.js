@@ -50,6 +50,27 @@ const generarDictadoMelodico = (
     const clave = gral.getElemPrioridad(nivelPrioridadClave);
 
     // ---------------------------------------------------------------------
+
+    // console.log('-------------------------....');
+    // console.log(notasRegla);
+    // console.log(nivelPrioridadRegla);
+
+    // var nivelPrioridadRegla_TEST = [];
+
+    // nivelPrioridadRegla_TEST.push({
+    //     regla: nivelPrioridadRegla[0].regla,
+    //     prioridad: nivelPrioridadRegla[0].prioridad,
+    //     lecturaAmbasDirecciones: true,
+    // });
+    // nivelPrioridadRegla_TEST.push({
+    //     regla: nivelPrioridadRegla[1].regla,
+    //     prioridad: nivelPrioridadRegla[1].prioridad,
+    //     lecturaAmbasDirecciones: false,
+    // });
+
+    // ---------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------
     // console.log('--------------------------------');
     // console.log('CLAVE : ');
     // console.log(clave);

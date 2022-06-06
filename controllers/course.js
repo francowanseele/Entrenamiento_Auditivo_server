@@ -286,6 +286,7 @@ async function getConfigDictation(req, res) {
                     giros_melodicos: giros_melodicos,
                     DelSistema: gm[0].DelSistema,
                     prioridad: gm[0].Prioridad,
+                    lecturaAmbasDirecciones: gm[0].LecturaAmbasDirecciones,
                 });
             });
 
@@ -478,6 +479,7 @@ async function getConfigDictation(req, res) {
             .select(
                 'GiroMelodico.id',
                 'ConfiguracionDictado_GiroMelodico.Prioridad',
+                'ConfiguracionDictado_GiroMelodico.LecturaAmbasDirecciones',
                 'GiroMelodico.Mayor',
                 'GiroMelodico.DelSistema',
                 'GiroMelodico_Nota.Nota',
@@ -870,6 +872,7 @@ async function addConfigDictation(req, res) {
                         ConfiguracionDictadoId: configDictId,
                         GiroMelodicoId: gm.id,
                         Prioridad: gm.prioridad,
+                        LecturaAmbasDirecciones: gm.lecturaAmbasDirecciones,
                     });
                 } else {
                     // add new giro melodico
@@ -899,6 +902,7 @@ async function addConfigDictation(req, res) {
                         ConfiguracionDictadoId: configDictId,
                         GiroMelodicoId: giroMelodicoId,
                         Prioridad: gm.prioridad,
+                        LecturaAmbasDirecciones: gm.lecturaAmbasDirecciones,
                     });
                 }
             }
@@ -1042,12 +1046,14 @@ async function addConfigDictation(req, res) {
                 .insert(aa)
                 .transacting(trx);
 
-            await db
-                .knex('ConfiguracionDictado_Ligadura')
-                .insert(
-                    getConfigDictLigaduraInsert(ligaduraRegla, configDictId)
-                )
-                .transacting(trx);
+            if (ligaduraRegla.length > 0) {
+                await db
+                    .knex('ConfiguracionDictado_Ligadura')
+                    .insert(
+                        getConfigDictLigaduraInsert(ligaduraRegla, configDictId)
+                    )
+                    .transacting(trx);
+            }
         });
 
         res.status(200).send({
