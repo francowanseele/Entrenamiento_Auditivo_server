@@ -133,10 +133,37 @@ async function CreateCelulaRitmica(req,res) {
     }
 }
 
+async function DeleteCelulaRitmica(req,res) {
+    try {
+        const { idCelulaRitmica } = req.body;
+        await db
+        .knex('CelulaRitmica_Figura')
+        .del()
+        .where({ 'CelulaRitmicaId': idCelulaRitmica })
+        
+        await db
+        .knex('CelulaRitmica')
+        .del()
+        .where({ 'id': idCelulaRitmica })
+       
+       
 
+        res.status(200).send({
+            ok: true,
+            message: 'Célula rítmica eliminada correctamente',
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
 
 module.exports = {
     addCelulaRitmica,
     getCelulaRitmica,
     CreateCelulaRitmica,
+    DeleteCelulaRitmica
 };

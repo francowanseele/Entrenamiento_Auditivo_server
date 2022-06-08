@@ -9,4 +9,6 @@ api.get(
 );
 api.post('/create-celula-ritmica',CelulaRitmicaController.CreateCelulaRitmica);
 
+api.post('/delete-celula-ritmica',CelulaRitmicaController.DeleteCelulaRitmica);
+
 module.exports = api;
