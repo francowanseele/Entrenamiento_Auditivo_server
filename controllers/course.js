@@ -7,7 +7,7 @@ const formatData = require('../services/formatData');
 
 async function addCourse(req, res) {
     try {
-        const { name, description, personal, idInstitute } = req.body;
+        const { name, description, personal, idInstitute, idUser } = req.body;
 
         const courses = await db
             .knex('Curso')
@@ -16,6 +16,7 @@ async function addCourse(req, res) {
                 Descripcion: description,
                 Personal: personal,
                 InstitutoId: idInstitute,
+                CreadoPor: idUser,
             })
             .returning(['id', 'Nombre', 'Descripcion']);
 
@@ -1349,6 +1350,229 @@ async function getTeacherCourses(req, res) {
     }
 }
 
+async function editCourse(req, res) {
+    try {
+        const { id } = req.params;
+        const { idUser } = req.query;
+        const { name, description } = req.body;
+
+        // Check if user has permission
+        if (await userCanEditCourse(idUser, id)) {
+            const courseUpdated = await db
+                .knex('Curso')
+                .where({ 'Curso.id': id })
+                .update({
+                    'Curso.Nombre': name,
+                    'Curso.Descripcion': description,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+
+            if (courseUpdated && courseUpdated.length > 0) {
+                res.status(200).send({
+                    ok: true,
+                    permiso: true,
+                    course: courseUpdated[0],
+                    message: 'Curso editado correctamente',
+                });
+            }
+        } else {
+            res.status(200).send({
+                ok: true,
+                permiso: false,
+                course: null,
+                message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function editModule(req, res) {
+    try {
+        const { id } = req.params;
+        const { idUser, idModule } = req.query;
+        const { name, description } = req.body;
+
+        // Check if user has permission
+        if (await userCanEditCourse(idUser, id)) {
+            const moduleUpdated = await db
+                .knex('Modulo')
+                .where({ 'Modulo.id': idModule })
+                .update({
+                    'Modulo.Nombre': name,
+                    'Modulo.Descripcion': description,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+
+            if (moduleUpdated && moduleUpdated.length > 0) {
+                res.status(200).send({
+                    ok: true,
+                    permiso: true,
+                    module: moduleUpdated[0],
+                    message: 'Modulo editado correctamente',
+                });
+            }
+        } else {
+            res.status(200).send({
+                ok: true,
+                permiso: false,
+                module: null,
+                message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function editConfigDictation(req, res) {
+    try {
+        const { id } = req.params;
+        const { idUser, idConfigDictation } = req.query;
+        const { name, description } = req.body;
+
+        // Check if user has permission
+        if (await userCanEditCourse(idUser, id)) {
+            const configDictationUpdated = await db
+                .knex('ConfiguracionDictado')
+                .where({ 'ConfiguracionDictado.id': idConfigDictation })
+                .update({
+                    'ConfiguracionDictado.Nombre': name,
+                    'ConfiguracionDictado.Descripcion': description,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+
+            if (configDictationUpdated && configDictationUpdated.length > 0) {
+                res.status(200).send({
+                    ok: true,
+                    permiso: true,
+                    configDictation: configDictationUpdated[0],
+                    message: 'Configuración de dictado editado correctamente',
+                });
+            }
+        } else {
+            res.status(200).send({
+                ok: true,
+                permiso: false,
+                configDictation: null,
+                message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function userHasPermissionToEditCourse(req, res) {
+    const { id } = req.params;
+    const { idUser } = req.query;
+    try {
+        res.status(200).send({
+            ok: true,
+            permiso: await userCanEditCourse(idUser, id),
+            message: '',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+// return true if 
+// userId create coruse OR course is personal course of userId OR userId teach course
+const userCanEditCourse = async (userId, courseId) => {
+    const courses = await db
+        .knex('Curso')
+        .where({ 'Curso.id': courseId })
+        .select(
+            'Curso.id',
+            'Curso.CreadoPor',
+            'Curso.Nombre',
+            'Curso.Descripcion',
+            'Curso.Personal',
+            'Curso.InstitutoId'
+        );
+
+    const course = courses[0];
+
+    const users = await db
+        .knex('Usuario')
+        .where({ 'Usuario.id': userId })
+        .select('Usuario.id', 'Usuario.CursoPersonalId');
+
+    const user = users[0];
+
+    const userTeachCourse = await db
+        .knex('UsuarioDicta_Curso')
+        .where({
+            'UsuarioDicta_Curso.CursoId': courseId,
+            'UsuarioDicta_Curso.UsuarioId': userId,
+        })
+        .select('UsuarioDicta_Curso.id');
+
+    return (
+        course.CreadoPor == user.id ||
+        user.CursoPersonalId == course.id ||
+        userTeachCourse.length > 0
+    );
+};
+
+async function unregisterStudenFromCourse(req, res) {
+    try {
+        const { idUser, idCourse } = req.body;
+
+        const deleted = await db
+            .knex('UsuarioCursa_Curso')
+            .where({ 'UsuarioCursa_Curso.UsuarioId': idUser, 'UsuarioCursa_Curso.CursoId': idCourse })
+            .del();
+
+        res.status(200).send({
+            ok: true,
+            studenCourse: deleted,
+            message: 'Ok',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function unregisterTeacherFromCourse(req, res) {
+    try {
+        const { idUser, idCourse } = req.body;
+
+        const deleted = await db
+            .knex('UsuarioDicta_Curso')
+            .where({ 'UsuarioDicta_Curso.UsuarioId': idUser, 'UsuarioDicta_Curso.CursoId': idCourse })
+            .del();
+
+        res.status(200).send({
+            ok: true,
+            teacherCourse: deleted,
+            message: 'Ok',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     addCourse,
     addCourseToDictaTeacher,
@@ -1364,4 +1588,10 @@ module.exports = {
     getTeacherCourses,
     addStudentToCourse,
     getPersonalCourse,
+    editCourse,
+    editModule,
+    editConfigDictation,
+    unregisterStudenFromCourse,
+    unregisterTeacherFromCourse,
+    userHasPermissionToEditCourse,
 };
