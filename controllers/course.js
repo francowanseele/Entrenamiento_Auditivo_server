@@ -7,7 +7,7 @@ const formatData = require('../services/formatData');
 
 async function addCourse(req, res) {
     try {
-        const { name, description, personal, idInstitute } = req.body;
+        const { name, description, personal, idInstitute, idUser } = req.body;
 
         const courses = await db
             .knex('Curso')
@@ -16,6 +16,7 @@ async function addCourse(req, res) {
                 Descripcion: description,
                 Personal: personal,
                 InstitutoId: idInstitute,
+                CreadoPor: idUser,
             })
             .returning(['id', 'Nombre', 'Descripcion']);
 
@@ -286,6 +287,7 @@ async function getConfigDictation(req, res) {
                     giros_melodicos: giros_melodicos,
                     DelSistema: gm[0].DelSistema,
                     prioridad: gm[0].Prioridad,
+                    lecturaAmbasDirecciones: gm[0].LecturaAmbasDirecciones,
                 });
             });
 
@@ -317,119 +319,136 @@ async function getConfigDictation(req, res) {
             return res;
         };
 
+        const getLigadurasFormat = (ligaduras) => {
+            let ligaduraData = [];
+
+            const ligadurasIdsAux = ligaduras.map((l) => {
+                return l.id;
+            });
+
+            // Get ConfiguracionDictado_Ligadura ids without repetition
+            const ligadurasIds = ligadurasIdsAux.filter((l, index) => {
+                return ligadurasIdsAux.indexOf(l) === index;
+            });
+
+            /**
+             *  {
+             *      firstId
+             *      firstFigura
+             *      prioridad
+             *      must
+             *      order
+             *  }
+             */
+            ligadurasIds.forEach((lId) => {
+                let resFirst = [];
+                let resSecond = [];
+
+                ligaduras.forEach((l) => {
+                    if (l.id == lId) {
+                        let found = false;
+                        resFirst.forEach((f) => {
+                            if (
+                                f.firstId == l.FirstCRId &&
+                                f.firstFigura == l.FirstCRFigura &&
+                                f.order == l.FirstCROrden
+                            ) {
+                                found = true;
+                            }
+                        });
+
+                        if (!found) {
+                            resFirst.push({
+                                firstId: l.FirstCRId,
+                                firstFigura: l.FirstCRFigura,
+                                prioridad: l.Prioridad,
+                                must: l.Must,
+                                order: l.FirstCROrden,
+                            });
+                        }
+
+                        found = false;
+                        resSecond.forEach((s) => {
+                            if (
+                                s.secondId == l.SecondCRId &&
+                                s.secondFigura == l.SecondCRFigura &&
+                                s.order == l.SecondCROrden
+                            ) {
+                                found = true;
+                            }
+                        });
+
+                        if (!found) {
+                            resSecond.push({
+                                secondId: l.SecondCRId,
+                                secondFigura: l.SecondCRFigura,
+                                prioridad: l.Prioridad,
+                                must: l.Must,
+                                order: l.SecondCROrden,
+                            });
+                        }
+                    }
+                });
+
+                ligaduraData.push({
+                    ligaduraId: lId,
+                    Prioridad: resFirst[0].prioridad,
+                    Must: resFirst[0].must,
+                    firstCR: resFirst,
+                    secondCR: resSecond,
+                });
+            });
+
+            let res = [];
+            ligaduraData.forEach((data) => {
+                let firstCROrded;
+                let secondCROrded;
+
+                firstCROrded = data.firstCR.sort((x, y) =>
+                    x.order > y.order ? 1 : -1
+                );
+                secondCROrded = data.secondCR.sort((x, y) =>
+                    x.order > y.order ? 1 : -1
+                );
+
+                let first = '';
+                let second = '';
+                for (let i = 0; i < firstCROrded.length; i++) {
+                    const f = firstCROrded[i];
+
+                    if (i != 0) {
+                        first = first.concat('-', f.firstFigura);
+                    } else {
+                        first = first.concat(f.firstFigura);
+                    }
+                }
+
+                for (let i = 0; i < secondCROrded.length; i++) {
+                    const s = secondCROrded[i];
+                    if (i != 0) {
+                        second = second.concat('-', s.secondFigura);
+                    } else {
+                        second = second.concat(s.secondFigura);
+                    }
+                }
+
+                res.push({
+                    elem: {
+                        first: first,
+                        firstId: firstCROrded[0].firstId,
+                        second: second,
+                        secondId: secondCROrded[0].secondId,
+                    },
+                    priority: data.Prioridad,
+                    must: data.Must,
+                    id: data.ligaduraId,
+                });
+            });
+
+            return res;
+        };
+
         const { id } = req.params;
-
-        // const configs = await db
-        //     .knex('ConfiguracionDictado')
-        //     .where({ 'ConfiguracionDictado.id': id })
-        //     // .select()
-        //     .select(
-        //         'ConfiguracionDictado.id as ConfigDictId',
-        //         'ConfiguracionDictado_GiroMelodico.id as ConfigDict_GMId',
-        //         'GiroMelodico.id as GMId',
-        //         'GiroMelodico_Nota.id as GM_NotaId',
-        //         'GiroMelodico_Nota.Nota',
-        //         'Tesitura.id as TesituraId',
-        //         'ConfiguracionDictado_NotaInicio.id as ConfigDict_NotaInicioId',
-        //         'ConfiguracionDictado_NotaFin.id as ConfigDict_NotaFinId',
-        //         'ConfiguracionDictado_Tonalidad.id as ConfigDict_TonId',
-        //         'ConfiguracionDictado_CelulaRitmica.id as ConfigDict_CRId',
-        //         'CelulaRitmica.id as CRId',
-        //         'CelulaRitmica_Figura.id as CR_FigId',
-        //         'ConfiguracionDictado_Compas.id as ConfigDict_CompasId',
-        //         'Compas.id as CompasId'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_GiroMelodico',
-        //         'ConfiguracionDictado_GiroMelodico.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'GiroMelodico',
-        //         'GiroMelodico.Id',
-        //         '=',
-        //         'ConfiguracionDictado_GiroMelodico.GiroMelodicoId'
-        //     )
-        //     .join(
-        //         'GiroMelodico_Nota',
-        //         'GiroMelodico_Nota.GiroMelodicoId',
-        //         '=',
-        //         'GiroMelodico.id'
-        //     )
-        //     .join('Tesitura', function () {
-        //         this.on(
-        //             'ConfiguracionDictado.TesituraClaveSolId',
-        //             '=',
-        //             'Tesitura.id'
-        //         ).orOn(
-        //             'ConfiguracionDictado.TesituraClaveFaId',
-        //             '=',
-        //             'Tesitura.id'
-        //         );
-        //     })
-        //     .join(
-        //         'ConfiguracionDictado_NotaInicio',
-        //         'ConfiguracionDictado_NotaInicio.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_NotaFin',
-        //         'ConfiguracionDictado_NotaFin.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_Tonalidad',
-        //         'ConfiguracionDictado_Tonalidad.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_CelulaRitmica',
-        //         'ConfiguracionDictado_CelulaRitmica.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'CelulaRitmica',
-        //         'CelulaRitmica.id',
-        //         '=',
-        //         'ConfiguracionDictado_CelulaRitmica.CelulaRitmicaId'
-        //     )
-        //     .join(
-        //         'CelulaRitmica_Figura',
-        //         'CelulaRitmica_Figura.CelulaRitmicaId',
-        //         '=',
-        //         'CelulaRitmica.id'
-        //     )
-        //     .join(
-        //         'ConfiguracionDictado_Compas',
-        //         'ConfiguracionDictado_Compas.ConfiguracionDictadoId',
-        //         '=',
-        //         'ConfiguracionDictado.id'
-        //     )
-        //     .join(
-        //         'Compas',
-        //         'Compas.id',
-        //         '=',
-        //         'ConfiguracionDictado_Compas.CompasId'
-        //     );
-
-        // var hash = configs.reduce(
-        //     (previous, current) => (
-        //         previous[current.ConfigDictId]
-        //             ? previous[current.ConfigDictId].push(current)
-        //             : (previous[current.ConfigDictId] = [current]),
-        //         previous
-        //     ),
-        //     {}
-        // );
-        // var newData = Object.keys(hash).map((k) => ({
-        //     configuracion_ditado: k,
-        //     giro_melodico_regla: hash[k],
-        // }));
 
         const configs = await db
             .knex('ConfiguracionDictado')
@@ -461,6 +480,7 @@ async function getConfigDictation(req, res) {
             .select(
                 'GiroMelodico.id',
                 'ConfiguracionDictado_GiroMelodico.Prioridad',
+                'ConfiguracionDictado_GiroMelodico.LecturaAmbasDirecciones',
                 'GiroMelodico.Mayor',
                 'GiroMelodico.DelSistema',
                 'GiroMelodico_Nota.Nota',
@@ -558,6 +578,48 @@ async function getConfigDictation(req, res) {
                 'ConfiguracionDictado_Compas.CompasId'
             );
 
+        const ligaduras = await db
+            .knex('ConfiguracionDictado_Ligadura')
+            .where({
+                'ConfiguracionDictado_Ligadura.ConfiguracionDictadoId':
+                    config.id,
+            })
+            .select(
+                'ConfiguracionDictado_Ligadura.id',
+                'ConfiguracionDictado_Ligadura.Prioridad',
+                'ConfiguracionDictado_Ligadura.Must',
+                'FirstCR.id as FirstCRId',
+                'FirstCR_Fig.Figura as FirstCRFigura',
+                'FirstCR_Fig.Orden as FirstCROrden',
+                'SecondCR.id as SecondCRId',
+                'SecondCR_Fig.Figura as SecondCRFigura',
+                'SecondCR_Fig.Orden as SecondCROrden'
+            )
+            .join(
+                'CelulaRitmica as FirstCR',
+                'FirstCR.Id',
+                '=',
+                'ConfiguracionDictado_Ligadura.FirstCelulaRitmicaId'
+            )
+            .join(
+                'CelulaRitmica as SecondCR',
+                'SecondCR.Id',
+                '=',
+                'ConfiguracionDictado_Ligadura.SecondCelulaRitmicaId'
+            )
+            .join(
+                'CelulaRitmica_Figura as FirstCR_Fig',
+                'FirstCR_Fig.CelulaRitmicaId',
+                '=',
+                'FirstCR.id'
+            )
+            .join(
+                'CelulaRitmica_Figura as SecondCR_Fig',
+                'SecondCR_Fig.CelulaRitmicaId',
+                '=',
+                'SecondCR.id'
+            );
+
         res.status(200).send({
             ok: true,
             config: {
@@ -594,6 +656,7 @@ async function getConfigDictation(req, res) {
                     mayor: config.BpmMayor,
                 },
                 dictado_ritmico: config.DictadoRitmico,
+                ligaduraRegla: getLigadurasFormat(ligaduras),
             },
             message: 'Ok',
         });
@@ -623,6 +686,7 @@ async function getConfigDictation(req, res) {
  * notaBase:
  * bpm:
  * dictado_ritmico:
+ * ligaduraRegla
  */
 async function addConfigDictation(req, res) {
     try {
@@ -809,6 +873,7 @@ async function addConfigDictation(req, res) {
                         ConfiguracionDictadoId: configDictId,
                         GiroMelodicoId: gm.id,
                         Prioridad: gm.prioridad,
+                        LecturaAmbasDirecciones: gm.lecturaAmbasDirecciones,
                     });
                 } else {
                     // add new giro melodico
@@ -838,11 +903,29 @@ async function addConfigDictation(req, res) {
                         ConfiguracionDictadoId: configDictId,
                         GiroMelodicoId: giroMelodicoId,
                         Prioridad: gm.prioridad,
+                        LecturaAmbasDirecciones: gm.lecturaAmbasDirecciones,
                     });
                 }
             }
 
             return objectToInsert;
+        };
+
+        // Given ligaduraRegla ([{elem: {first: '8-8', firstId: 1, second: '8-16-16', secondId: 2}, priority: 1, must: false}, {...}, ... ])
+        // return object array of type ConfiguracionDictado_Ligadura to insert
+        const getConfigDictLigaduraInsert = (ligaduraRegla, configDictId) => {
+            let res = [];
+            ligaduraRegla.forEach((l) => {
+                res.push({
+                    ConfiguracionDictadoId: configDictId,
+                    FirstCelulaRitmicaId: l.elem.firstId,
+                    SecondCelulaRitmicaId: l.elem.secondId,
+                    Prioridad: l.priority,
+                    Must: l.must,
+                });
+            });
+
+            return res;
         };
 
         const { idModule, idUserCreate } = req.query;
@@ -863,6 +946,7 @@ async function addConfigDictation(req, res) {
             bpm,
             dictado_ritmico,
             mayor,
+            ligaduraRegla,
         } = req.body;
 
         // Tesitura
@@ -962,6 +1046,15 @@ async function addConfigDictation(req, res) {
                 .knex('ConfiguracionDictado_GiroMelodico')
                 .insert(aa)
                 .transacting(trx);
+
+            if (ligaduraRegla.length > 0) {
+                await db
+                    .knex('ConfiguracionDictado_Ligadura')
+                    .insert(
+                        getConfigDictLigaduraInsert(ligaduraRegla, configDictId)
+                    )
+                    .transacting(trx);
+            }
         });
 
         res.status(200).send({
@@ -1235,6 +1328,229 @@ async function getTeacherCourses(req, res) {
     }
 }
 
+async function editCourse(req, res) {
+    try {
+        const { id } = req.params;
+        const { idUser } = req.query;
+        const { name, description } = req.body;
+
+        // Check if user has permission
+        if (await userCanEditCourse(idUser, id)) {
+            const courseUpdated = await db
+                .knex('Curso')
+                .where({ 'Curso.id': id })
+                .update({
+                    'Curso.Nombre': name,
+                    'Curso.Descripcion': description,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+
+            if (courseUpdated && courseUpdated.length > 0) {
+                res.status(200).send({
+                    ok: true,
+                    permiso: true,
+                    course: courseUpdated[0],
+                    message: 'Curso editado correctamente',
+                });
+            }
+        } else {
+            res.status(200).send({
+                ok: true,
+                permiso: false,
+                course: null,
+                message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function editModule(req, res) {
+    try {
+        const { id } = req.params;
+        const { idUser, idModule } = req.query;
+        const { name, description } = req.body;
+
+        // Check if user has permission
+        if (await userCanEditCourse(idUser, id)) {
+            const moduleUpdated = await db
+                .knex('Modulo')
+                .where({ 'Modulo.id': idModule })
+                .update({
+                    'Modulo.Nombre': name,
+                    'Modulo.Descripcion': description,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+
+            if (moduleUpdated && moduleUpdated.length > 0) {
+                res.status(200).send({
+                    ok: true,
+                    permiso: true,
+                    module: moduleUpdated[0],
+                    message: 'Modulo editado correctamente',
+                });
+            }
+        } else {
+            res.status(200).send({
+                ok: true,
+                permiso: false,
+                module: null,
+                message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function editConfigDictation(req, res) {
+    try {
+        const { id } = req.params;
+        const { idUser, idConfigDictation } = req.query;
+        const { name, description } = req.body;
+
+        // Check if user has permission
+        if (await userCanEditCourse(idUser, id)) {
+            const configDictationUpdated = await db
+                .knex('ConfiguracionDictado')
+                .where({ 'ConfiguracionDictado.id': idConfigDictation })
+                .update({
+                    'ConfiguracionDictado.Nombre': name,
+                    'ConfiguracionDictado.Descripcion': description,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+
+            if (configDictationUpdated && configDictationUpdated.length > 0) {
+                res.status(200).send({
+                    ok: true,
+                    permiso: true,
+                    configDictation: configDictationUpdated[0],
+                    message: 'Configuración de dictado editado correctamente',
+                });
+            }
+        } else {
+            res.status(200).send({
+                ok: true,
+                permiso: false,
+                configDictation: null,
+                message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function userHasPermissionToEditCourse(req, res) {
+    const { id } = req.params;
+    const { idUser } = req.query;
+    try {
+        res.status(200).send({
+            ok: true,
+            permiso: await userCanEditCourse(idUser, id),
+            message: '',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+// return true if 
+// userId create coruse OR course is personal course of userId OR userId teach course
+const userCanEditCourse = async (userId, courseId) => {
+    const courses = await db
+        .knex('Curso')
+        .where({ 'Curso.id': courseId })
+        .select(
+            'Curso.id',
+            'Curso.CreadoPor',
+            'Curso.Nombre',
+            'Curso.Descripcion',
+            'Curso.Personal',
+            'Curso.InstitutoId'
+        );
+
+    const course = courses[0];
+
+    const users = await db
+        .knex('Usuario')
+        .where({ 'Usuario.id': userId })
+        .select('Usuario.id', 'Usuario.CursoPersonalId');
+
+    const user = users[0];
+
+    const userTeachCourse = await db
+        .knex('UsuarioDicta_Curso')
+        .where({
+            'UsuarioDicta_Curso.CursoId': courseId,
+            'UsuarioDicta_Curso.UsuarioId': userId,
+        })
+        .select('UsuarioDicta_Curso.id');
+
+    return (
+        course.CreadoPor == user.id ||
+        user.CursoPersonalId == course.id ||
+        userTeachCourse.length > 0
+    );
+};
+
+async function unregisterStudenFromCourse(req, res) {
+    try {
+        const { idUser, idCourse } = req.body;
+
+        const deleted = await db
+            .knex('UsuarioCursa_Curso')
+            .where({ 'UsuarioCursa_Curso.UsuarioId': idUser, 'UsuarioCursa_Curso.CursoId': idCourse })
+            .del();
+
+        res.status(200).send({
+            ok: true,
+            studenCourse: deleted,
+            message: 'Ok',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function unregisterTeacherFromCourse(req, res) {
+    try {
+        const { idUser, idCourse } = req.body;
+
+        const deleted = await db
+            .knex('UsuarioDicta_Curso')
+            .where({ 'UsuarioDicta_Curso.UsuarioId': idUser, 'UsuarioDicta_Curso.CursoId': idCourse })
+            .del();
+
+        res.status(200).send({
+            ok: true,
+            teacherCourse: deleted,
+            message: 'Ok',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     addCourse,
     addCourseToDictaTeacher,
@@ -1250,4 +1566,10 @@ module.exports = {
     getTeacherCourses,
     addStudentToCourse,
     getPersonalCourse,
+    editCourse,
+    editModule,
+    editConfigDictation,
+    unregisterStudenFromCourse,
+    unregisterTeacherFromCourse,
+    userHasPermissionToEditCourse,
 };

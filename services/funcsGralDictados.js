@@ -196,7 +196,18 @@ const translateFigToSec = (fig, negraSec) => {
 // return a dictation with each figure in seconds
 const translateDictadoFigToSec = (figurasDictado, negraSec) => {
     let dictadoSec = figurasDictado.map((fig) => {
-        return translateFigToSec(fig, negraSec);
+        if (fig.indexOf('_') != -1) {
+            // Check if fig has ligadura
+            let resInSec = 0;
+            const f = fig.split('_');
+            f.forEach((fLigs) => {
+                resInSec = resInSec + translateFigToSec(fLigs, negraSec);
+            });
+
+            return resInSec;
+        } else {
+            return translateFigToSec(fig, negraSec);
+        }
     }); 
 
     return dictadoSec;

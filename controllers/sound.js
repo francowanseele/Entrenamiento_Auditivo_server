@@ -73,8 +73,21 @@ function generateDictationFile(req, res) {
             conjuntoFiguras.forEach((figuras) => {
                 figuras.forEach((fig) => {
                     const figsSeparadas = fig.split('-');
+                    let firstFiguras = true;
                     figsSeparadas.forEach((f) => {
-                        res.push(f);
+                        if (
+                            firstFiguras &&
+                            f.indexOf('_') == 0 &&
+                            res.length > 0
+                        ) {
+                            const lastFigure = res[res.length - 1];
+                            res.pop();
+                            const newFigure = lastFigure + f;
+                            res.push(newFigure);
+                        } else {
+                            res.push(f);
+                        }
+                        firstFiguras = false;
                     });
                 });
             });
@@ -153,6 +166,14 @@ function generateDictationFile(req, res) {
             getFigurasALL(figurasDictado),
             negraSec
         );
+        console.log('--------------------------------------');
+        console.log('Figuras del dictado');
+        console.log(figurasDictado);
+        console.log('get all figures');
+        console.log(getFigurasALL(figurasDictado));
+        console.log('-------- NOTAS ------');
+        console.log(notasDictado);
+        console.log('--------------------------------------');
         // ----------------------------------------------
         //#endregion
 
@@ -165,14 +186,14 @@ function generateDictationFile(req, res) {
             numerador,
             pulsoSec,
             compasSec
-        );
+        ); 
 
         var trackDictation = midi.addTrack();
         trackDictation = trackDictationSound(
             dictadoFigurasSec,
             notasDictado,
             trackDictation,
-            compasSec * 2
+            compasSec * 2 // indica que arranque luego del sonido de los sticks (que tiene una duración de 1 compasSec)
         );
         // ----------------------------------------------
         //#endregion

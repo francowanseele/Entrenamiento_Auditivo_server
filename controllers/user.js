@@ -129,8 +129,21 @@ async function generateDictation(req, res) {
             dictado.forEach((compas) => {
                 compas.forEach((tarjeta) => {
                     const fgs = tarjeta.split('-');
+                    let firstFiguras = true;
                     fgs.forEach((fig) => {
-                        figuras.push(fig);
+                        if (
+                            firstFiguras &&
+                            fig.indexOf('_') == 0 &&
+                            figuras.length > 0
+                        ) {
+                            const lastFigure = figuras[figuras.length - 1];
+                            figuras.pop();
+                            const newFigure = lastFigure + fig;
+                            figuras.push(newFigure);
+                        } else {
+                            figuras.push(fig);
+                        }
+                        firstFiguras = false;
                     });
                 });
             });
@@ -192,16 +205,20 @@ async function generateDictation(req, res) {
             notaBase,
             bpm,
             dictado_ritmico,
+            ligaduraRegla,
         } = req.body;
         const { id } = req.params;
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
 
-        console.log(
-            'acaaaa------------------------------------ Generate dictation'
-        );
-        console.log(req.body);
-        console.log(req.params);
-        console.log(req.query);
+        console.log('TARJETAS');
+        console.log(tarjetas);
+        console.log('LIGADURAS:');
+        console.log(ligaduraRegla);
+
+        console.log('Notas Regla');
+        console.log(notasRegla);
+        console.log('Nivel prioridad regla');
+        console.log(nivelPrioridadRegla);
 
         // Translate to my notas cod (ex: Sol4)
         const notasRegla_trad = translateNotasRegla(notasRegla);
@@ -222,17 +239,19 @@ async function generateDictation(req, res) {
             const dateNow = Date.now();
 
             var generateOk = false;
-            var cantRecMax = 35;
+            var cantRecMax = 50;
             var cantRec = 0;
             while (!generateOk && cantRec < cantRecMax) {
                 // Rhythmic
                 var res_generarDictadoRitmico =
                     dictadoRitmico.generarDictadoRitmico(
                         tarjetas,
+                        ligaduraRegla,
                         nroCompases,
                         compas,
                         simple
                     );
+
                 var dictadoRitmico_Compases =
                     res_generarDictadoRitmico.dictadoRitmico;
                 var numeradorDictadoRitmico =
@@ -254,6 +273,7 @@ async function generateDictation(req, res) {
                         escalaDiatonicaRegla,
                         notaReferencia_trad
                     );
+
                 generateOk = res_dictadoMelodico[0];
                 cantRec++;
             }
