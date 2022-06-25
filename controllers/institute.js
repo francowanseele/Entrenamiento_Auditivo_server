@@ -110,9 +110,42 @@ async function getInstitute(req, res) {
     }
 }
 
+async function getInstituteByUser(req, res) {
+    try {
+        const { idUser } = req.query;
+
+        const institutes = await db
+            .knex('Usuario_Instituto')
+            .where({ 'Usuario_Instituto.UsuarioId': idUser })
+            .select(
+                'Instituto.id as InstitutoId',
+                'Instituto.Nombre',
+                'Usuario_Instituto.UsuarioId as UserId'
+            )
+            .join(
+                'Instituto',
+                'Usuario_Instituto.InstitutoId',
+                '=',
+                'Instituto.id'
+            );
+
+        res.status(200).send({
+            ok: true,
+            institutes: institutes,
+            message: 'Ok',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     addInstitute,
     addCourse,
     getInstitute,
     getCourses,
+    getInstituteByUser,
 };
