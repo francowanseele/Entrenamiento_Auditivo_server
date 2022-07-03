@@ -4,6 +4,7 @@ const usuario = require('../models/usuario');
 const Usuario = require('../models/usuario');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
+const { inscriptionState } = require('../enums/inscriptionState');
 
 async function addCourse(req, res) {
     try {
@@ -42,9 +43,10 @@ async function addCourseToDictaTeacher(req, res) {
             .insert({
                 CursoId: idCourse,
                 UsuarioId: idUser,
-                Responsable: true,
+                Responsable: false,
+                Estado: inscriptionState.pending
             })
-            .returning(['id', 'UsuarioId', 'CursoId', 'Responsable']);
+            .returning(['id', 'UsuarioId', 'CursoId', 'Responsable', 'Estado']);
 
         res.status(200).send({
             ok: true,
@@ -111,13 +113,29 @@ async function getCoursesCursaStudent(req, res) {
 
 async function getAllCourse(req, res) {
     try {
-        const courses = await db.knex
-            .select('id', 'Nombre', 'Descripcion', 'Personal')
-            .from('Curso');
+        const { idUser } = req.query;
+
+        const courses = await db
+            .knex('Usuario')
+            .where({ 'Usuario.id': idUser })
+            .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal')
+            .join('Usuario_Instituto', 'Usuario.id', '=', 'Usuario_Instituto.UsuarioId')
+            .join('Instituto', 'Usuario_Instituto.InstitutoId', '=', 'Instituto.id')
+            .join('Curso', 'Instituto.id', '=', 'Curso.InstitutoId')
+            .groupBy('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
+
+        const coursesWithoutInstitute = await db
+            .knex('Curso')
+            .where({ 'Curso.InstitutoId': NULL })
+            .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
+
+        // const courses = await db.knex
+        //     .select('id', 'Nombre', 'Descripcion', 'Personal')
+        //     .from('Curso');
 
         res.status(200).send({
             ok: true,
-            cursos: courses,
+            cursos: courses.concat(coursesWithoutInstitute),
             message: 'Ok',
         });
     } catch (error) {

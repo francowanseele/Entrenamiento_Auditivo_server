@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const db = require('../data/knex');
 const { GroupByIdAndShortByOrder } = require('../services/formatData');
+const { roles } = require('../enums/roles');
 
 const find = (arr, id) => {
     var exist = false;
@@ -23,38 +24,53 @@ async function addUser(req, res) {
     try {
         const { name, lastname, email, password, isTeacher, idCoursePersonal } =
             req.body;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        const usrs = await db
+        const existUser = await db
             .knex('Usuario')
-            .insert({
-                Nombre: name,
-                Apellido: lastname,
-                Email: email.toLowerCase(),
-                Password: hashedPassword,
-                EsDocente: isTeacher,
-                CursoPersonalId: idCoursePersonal,
-            })
-            .returning([
-                'id',
-                'Nombre',
-                'Apellido',
-                'Email',
-                'EsDocente',
-                'CursoPersonalId',
-            ]);
+            .where({ Email: email.toLowerCase(), EsDocente: isTeacher })
+            .select('id');
+        
+        if (existUser.length > 0) {
+            res.status(403).send({
+                ok: false,
+                message: 'El usuario ya existe.',
+            });
+        } else {
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        await db.knex('UsuarioCursa_Curso').insert({
-            CursoId: idCoursePersonal,
-            UsuarioId: usrs[0].id,
-            FechaInscripcion: Date.now(),
-        });
+            const usrs = await db
+                .knex('Usuario')
+                .insert({
+                    Nombre: name,
+                    Apellido: lastname,
+                    Email: email.toLowerCase(),
+                    Password: hashedPassword,
+                    EsDocente: isTeacher,
+                    CursoPersonalId: idCoursePersonal,
+                    Rol: roles.user,
+                })
+                .returning([
+                    'id',
+                    'Nombre',
+                    'Apellido',
+                    'Email',
+                    'EsDocente',
+                    'CursoPersonalId',
+                    'Rol',
+                ]);
 
-        res.status(200).send({
-            ok: true,
-            user: usrs[0],
-            message: 'Usuario creado correctamente',
-        });
+            await db.knex('UsuarioCursa_Curso').insert({
+                CursoId: idCoursePersonal,
+                UsuarioId: usrs[0].id,
+                FechaInscripcion: Date.now(),
+            });
+
+            res.status(200).send({
+                ok: true,
+                user: usrs[0],
+                message: 'Usuario creado correctamente',
+            });
+        }
     } catch (error) {
         res.status(501).send({
             ok: false,
@@ -79,7 +95,8 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                 'Email',
                 'Password',
                 'EsDocente',
-                'CursoPersonalId'
+                'CursoPersonalId',
+                'Rol'
             );
 
         if (users.length == 1) {
@@ -95,6 +112,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                         email: usr.Email,
                         password: usr.Password,
                         esDocente: usr.EsDocente,
+                        Rol: usr.Rol,
                         message: 'Usuario encontrado',
                     });
                 } else {
