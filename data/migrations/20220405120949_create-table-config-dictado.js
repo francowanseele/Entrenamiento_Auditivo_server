@@ -15,11 +15,11 @@ exports.up = function (knex) {
         table.boolean('DictadoRitmico').notNullable();
         table.integer('PrioridadClaveSol').notNullable();
         table.integer('PrioridadClaveFa').notNullable();
-        table.integer('TesituraClaveSolId').notNullable();
+        table.integer('TesituraClaveSolId').unsigned().notNullable();
         table.foreign('TesituraClaveSolId').references('Tesitura.id');
-        table.integer('TesituraClaveFaId').notNullable();
+        table.integer('TesituraClaveFaId').unsigned().notNullable();
         table.foreign('TesituraClaveFaId').references('Tesitura.id');
-        table.integer('ModuloId').notNullable();
+        table.integer('ModuloId').unsigned().notNullable();
         table.foreign('ModuloId').references('Modulo.id');
         table.timestamps(true, true);
     });

@@ -6,9 +6,9 @@ exports.up = function (knex) {
     return knex.schema.createTable('Dictado_CelulaRitmica', (table) => {
         table.increments();
         table.integer('Orden').notNullable();
-        table.integer('CelulaRitmicaId').notNullable();
+        table.integer('CelulaRitmicaId').unsigned().notNullable();
         table.foreign('CelulaRitmicaId').references('CelulaRitmica.id');
-        table.integer('DictadoId').notNullable().index();
+        table.integer('DictadoId').unsigned().notNullable().index();
         table.foreign('DictadoId').references('Dictado.id');
         table.timestamps(true, true);
     });

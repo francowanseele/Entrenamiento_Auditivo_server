@@ -10,7 +10,7 @@ exports.up = function (knex) {
         table.string('Email', 250);
         table.string('Password', 300);
         table.boolean('EsDocente').notNullable();
-        table.integer('CursoPersonalId').notNullable();
+        table.integer('CursoPersonalId').unsigned().notNullable();
         table.foreign('CursoPersonalId').references('Curso.id');
         table.timestamps(true, true);
     });

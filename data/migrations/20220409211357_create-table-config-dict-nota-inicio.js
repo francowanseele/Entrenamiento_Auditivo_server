@@ -8,7 +8,7 @@ exports.up = function (knex) {
         (table) => {
             table.increments();
             table.string('Nota', 10);
-            table.integer('ConfiguracionDictadoId').notNullable().index();
+            table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
                 .references('ConfiguracionDictado.id');

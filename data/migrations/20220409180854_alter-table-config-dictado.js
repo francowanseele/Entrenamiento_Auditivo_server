@@ -4,7 +4,7 @@
  */
 exports.up = function (knex) {
     return knex.schema.alterTable('ConfiguracionDictado', (table) => {
-        table.integer('CreadorUsuarioId').notNullable().index();
+        table.integer('CreadorUsuarioId').unsigned().notNullable().index();
         table.foreign('CreadorUsuarioId').references('Usuario.id');
     });
 };

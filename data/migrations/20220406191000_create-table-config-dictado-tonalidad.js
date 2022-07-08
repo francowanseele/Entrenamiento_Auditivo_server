@@ -7,7 +7,7 @@ exports.up = function (knex) {
         'ConfiguracionDictado_Tonalidad',
         (table) => {
             table.increments();
-            table.integer('ConfiguracionDictadoId').notNullable().index();
+            table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
                 .references('ConfiguracionDictado.id');

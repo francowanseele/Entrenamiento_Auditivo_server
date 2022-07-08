@@ -5,9 +5,9 @@
 exports.up = function (knex) {
     return knex.schema.createTable('Usuario_Instituto', (table) => {
         table.increments();
-        table.integer('UsuarioId').notNullable().index();
+        table.integer('UsuarioId').unsigned().notNullable().index();
         table.foreign('UsuarioId').references('Usuario.id');
-        table.integer('InstitutoId').notNullable().index();
+        table.integer('InstitutoId').unsigned().notNullable().index();
         table.foreign('InstitutoId').references('Instituto.id');
         table.timestamps(true, true);
     });

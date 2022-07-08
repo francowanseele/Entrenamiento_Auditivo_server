@@ -7,7 +7,7 @@ exports.up = function (knex) {
         table.increments();
         table.integer('Calificacion');
         table.string('TipoError', 50);
-        table.integer('DictadoId').notNullable().index();
+        table.integer('DictadoId').unsigned().notNullable().index();
         table.foreign('DictadoId').references('Dictado.id');
         table.timestamps(true, true);
     });

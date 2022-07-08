@@ -6,11 +6,11 @@ exports.up = function (knex) {
     return knex.schema.createTable('Curso', (table) => {
         table.increments();
         table.string('Nombre', 100);
-        table.string('Descripcion', 300),
-            table.boolean('Personal').notNullable(),
-            table.integer('InstitutoId').notNullable(),
-            table.foreign('InstitutoId').references('Instituto.id'),
-            table.timestamps(true, true);
+        table.string('Descripcion', 300);
+        table.boolean('Personal').notNullable();
+        table.integer('InstitutoId').unsigned().notNullable();
+        table.foreign('InstitutoId').references('Instituto.id');
+        table.timestamps(true, true);
     });
 };
 
