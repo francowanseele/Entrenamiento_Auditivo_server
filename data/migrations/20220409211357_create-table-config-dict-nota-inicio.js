@@ -11,7 +11,8 @@ exports.up = function (knex) {
             table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
-                .references('ConfiguracionDictado.id');
+                .references('ConfiguracionDictado.id')
+                .withKeyName('fk_condicnotini_condic');
             table.timestamps(true, true);
         }
     );

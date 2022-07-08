@@ -11,7 +11,7 @@ exports.up = function (knex) {
         table.string('Password', 300);
         table.boolean('EsDocente').notNullable();
         table.integer('CursoPersonalId').unsigned().notNullable();
-        table.foreign('CursoPersonalId').references('Curso.id');
+        table.foreign('CursoPersonalId').references('Curso.id').withKeyName('fk_usr_cur_per');
         table.timestamps(true, true);
     });
 };

@@ -6,9 +6,15 @@ exports.up = function (knex) {
     return knex.schema.createTable('Usuario_Instituto', (table) => {
         table.increments();
         table.integer('UsuarioId').unsigned().notNullable().index();
-        table.foreign('UsuarioId').references('Usuario.id');
+        table
+            .foreign('UsuarioId')
+            .references('Usuario.id')
+            .withKeyName('fk_usrins_usr');
         table.integer('InstitutoId').unsigned().notNullable().index();
-        table.foreign('InstitutoId').references('Instituto.id');
+        table
+            .foreign('InstitutoId')
+            .references('Instituto.id')
+            .withKeyName('fk_usrins_ins');
         table.timestamps(true, true);
     });
 };

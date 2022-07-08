@@ -10,9 +10,13 @@ exports.up = function (knex) {
             table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
-                .references('ConfiguracionDictado.id');
+                .references('ConfiguracionDictado.id')
+                .withKeyName('fk_condic_cr_condic');
             table.integer('CelulaRitmicaId').unsigned().notNullable();
-            table.foreign('CelulaRitmicaId').references('CelulaRitmica.id');
+            table
+                .foreign('CelulaRitmicaId')
+                .references('CelulaRitmica.id')
+                .withKeyName('fk_condic_cr_cr');
             table.timestamps(true, true);
         }
     );

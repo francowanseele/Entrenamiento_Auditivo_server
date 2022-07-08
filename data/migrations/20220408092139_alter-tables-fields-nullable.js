@@ -3,9 +3,9 @@
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-    return knex.schema.alterTable('Curso', (table) => {
-        table.setNullable('InstitutoId');
-    });
+    // return knex.schema.alterTable('Curso', (table) => {
+    //     table.setNullable('InstitutoId');
+    // });
 };
 
 /**

@@ -8,11 +8,18 @@ exports.up = function (knex) {
         table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
         table
             .foreign('ConfiguracionDictadoId')
-            .references('ConfiguracionDictado.id');
+            .references('ConfiguracionDictado.id')
+            .withKeyName('fk_condiclig_condic');
         table.integer('FirstCelulaRitmicaId').unsigned().notNullable().index();
-        table.foreign('FirstCelulaRitmicaId').references('CelulaRitmica.id');
+        table
+            .foreign('FirstCelulaRitmicaId')
+            .references('CelulaRitmica.id')
+            .withKeyName('fk_condiclig_fircr');
         table.integer('SecondCelulaRitmicaId').unsigned().notNullable().index();
-        table.foreign('SecondCelulaRitmicaId').references('CelulaRitmica.id');
+        table
+            .foreign('SecondCelulaRitmicaId')
+            .references('CelulaRitmica.id')
+            .withKeyName('fk_condiclig_seccr');
         table.integer('Prioridad');
         table.boolean('Must').notNullable();
         table.timestamps(true, true);

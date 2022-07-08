@@ -7,7 +7,10 @@ exports.up = function (knex) {
         table.increments();
         table.string('Nota', 10);
         table.integer('DictadoId').unsigned().notNullable().index();
-        table.foreign('DictadoId').references('Dictado.id');
+        table
+            .foreign('DictadoId')
+            .references('Dictado.id')
+            .withKeyName('fk_dicnot_dic');
         table.timestamps(true, true);
     });
 };

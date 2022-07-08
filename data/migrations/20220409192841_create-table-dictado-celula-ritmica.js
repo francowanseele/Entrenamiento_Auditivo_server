@@ -7,9 +7,15 @@ exports.up = function (knex) {
         table.increments();
         table.integer('Orden').notNullable();
         table.integer('CelulaRitmicaId').unsigned().notNullable();
-        table.foreign('CelulaRitmicaId').references('CelulaRitmica.id');
+        table
+            .foreign('CelulaRitmicaId')
+            .references('CelulaRitmica.id')
+            .withKeyName('fk_diccr_cr');
         table.integer('DictadoId').unsigned().notNullable().index();
-        table.foreign('DictadoId').references('Dictado.id');
+        table
+            .foreign('DictadoId')
+            .references('Dictado.id')
+            .withKeyName('fk_diccr_dic');
         table.timestamps(true, true);
     });
 };

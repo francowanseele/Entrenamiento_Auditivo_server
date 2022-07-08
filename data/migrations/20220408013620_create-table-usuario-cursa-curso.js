@@ -6,9 +6,9 @@ exports.up = function (knex) {
     return knex.schema.createTable('UsuarioCursa_Curso', (table) => {
         table.increments();
         table.integer('CursoId').unsigned().notNullable().index();
-        table.foreign('CursoId').references('Curso.id');
+        table.foreign('CursoId').references('Curso.id').withKeyName('fk_usrcursa_cur');
         table.integer('UsuarioId').unsigned().notNullable().index();
-        table.foreign('UsuarioId').references('Usuario.id');
+        table.foreign('UsuarioId').references('Usuario.id').withKeyName('fk_usrcursa_usr');
         table.dateTime('FechaInscripcion').notNullable();
         table.timestamps(true, true);
     });
