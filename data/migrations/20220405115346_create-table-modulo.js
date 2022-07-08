@@ -7,7 +7,7 @@ exports.up = function (knex) {
         table.increments();
         table.string('Nombre', 100);
         table.string('Descripcion', 300),
-            table.integer('CursoId').notNullable(),
+            table.integer('CursoId').unsigned().notNullable(),
             table.foreign('CursoId').references('Curso.id'),
             table.timestamps(true, true);
     });
