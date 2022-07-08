@@ -20,7 +20,7 @@ module.exports = {
     staging: {
         client: 'mysql',
         connection: {
-            server: sql.server,
+            host: sql.server,
             port: sql.port,
             user: sql.user,
             password: sql.password,
