@@ -488,7 +488,7 @@ async function getConfigDictation(req, res) {
             )
             .join(
                 'GiroMelodico',
-                'GiroMelodico.Id',
+                'GiroMelodico.id',
                 '=',
                 'ConfiguracionDictado_GiroMelodico.GiroMelodicoId'
             )
@@ -549,7 +549,7 @@ async function getConfigDictation(req, res) {
             )
             .join(
                 'CelulaRitmica',
-                'CelulaRitmica.Id',
+                'CelulaRitmica.id',
                 '=',
                 'ConfiguracionDictado_CelulaRitmica.CelulaRitmicaId'
             )
@@ -597,13 +597,13 @@ async function getConfigDictation(req, res) {
             )
             .join(
                 'CelulaRitmica as FirstCR',
-                'FirstCR.Id',
+                'FirstCR.id',
                 '=',
                 'ConfiguracionDictado_Ligadura.FirstCelulaRitmicaId'
             )
             .join(
                 'CelulaRitmica as SecondCR',
-                'SecondCR.Id',
+                'SecondCR.id',
                 '=',
                 'ConfiguracionDictado_Ligadura.SecondCelulaRitmicaId'
             )
