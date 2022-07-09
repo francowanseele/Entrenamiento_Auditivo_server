@@ -18,7 +18,7 @@ module.exports = {
     },
 
     staging: {
-        client: 'mysql',
+        client: 'pg',
         connection: {
             host: sql.server,
             port: sql.port,
