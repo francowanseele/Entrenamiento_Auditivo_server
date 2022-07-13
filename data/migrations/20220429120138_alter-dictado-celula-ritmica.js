@@ -4,7 +4,7 @@
  */
 exports.up = function (knex) {
     return knex.schema.alterTable('Dictado_CelulaRitmica', (table) => {
-        table.dropForeign('CelulaRitmicaId');
+        table.dropForeign('CelulaRitmicaId', 'fk_diccr_cr');
     });
 };
 

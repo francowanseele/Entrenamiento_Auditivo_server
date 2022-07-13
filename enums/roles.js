@@ -3,4 +3,6 @@ const roles = {
     admin: 1,
 };
 
-module.export = roles;
+module.exports = { 
+    roles
+};

@@ -7,12 +7,16 @@ exports.up = function (knex) {
         'ConfiguracionDictado_CelulaRitmica',
         (table) => {
             table.increments();
-            table.integer('ConfiguracionDictadoId').notNullable().index();
+            table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
-                .references('ConfiguracionDictado.id');
-            table.integer('CelulaRitmicaId').notNullable();
-            table.foreign('CelulaRitmicaId').references('CelulaRitmica.id');
+                .references('ConfiguracionDictado.id')
+                .withKeyName('fk_condic_cr_condic');
+            table.integer('CelulaRitmicaId').unsigned().notNullable();
+            table
+                .foreign('CelulaRitmicaId')
+                .references('CelulaRitmica.id')
+                .withKeyName('fk_condic_cr_cr');
             table.timestamps(true, true);
         }
     );

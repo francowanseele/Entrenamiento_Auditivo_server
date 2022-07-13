@@ -7,10 +7,11 @@ exports.up = function (knex) {
         'ConfiguracionDictado_Tonalidad',
         (table) => {
             table.increments();
-            table.integer('ConfiguracionDictadoId').notNullable().index();
+            table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
-                .references('ConfiguracionDictado.id');
+                .references('ConfiguracionDictado.id')
+                .withKeyName('fk_condic_t_condic');
             table.string('Tonalidad', 10);
             table.integer('Prioridad').notNullable();
             table.timestamps(true, true);

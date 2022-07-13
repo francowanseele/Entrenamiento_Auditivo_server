@@ -4,8 +4,6 @@ const formatData = require('../services/formatData');
 const fs = require('fs');
 const dato = require('./../services/DictadosRitmicos/datosRitmicos');
 
-
-
 async function addCelulaRitmica(req, res) {
     try {
         const { figuras, simple, valor } = req.body;
@@ -79,7 +77,7 @@ async function getCelulaRitmica(req, res) {
                 figuras: figura,
                 simple: crs[0].Simple,
                 valor: crs[0].Valor,
-                imagen:crs[0].Imagen
+                imagen: crs[0].Imagen,
             });
         });
 
@@ -96,28 +94,30 @@ async function getCelulaRitmica(req, res) {
     }
 }
 
-
-async function CreateCelulaRitmica(req,res) {
+async function CreateCelulaRitmica(req, res) {
     try {
-        const { profileImage,valor,simple } = req.body;
+        const { profileImage, valor, simple } = req.body;
 
-        let valorTodb = 0; 
-        valor.forEach((val)=>{
-            valorTodb = valorTodb + dato.VALOR_DE_NOTA[val]
-        })
-        const celRitAdded = await db.knex('CelulaRitmica').insert({
+        let valorTodb = 0;
+        valor.forEach((val) => {
+            valorTodb = valorTodb + dato.VALOR_DE_NOTA[val];
+        });
+        const celRitAdded = await db
+            .knex('CelulaRitmica')
+            .insert({
                 Simple: simple,
-                Valor:valorTodb,
-                Imagen: profileImage
-            }).returning(['id', 'Simple', 'Valor']);
-
-        valor.forEach(async (val,index)=>{
-            await db.knex('CelulaRitmica_figura').insert({
-                CelulaRitmicaId:celRitAdded[0].id,
-                Figura:val,
-                Orden:index,
+                Valor: valorTodb,
+                Imagen: profileImage,
             })
-        })  
+            .returning(['id', 'Simple', 'Valor']);
+
+        valor.forEach(async (val, index) => {
+            await db.knex('CelulaRitmica_Figura').insert({
+                CelulaRitmicaId: celRitAdded[0].id,
+                Figura: val,
+                Orden: index,
+            });
+        });
 
         res.status(200).send({
             ok: true,
@@ -125,7 +125,7 @@ async function CreateCelulaRitmica(req,res) {
             message: 'Célula rítmica creada correctamente',
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -133,27 +133,22 @@ async function CreateCelulaRitmica(req,res) {
     }
 }
 
-async function DeleteCelulaRitmica(req,res) {
+async function DeleteCelulaRitmica(req, res) {
     try {
         const { idCelulaRitmica } = req.body;
         await db
-        .knex('CelulaRitmica_Figura')
-        .del()
-        .where({ 'CelulaRitmicaId': idCelulaRitmica })
-        
-        await db
-        .knex('CelulaRitmica')
-        .del()
-        .where({ 'id': idCelulaRitmica })
-       
-       
+            .knex('CelulaRitmica_Figura')
+            .del()
+            .where({ CelulaRitmicaId: idCelulaRitmica });
+
+        await db.knex('CelulaRitmica').del().where({ id: idCelulaRitmica });
 
         res.status(200).send({
             ok: true,
             message: 'Célula rítmica eliminada correctamente',
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -165,5 +160,5 @@ module.exports = {
     addCelulaRitmica,
     getCelulaRitmica,
     CreateCelulaRitmica,
-    DeleteCelulaRitmica
+    DeleteCelulaRitmica,
 };

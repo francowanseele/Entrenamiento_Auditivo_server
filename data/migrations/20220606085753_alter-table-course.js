@@ -4,8 +4,11 @@
  */
 exports.up = function (knex) {
     return knex.schema.alterTable('Curso', (table) => {
-        table.integer('CreadoPor');
-        table.foreign('CreadoPor').references('Usuario.id');
+        table.integer('CreadoPor').unsigned();
+        table
+            .foreign('CreadoPor')
+            .references('Usuario.id')
+            .withKeyName('fk_curso_creado');
     });
 };
 

@@ -4,4 +4,6 @@ const inscriptionState = {
     denied: 2,
 };
 
-module.export = inscriptionState;
+module.exports = {
+    inscriptionState
+};

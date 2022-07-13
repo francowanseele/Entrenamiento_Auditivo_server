@@ -7,8 +7,11 @@ exports.up = function (knex) {
         table.increments();
         table.integer('Calificacion');
         table.string('TipoError', 50);
-        table.integer('DictadoId').notNullable().index();
-        table.foreign('DictadoId').references('Dictado.id');
+        table.integer('DictadoId').unsigned().notNullable().index();
+        table
+            .foreign('DictadoId')
+            .references('Dictado.id')
+            .withKeyName('fk_diccalif_dic');
         table.timestamps(true, true);
     });
 };

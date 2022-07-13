@@ -21,7 +21,7 @@ async function addCourse(req, res) {
             })
             .returning(['id', 'Nombre', 'Descripcion']);
 
-        res.status(200).send({
+            res.status(200).send({
             ok: true,
             course: courses[0],
             message: 'Curso creado correctamente',
@@ -44,9 +44,9 @@ async function addCourseToDictaTeacher(req, res) {
                 CursoId: idCourse,
                 UsuarioId: idUser,
                 Responsable: false,
-                Estado: inscriptionState.pending
+                // Estado: inscriptionState.pending
             })
-            .returning(['id', 'UsuarioId', 'CursoId', 'Responsable', 'Estado']);
+            .returning(['id', 'UsuarioId', 'CursoId', 'Responsable']);
 
         res.status(200).send({
             ok: true,
@@ -126,7 +126,7 @@ async function getAllCourse(req, res) {
 
         const coursesWithoutInstitute = await db
             .knex('Curso')
-            .where({ 'Curso.InstitutoId': NULL })
+            .whereNull('Curso.InstitutoId')
             .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
 
         // const courses = await db.knex
@@ -506,7 +506,7 @@ async function getConfigDictation(req, res) {
             )
             .join(
                 'GiroMelodico',
-                'GiroMelodico.Id',
+                'GiroMelodico.id',
                 '=',
                 'ConfiguracionDictado_GiroMelodico.GiroMelodicoId'
             )
@@ -567,7 +567,7 @@ async function getConfigDictation(req, res) {
             )
             .join(
                 'CelulaRitmica',
-                'CelulaRitmica.Id',
+                'CelulaRitmica.id',
                 '=',
                 'ConfiguracionDictado_CelulaRitmica.CelulaRitmicaId'
             )
@@ -615,13 +615,13 @@ async function getConfigDictation(req, res) {
             )
             .join(
                 'CelulaRitmica as FirstCR',
-                'FirstCR.Id',
+                'FirstCR.id',
                 '=',
                 'ConfiguracionDictado_Ligadura.FirstCelulaRitmicaId'
             )
             .join(
                 'CelulaRitmica as SecondCR',
-                'SecondCR.Id',
+                'SecondCR.id',
                 '=',
                 'ConfiguracionDictado_Ligadura.SecondCelulaRitmicaId'
             )

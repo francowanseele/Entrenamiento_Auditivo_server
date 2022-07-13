@@ -5,7 +5,7 @@
 exports.up = function (knex) {
     return knex.schema.createTable('GiroMelodico_Nota', (table) => {
         table.increments();
-        table.integer('GiroMelodicoId').notNullable().index();
+        table.integer('GiroMelodicoId').unsigned().notNullable().index();
         table.foreign('GiroMelodicoId').references('GiroMelodico.id');
         table.string('Nota', 10);
         table.integer('Orden').notNullable();

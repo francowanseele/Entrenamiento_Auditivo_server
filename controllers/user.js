@@ -59,11 +59,11 @@ async function addUser(req, res) {
                     'Rol',
                 ]);
 
-            await db.knex('UsuarioCursa_Curso').insert({
-                CursoId: idCoursePersonal,
-                UsuarioId: usrs[0].id,
-                FechaInscripcion: Date.now(),
-            });
+            // await db.knex('UsuarioCursa_Curso').insert({
+            //     CursoId: idCoursePersonal,
+            //     UsuarioId: usrs[0].id,
+            //     FechaInscripcion: new Date(),
+            // });
 
             res.status(200).send({
                 ok: true,
@@ -254,7 +254,7 @@ async function generateDictation(req, res) {
         var error_generateDictationMelodic = false;
 
         while (i < nroDic && !error_generateDictationMelodic) {
-            const dateNow = Date.now();
+            const dateNow = new Date();
 
             var generateOk = false;
             var cantRecMax = 50;

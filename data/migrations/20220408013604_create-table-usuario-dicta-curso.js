@@ -5,10 +5,13 @@
 exports.up = function (knex) {
     return knex.schema.createTable('UsuarioDicta_Curso', (table) => {
         table.increments();
-        table.integer('CursoId').notNullable().index();
-        table.foreign('CursoId').references('Curso.id');
-        table.integer('UsuarioId').notNullable().index();
-        table.foreign('UsuarioId').references('Usuario.id');
+        table.integer('CursoId').unsigned().notNullable().index();
+        table.foreign('CursoId').references('Curso.id').withKeyName('fk_usrdict_cur');
+        table.integer('UsuarioId').unsigned().notNullable().index();
+        table
+            .foreign('UsuarioId')
+            .references('Usuario.id')
+            .withKeyName('fk_usrdict_usr');
         table.boolean('Responsable').notNullable();
         table.timestamps(true, true);
     });

@@ -7,11 +7,11 @@ exports.up = function (knex) {
         'ConfiguracionDictado_GiroMelodico',
         (table) => {
             table.increments();
-            table.integer('ConfiguracionDictadoId').notNullable().index();
+            table.integer('ConfiguracionDictadoId').unsigned().notNullable().index();
             table
                 .foreign('ConfiguracionDictadoId')
                 .references('ConfiguracionDictado.id');
-            table.integer('GiroMelodicoId').notNullable().index();
+            table.integer('GiroMelodicoId').unsigned().notNullable().index();
             table.foreign('GiroMelodicoId').references('GiroMelodico.id');
             table.timestamps(true, true);
         }
