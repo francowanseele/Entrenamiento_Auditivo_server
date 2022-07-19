@@ -19,6 +19,7 @@ api.post(
 api.post('/get_students_course', CourseController.getStudentsByIdCourse);
 api.post('/get_teacher_courses', CourseController.getTeacherCourses);
 api.get('/get-all-courses', CourseController.getAllCourse);
+api.get('/get-all-courses-regardless-institute', CourseController.getAllCourseRegardlessInstituteUser);
 api.post('/get-cursa-student', CourseController.getCoursesCursaStudent);
 api.put('/add-student-course', CourseController.addStudentToCourse);
 api.put('/add-teacher-course', CourseController.addCourseToDictaTeacher);

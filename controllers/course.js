@@ -111,6 +111,28 @@ async function getCoursesCursaStudent(req, res) {
     }
 }
 
+async function getAllCourseRegardlessInstituteUser(_, res) {
+    try {
+        const courses = await db
+            .knex('Curso')
+            .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
+
+        res.status(200).send({
+            ok: true,
+            cursos: courses,
+            message: 'Ok',
+        });
+    } catch (error) {
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+// Get courses without institute 
+// AND
+// Get courses with institute which user is register
 async function getAllCourse(req, res) {
     try {
         const { idUser } = req.query;
@@ -1573,6 +1595,7 @@ module.exports = {
     addCourse,
     addCourseToDictaTeacher,
     getAllCourse,
+    getAllCourseRegardlessInstituteUser,
     addModule,
     getModules,
     getConfigsDictations,
