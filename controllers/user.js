@@ -28,9 +28,9 @@ async function addUser(req, res) {
         const existUser = await db
             .knex('Usuario')
             .where({ Email: email.toLowerCase(), EsDocente: isTeacher })
-            .select('id');
+            .select('id', 'Eliminado');
         
-        if (existUser.length > 0) {
+        if (existUser.length > 0 && !existUser[0].Eliminado) {
             res.status(403).send({
                 ok: false,
                 message: 'El usuario ya existe.',
@@ -48,6 +48,7 @@ async function addUser(req, res) {
                     EsDocente: isTeacher,
                     CursoPersonalId: idCoursePersonal,
                     Rol: roles.user,
+                    Eliminado: false,
                 })
                 .returning([
                     'id',
@@ -87,7 +88,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
 
         const users = await db
             .knex('Usuario')
-            .where({ Email: email.toLowerCase(), EsDocente: isTeacher })
+            .where({ Email: email.toLowerCase(), EsDocente: isTeacher, Eliminado: false })
             .select(
                 'id',
                 'Nombre',
@@ -587,10 +588,36 @@ const agregarNuevoResultado = async (req, res) => {
     }
 };
 
+const softDeleteUser = async (req, res) => {
+    try {
+        const { idUser } = req.params;
+
+        const user = await db
+            .knex('Usuario')
+            .where({ 'Usuario.id': idUser })
+            .update({ 'Eliminado': true })
+            .returning(['id', 'Nombre']);
+
+        if (user && user.length > 0) {
+            res.status(200).send({
+                ok: true,
+                message: 'Usuario eliminado correctamente.',
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     agregarNuevoResultado,
     addUser,
     generateDictation,
     getDictation,
     obtenerUsuarioRegistrado,
+    softDeleteUser
 };
