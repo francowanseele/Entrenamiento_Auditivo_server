@@ -1380,8 +1380,8 @@ async function editCourse(req, res) {
                 .knex('Curso')
                 .where({ 'Curso.id': id })
                 .update({
-                    'Curso.Nombre': name,
-                    'Curso.Descripcion': description,
+                    'Nombre': name,
+                    'Descripcion': description,
                 })
                 .returning(['id', 'Nombre', 'Descripcion']);
 
@@ -1421,8 +1421,8 @@ async function editModule(req, res) {
                 .knex('Modulo')
                 .where({ 'Modulo.id': idModule })
                 .update({
-                    'Modulo.Nombre': name,
-                    'Modulo.Descripcion': description,
+                    'Nombre': name,
+                    'Descripcion': description,
                 })
                 .returning(['id', 'Nombre', 'Descripcion']);
 
@@ -1443,6 +1443,7 @@ async function editModule(req, res) {
             });
         }
     } catch (error) {
+        console.log(error);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1462,8 +1463,8 @@ async function editConfigDictation(req, res) {
                 .knex('ConfiguracionDictado')
                 .where({ 'ConfiguracionDictado.id': idConfigDictation })
                 .update({
-                    'ConfiguracionDictado.Nombre': name,
-                    'ConfiguracionDictado.Descripcion': description,
+                    'Nombre': name,
+                    'Descripcion': description,
                 })
                 .returning(['id', 'Nombre', 'Descripcion']);
 
