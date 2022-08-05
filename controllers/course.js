@@ -5,6 +5,7 @@ const Usuario = require('../models/usuario');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const { inscriptionState } = require('../enums/inscriptionState');
+const { logError } = require('../services/errorService');
 
 async function addCourse(req, res) {
     try {
@@ -27,6 +28,7 @@ async function addCourse(req, res) {
             message: 'Curso creado correctamente',
         });
     } catch (error) {
+        logError('addCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -54,6 +56,7 @@ async function addCourseToDictaTeacher(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('addCourseToDictaTeacher', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -81,6 +84,7 @@ async function addStudentToCourse(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('addStudentToCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -104,6 +108,7 @@ async function getCoursesCursaStudent(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getCoursesCursaStudent', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -123,6 +128,7 @@ async function getAllCourseRegardlessInstituteUser(_, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getAllCourseRegardlessInstituteUser', error, null);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -161,6 +167,7 @@ async function getAllCourse(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getAllCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -185,6 +192,7 @@ async function getPersonalCourse(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getPersonalCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -229,6 +237,7 @@ async function addModule(req, res) {
             });
         }
     } catch (error) {
+        logError('addModule', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -263,6 +272,7 @@ async function getModules(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getModules', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -285,6 +295,7 @@ async function getConfigsDictations(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getConfigsDictations', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -701,6 +712,7 @@ async function getConfigDictation(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getConfigDictation', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1103,6 +1115,7 @@ async function addConfigDictation(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('addConfigDictation', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1300,10 +1313,11 @@ async function  getCalificacionPorCursoYNotasPromedios(req, res){
         //     }
         // });
     } catch (error) {
-    res.status(501).send({
-        ok: false,
-        message: error.message,
-    });
+        logError('getCalificacionPorCursoYNotasPromedios', error, null);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
     }
 
 }
@@ -1336,10 +1350,11 @@ async function getStudentsByIdCourse(req, res) {
         //         message: 'Ok',
         //     });
         // });
-    } catch (err) {
+    } catch (error) {
+        logError('getStudentsByIdCourse', error, req);
         res.status(501).send({
             ok: false,
-            message: err.message,
+            message: error.message,
         });
     }
 }
@@ -1360,10 +1375,11 @@ async function getTeacherCourses(req, res) {
             cursos: courses,
             message: 'Ok',
         });
-    } catch (err) {
+    } catch (error) {
+        logError('getTeacherCourses', error, req);
         res.status(501).send({
             ok: false,
-            message: err.message,
+            message: error.message,
         });
     }
 }
@@ -1402,6 +1418,7 @@ async function editCourse(req, res) {
             });
         }
     } catch (error) {
+        logError('editCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1443,7 +1460,7 @@ async function editModule(req, res) {
             });
         }
     } catch (error) {
-        console.log(error);
+        logError('editModule', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1485,6 +1502,7 @@ async function editConfigDictation(req, res) {
             });
         }
     } catch (error) {
+        logError('editConfigDictation', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1502,6 +1520,7 @@ async function userHasPermissionToEditCourse(req, res) {
             message: '',
         });
     } catch (error) {
+        logError('userHasPermissionToEditCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1563,6 +1582,7 @@ async function unregisterStudenFromCourse(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('unregisterStudenFromCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1585,6 +1605,7 @@ async function unregisterTeacherFromCourse(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('unregisterTeacherFromCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

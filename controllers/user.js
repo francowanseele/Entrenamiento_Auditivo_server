@@ -8,6 +8,7 @@ const saltRounds = 10;
 const db = require('../data/knex');
 const { GroupByIdAndShortByOrder } = require('../services/formatData');
 const { roles } = require('../enums/roles');
+const { logError } = require('../services/errorService');
 
 const find = (arr, id) => {
     var exist = false;
@@ -73,6 +74,7 @@ async function addUser(req, res) {
             });
         }
     } catch (error) {
+        logError('addUser', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -130,6 +132,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
             });
         }
     } catch (err) {
+        logError('obtenerUsuarioRegistrado', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -437,6 +440,7 @@ async function generateDictation(req, res) {
             }
         }
     } catch (error) {
+        logError('generateDictation', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -535,6 +539,7 @@ async function getDictation(req, res) {
             dictations: dictations,
         });
     } catch (error) {
+        logError('getDictation', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -581,6 +586,7 @@ const agregarNuevoResultado = async (req, res) => {
             }
         });
     } catch (error) {
+        logError('agregarNuevoResultado', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -605,7 +611,7 @@ const softDeleteUser = async (req, res) => {
             });
         }
     } catch (error) {
-        console.log(error);
+        logError('softDeleteUser', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

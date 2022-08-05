@@ -1,6 +1,7 @@
 const Instituto = require('../models/instituto');
 const Curso = require('../models/curso');
 const db = require('../data/knex');
+const { logError } = require('../services/errorService');
 
 async function addInstitute(req, res) {
     try {
@@ -16,6 +17,7 @@ async function addInstitute(req, res) {
             message: 'Instituto creado correctamente',
         });
     } catch (error) {
+        logError('addInstitute', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -58,6 +60,7 @@ function addCourse(req, res) {
         //     }
         // );
     } catch (error) {
+        logError('addCourse', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -86,6 +89,7 @@ async function getCourses(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getCourses', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -103,6 +107,7 @@ async function getInstitute(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getInstitute', error, null);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -135,6 +140,7 @@ async function getInstituteByUser(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getInstituteByUser', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

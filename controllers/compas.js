@@ -1,5 +1,6 @@
 const Compas = require('../models/compas');
 const db = require('../data/knex');
+const { logError } = require('../services/errorService');
 
 function addCompas(req, res) {
     try {
@@ -36,6 +37,7 @@ function addCompas(req, res) {
         //     }
         // });
     } catch (error) {
+        logError('addCompas', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -69,6 +71,7 @@ async function getCompas(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getCompas', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

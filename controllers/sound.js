@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const cte = require('../services/constants');
 const comands = require('../services/comands');
 const funcGralDictado = require('../services/funcsGralDictados');
+const { logError } = require('../services/errorService');
 
 function tramsitDictation(req, res) {
     try {
@@ -27,6 +28,7 @@ function tramsitDictation(req, res) {
             }
         });
     } catch (error) {
+        logError('tramsitDictation', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -59,6 +61,7 @@ function tramsitNoteReference(req, res) {
             }
         });
     } catch (error) {
+        logError('tramsitNoteReference', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -277,7 +280,7 @@ function generateDictationFile(req, res) {
                 'Generación correcta de los dictados en archivos .mid y .mp3.',
         });
     } catch (error) {
-        console.log(error.message);
+        logError('generateDictationFile', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

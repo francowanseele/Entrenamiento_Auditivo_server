@@ -1,5 +1,6 @@
 // const GiroMelodico = require('../models/giro_melodico');
 const db = require('../data/knex');
+const { logError } = require('../services/errorService');
 const formatData = require('../services/formatData');
 
 async function addGiroMelodico(req, res) {
@@ -36,6 +37,7 @@ async function addGiroMelodico(req, res) {
             message: 'Giro Melódico creada correctamente',
         });
     } catch (error) {
+        logError('addGiroMelodico', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -72,6 +74,7 @@ async function getGiroMelodico(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getGiroMelodico', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

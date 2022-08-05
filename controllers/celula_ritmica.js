@@ -3,6 +3,7 @@ const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const fs = require('fs');
 const dato = require('./../services/DictadosRitmicos/datosRitmicos');
+const { logError } = require('../services/errorService');
 
 async function addCelulaRitmica(req, res) {
     try {
@@ -31,6 +32,7 @@ async function addCelulaRitmica(req, res) {
             message: 'Célula rítmica creada correctamente',
         });
     } catch (error) {
+        logError('addCelulaRitmica', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -87,6 +89,7 @@ async function getCelulaRitmica(req, res) {
             message: 'Ok',
         });
     } catch (error) {
+        logError('getCelulaRitmica', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -125,7 +128,7 @@ async function CreateCelulaRitmica(req, res) {
             message: 'Célula rítmica creada correctamente',
         });
     } catch (error) {
-        console.log(error);
+        logError('CreateCelulaRitmica', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
