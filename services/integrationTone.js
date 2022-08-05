@@ -124,14 +124,14 @@ const dictadoFigurasSec = translateDictadoFigToSec(figurasDictado, negraSec);
 // --------------------------------------
 
 // ------------- Prints ----------------
-console.log('COMPAS: ' + numerador.toString() + '/' + denominador.toString());
-console.log('NEGRA sec');
-console.log(negraSec);
-console.log('PULSO sec | COMPAS sec');
-console.log(pulsoSec);
-console.log(compasSec);
-console.log('DICTADO FIGURAS SEC');
-console.log(dictadoFigurasSec);
+// console.log('COMPAS: ' + numerador.toString() + '/' + denominador.toString());
+// console.log('NEGRA sec');
+// console.log(negraSec);
+// console.log('PULSO sec | COMPAS sec');
+// console.log(pulsoSec);
+// console.log(compasSec);
+// console.log('DICTADO FIGURAS SEC');
+// console.log(dictadoFigurasSec);
 
 // --------------------------------------
 // --------------------------------------

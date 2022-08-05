@@ -151,7 +151,7 @@ async function DeleteCelulaRitmica(req, res) {
             message: 'Célula rítmica eliminada correctamente',
         });
     } catch (error) {
-        console.log(error);
+        logError('DeleteCelulaRitmica', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,

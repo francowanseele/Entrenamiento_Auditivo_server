@@ -232,15 +232,15 @@ async function generateDictation(req, res) {
         const { id } = req.params;
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
 
-        console.log('TARJETAS');
-        console.log(tarjetas);
-        console.log('LIGADURAS:');
-        console.log(ligaduraRegla);
+        // console.log('TARJETAS');
+        // console.log(tarjetas);
+        // console.log('LIGADURAS:');
+        // console.log(ligaduraRegla);
 
-        console.log('Notas Regla');
-        console.log(notasRegla);
-        console.log('Nivel prioridad regla');
-        console.log(nivelPrioridadRegla);
+        // console.log('Notas Regla');
+        // console.log(notasRegla);
+        // console.log('Nivel prioridad regla');
+        // console.log(nivelPrioridadRegla);
 
         // Translate to my notas cod (ex: Sol4)
         const notasRegla_trad = translateNotasRegla(notasRegla);

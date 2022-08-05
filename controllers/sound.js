@@ -56,7 +56,7 @@ function tramsitNoteReference(req, res) {
                     message: 'El archivo no existe',
                 });
             } else {
-                console.log('EXISTE MIDI FILE');
+                // console.log('EXISTE MIDI FILE');
                 res.sendFile(path.resolve(filePath));
             }
         });
@@ -169,14 +169,14 @@ function generateDictationFile(req, res) {
             getFigurasALL(figurasDictado),
             negraSec
         );
-        console.log('--------------------------------------');
-        console.log('Figuras del dictado');
-        console.log(figurasDictado);
-        console.log('get all figures');
-        console.log(getFigurasALL(figurasDictado));
-        console.log('-------- NOTAS ------');
-        console.log(notasDictado);
-        console.log('--------------------------------------');
+        // console.log('--------------------------------------');
+        // console.log('Figuras del dictado');
+        // console.log(figurasDictado);
+        // console.log('get all figures');
+        // console.log(getFigurasALL(figurasDictado));
+        // console.log('-------- NOTAS ------');
+        // console.log(notasDictado);
+        // console.log('--------------------------------------');
         // ----------------------------------------------
         //#endregion
 
