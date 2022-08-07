@@ -1,5 +1,5 @@
 const app = require('./app');
-const { CONECTION_STRING, host, port, sql } = require('./config');
+const { host, port } = require('./config');
 
 app.listen(port, () => {
     console.log('-----------------------');

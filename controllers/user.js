@@ -9,6 +9,7 @@ const db = require('../data/knex');
 const { GroupByIdAndShortByOrder } = require('../services/formatData');
 const { roles } = require('../enums/roles');
 const { logError } = require('../services/errorService');
+const jwt = require('../services/jwt');
 
 const find = (arr, id) => {
     var exist = false;
@@ -106,6 +107,15 @@ const obtenerUsuarioRegistrado = async (req, res) => {
             const usr = users[0];
             bcrypt.compare(password, usr.Password, function (err, resultPass) {
                 if (resultPass) {
+                    const userForToken = {
+                        id: usr.id,
+                        name: usr.Nombre,
+                        lastname: usr.Apellido,
+                        email: usr.Email,
+                        role: usr.Rol,
+                        isTeacher: usr.EsDocente,
+                        personalCourseId: usr.CursoPersonalId,
+                    }
                     res.status(200).send({
                         ok: true,
                         personal_course: usr.CursoPersonalId,
@@ -116,6 +126,8 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                         password: usr.Password,
                         esDocente: usr.EsDocente,
                         Rol: usr.Rol,
+                        accessToken: jwt.createAccessToken(userForToken),
+                        refreshToken: jwt.createRefreshToken(userForToken),
                         message: 'Usuario encontrado',
                     });
                 } else {

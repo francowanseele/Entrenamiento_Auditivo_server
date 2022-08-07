@@ -97,7 +97,7 @@ async function getCourses(req, res) {
     }
 }
 
-async function getInstitute(req, res) {
+async function getInstitute(_, res) {
     try {
         const institutos = await db.knex('Instituto').select('id', 'Nombre');
 

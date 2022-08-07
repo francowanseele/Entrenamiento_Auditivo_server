@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 
 const app = express();
 
@@ -12,6 +11,7 @@ const compasRoutes = require('./routers/compas');
 const userRoutes = require('./routers/user');
 const celulaRitmicaRoutes = require('./routers/celula_ritmica');
 const instituteRoutes = require('./routers/institute');
+const authRoutes = require('./routers/auth');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -41,6 +41,7 @@ app.use(`/api`, compasRoutes);
 app.use(`/api`, userRoutes);
 app.use(`/api`, celulaRitmicaRoutes);
 app.use(`/api`, instituteRoutes);
+app.use(`/api`, authRoutes);
 
 // Export
 module.exports = app;
