@@ -6,7 +6,7 @@ const gral = require('../services/funcsGralDictados');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const db = require('../data/knex');
-const { GroupByIdAndShortByOrder } = require('../services/formatData');
+const { GroupByIdAndShortByOrder, GetFigurasSeparadasPorLigaduras } = require('../services/formatData');
 const { roles } = require('../enums/roles');
 const { logError } = require('../services/errorService');
 
@@ -517,9 +517,11 @@ async function getDictation(req, res) {
                 figurasPulso.push(figs.Figuras);
             });
             figuras.push(figurasPulso);
+
             dictations.push({
                 id: d[0].id,
                 figuras: figuras,
+                figurasSeparadasPorLigaudra: GetFigurasSeparadasPorLigaduras(figuras),
                 configuracion_dictado: idConfigDictation,
                 fecha_generado: d[0].created_at,
                 notas: d[0].Notas.split('|'),
