@@ -10,6 +10,7 @@ exports.ensureAuth = (req, res, next) => {
         });
     }
 
+    // Remove url from api in token
     const token = req.headers.authorization.replace(/['"]+/g, '');
 
     try {

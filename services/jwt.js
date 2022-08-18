@@ -13,6 +13,7 @@ exports.createAccessToken = function (user) {
         personalCourseId: user.personalCourseId,
         createToken: moment().unix(),
         exp: moment().add(3, 'hours').unix(),
+        // exp: moment().add(15, 'seconds').unix(),
     };
 
     return jwt.encode(payload, jwtKey);

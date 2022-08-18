@@ -6,7 +6,7 @@ const gral = require('../services/funcsGralDictados');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const db = require('../data/knex');
-const { GroupByIdAndShortByOrder } = require('../services/formatData');
+const { GroupByIdAndShortByOrder, GetFigurasSeparadasPorLigaduras } = require('../services/formatData');
 const { roles } = require('../enums/roles');
 const { logError } = require('../services/errorService');
 const jwt = require('../services/jwt');
@@ -62,15 +62,22 @@ async function addUser(req, res) {
                     'Rol',
                 ]);
 
-            // await db.knex('UsuarioCursa_Curso').insert({
-            //     CursoId: idCoursePersonal,
-            //     UsuarioId: usrs[0].id,
-            //     FechaInscripcion: new Date(),
-            // });
+            const usr = usrs[0];
+            const userForToken = {
+                id: usr.id,
+                name: usr.Nombre,
+                lastname: usr.Apellido,
+                email: usr.Email,
+                role: usr.Rol,
+                isTeacher: usr.EsDocente,
+                personalCourseId: usr.CursoPersonalId,
+            }
 
             res.status(200).send({
                 ok: true,
-                user: usrs[0],
+                user: usr,
+                accessToken: jwt.createAccessToken(userForToken),
+                refreshToken: jwt.createRefreshToken(userForToken),
                 message: 'Usuario creado correctamente',
             });
         }
@@ -529,9 +536,11 @@ async function getDictation(req, res) {
                 figurasPulso.push(figs.Figuras);
             });
             figuras.push(figurasPulso);
+
             dictations.push({
                 id: d[0].id,
                 figuras: figuras,
+                figurasSeparadasPorLigaudra: GetFigurasSeparadasPorLigaduras(figuras),
                 configuracion_dictado: idConfigDictation,
                 fecha_generado: d[0].created_at,
                 notas: d[0].Notas.split('|'),

@@ -1,6 +1,7 @@
 const jwt = require('../services/jwt');
 const moment = require('moment');
 const db = require('../data/knex');
+const { logError } = require('../services/errorService');
 
 function willExpireToken(token) {
     const { exp } = jwt.decodedToken(token);

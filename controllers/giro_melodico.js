@@ -2,6 +2,7 @@
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
 const formatData = require('../services/formatData');
+const { getAuthenticationToken } = require('../services/headers');
 
 async function addGiroMelodico(req, res) {
     try {
@@ -24,7 +25,11 @@ async function addGiroMelodico(req, res) {
 
         const giroMelodicoAdded = await db
             .knex('GiroMelodico')
-            .insert({ Mayor: mayor, DelSistema: true })
+            .insert({
+                Mayor: mayor,
+                DelSistema: true,
+                created_by: getAuthenticationToken(req).id,
+            })
             .returning(['id']);
         const gmId = giroMelodicoAdded[0].id;
 

@@ -49,7 +49,72 @@ const GroupByModuleAndConfigDict = (data) => {
     return res;
 };
 
+/**
+ * 
+ * @param {*} figuras = [
+                [
+                    "4",
+                    "4",
+                    "8-16-16"
+                ],
+                [
+                    "_4",
+                    "8-16-16_4"
+                ],
+                [
+                    "8-16-16_4",
+                    "8-16-16"
+                ],
+                [
+                    "_4",
+                    "4",
+                    "4"
+                ],
+                [
+                    "8-16-16_4",
+                    "8-16-16"
+                ],
+                [
+                    "8-16-16_4",
+                    "4"
+                ],
+                [
+                    "2",
+                    "4"
+                ]
+            ],
+ * @returns [ ["4", "4", "8-16-16"]
+["_4", "8-16-16", "_4"]
+["8-16-16", "_4", "8-16-16"]
+["_4", "4", "4"]
+["8-16-16", "_4", "8-16-16"]
+["8-16-16", "_4", "4"]
+["2", "4"] ]
+ */
+
+const GetFigurasSeparadasPorLigaduras = (figuras) => {
+    const newFiguras = [];        
+    figuras.forEach(figs => {
+        const newPulsos = [];
+        figs.forEach(f => {
+            var crs = f.split('_');
+            if (crs[0] !== '') {
+                newPulsos.push(crs[0]);
+            }
+            
+            // si tiene mas de un elemento quiere decir que el resto tienen ligaudras
+            for (var i = 1; i < crs.length; i++) {
+                newPulsos.push('_'.concat(crs[i]));
+            }
+        })
+        newFiguras.push(newPulsos);
+    });
+
+    return newFiguras;
+}
+
 module.exports = {
     GroupByIdAndShortByOrder,
     GroupByModuleAndConfigDict,
+    GetFigurasSeparadasPorLigaduras,
 };

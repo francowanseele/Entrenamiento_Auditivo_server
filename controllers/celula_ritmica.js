@@ -4,41 +4,42 @@ const formatData = require('../services/formatData');
 const fs = require('fs');
 const dato = require('./../services/DictadosRitmicos/datosRitmicos');
 const { logError } = require('../services/errorService');
+const { getAuthenticationToken } = require('../services/headers');
 
-async function addCelulaRitmica(req, res) {
-    try {
-        const { figuras, simple, valor } = req.body;
+// async function addCelulaRitmica(req, res) {
+//     try {
+//         const { figuras, simple, valor } = req.body;
 
-        const celRitAdded = await db
-            .knex('CelulaRitmica')
-            .insert({
-                Simple: simple,
-                Valor: valor,
-            })
-            .returning(['id', 'Simple', 'Valor']);
+//         const celRitAdded = await db
+//             .knex('CelulaRitmica')
+//             .insert({
+//                 Simple: simple,
+//                 Valor: valor,
+//             })
+//             .returning(['id', 'Simple', 'Valor']);
 
-        for (let i = 0; i < figuras.length; i++) {
-            const fig = figuras[i];
-            await db.knex('CelulaRitmica_Figura').insert({
-                CelulaRitmicaId: celRitAdded[0].id,
-                Figura: fig,
-                Orden: i,
-            });
-        }
+//         for (let i = 0; i < figuras.length; i++) {
+//             const fig = figuras[i];
+//             await db.knex('CelulaRitmica_Figura').insert({
+//                 CelulaRitmicaId: celRitAdded[0].id,
+//                 Figura: fig,
+//                 Orden: i,
+//             });
+//         }
 
-        res.status(200).send({
-            ok: true,
-            compas: celRitAdded,
-            message: 'Célula rítmica creada correctamente',
-        });
-    } catch (error) {
-        logError('addCelulaRitmica', error, req);
-        res.status(501).send({
-            ok: false,
-            message: error.message,
-        });
-    }
-}
+//         res.status(200).send({
+//             ok: true,
+//             compas: celRitAdded,
+//             message: 'Célula rítmica creada correctamente',
+//         });
+//     } catch (error) {
+//         logError('addCelulaRitmica', error, req);
+//         res.status(501).send({
+//             ok: false,
+//             message: error.message,
+//         });
+//     }
+// }
 
 async function getCelulaRitmica(req, res) {
     try {
@@ -111,6 +112,7 @@ async function CreateCelulaRitmica(req, res) {
                 Simple: simple,
                 Valor: valorTodb,
                 Imagen: profileImage,
+                created_by: getAuthenticationToken(req).id,
             })
             .returning(['id', 'Simple', 'Valor']);
 
@@ -160,7 +162,7 @@ async function DeleteCelulaRitmica(req, res) {
 }
 
 module.exports = {
-    addCelulaRitmica,
+    // addCelulaRitmica,
     getCelulaRitmica,
     CreateCelulaRitmica,
     DeleteCelulaRitmica,

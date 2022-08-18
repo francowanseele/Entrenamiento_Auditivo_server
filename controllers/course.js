@@ -6,6 +6,7 @@ const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const { inscriptionState } = require('../enums/inscriptionState');
 const { logError } = require('../services/errorService');
+const { getAuthenticationToken } = require('../services/headers');
 
 async function addCourse(req, res) {
     try {
@@ -227,6 +228,7 @@ async function addModule(req, res) {
                     Nombre: name,
                     Descripcion: description,
                     CursoId: id,
+                    created_by: getAuthenticationToken(req).id,
                 })
                 .returning(['id', 'Nombre', 'Descripcion', 'CursoId']);
 
