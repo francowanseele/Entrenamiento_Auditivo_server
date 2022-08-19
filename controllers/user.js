@@ -231,6 +231,39 @@ async function generateDictation(req, res) {
             return res;
         };
 
+        const getLengthWithoutSilences = (figurasDictado) => {
+            let count = 0;
+            figurasDictado.forEach(f => {
+                if (f.indexOf('S') == -1) {
+                    count = count + 1;
+                }
+            });
+
+            return count;
+        }
+
+        /**
+         * 
+         * @param  {[A, B,     C        ]} notes 
+         * @param  {[4, 4, 4S, 2, 2S, 1S]} figs 
+         * @returns [A, B, S,  C, S,  S]
+         */
+        const getMelodicDictationWithSilences = (notes, figs) => {
+            let notesResult = [];
+            let j = 0;
+            for (let i = 0; i < figs.length; i++) {
+                const f = figs[i];
+                if (f.indexOf('S') == -1) {
+                    notesResult.push(notes[j]);
+                    j++;
+                } else {
+                    notesResult.push('S');
+                }
+            }
+
+            return notesResult;
+        }
+
         const {
             tarjetas,
             nroCompases,
@@ -300,23 +333,28 @@ async function generateDictation(req, res) {
                 var denominadorDictadoRitmico =
                     res_generarDictadoRitmico.denominador;
                 var figurasDictado = getFiguras(dictadoRitmico_Compases);
-                var largoDictadoMelodico = figurasDictado.length;
-                // Melodic
-                var res_dictadoMelodico =
-                    dictadoMelodico.generarDictadoMelodico(
-                        notasRegla_trad,
-                        nivelPrioridadRegla,
-                        intervaloNotas_trad,
-                        notasBase_trad,
-                        notasFin_trad,
-                        nivelPrioridadClave,
-                        largoDictadoMelodico,
-                        escalaDiatonicaRegla,
-                        notaReferencia_trad
-                    );
+                var largoDictadoMelodico_SinSilencios = getLengthWithoutSilences(figurasDictado);
 
-                generateOk = res_dictadoMelodico[0];
-                cantRec++;
+                if (largoDictadoMelodico_SinSilencios > 0) {
+                    // Melodic
+                    var res_dictadoMelodico =
+                        dictadoMelodico.generarDictadoMelodico(
+                            notasRegla_trad,
+                            nivelPrioridadRegla,
+                            intervaloNotas_trad,
+                            notasBase_trad,
+                            notasFin_trad,
+                            nivelPrioridadClave,
+                            largoDictadoMelodico_SinSilencios,
+                            escalaDiatonicaRegla,
+                            notaReferencia_trad
+                        );
+    
+                    generateOk = res_dictadoMelodico[0];
+                    cantRec++;
+                } else {
+                    cantRec++;
+                }
             }
 
             if (!res_dictadoMelodico[0]) {
@@ -327,7 +365,7 @@ async function generateDictation(req, res) {
                     message: res_dictadoMelodico[1],
                 });
             } else {
-                const dictadoMelodico_traducido = res_dictadoMelodico[1];
+                const dictadoMelodico_traducido = getMelodicDictationWithSilences(res_dictadoMelodico[1], figurasDictado);
                 const clave = res_dictadoMelodico[2];
                 const escala_diatonica = res_dictadoMelodico[3];
                 const notaRefTrans = res_dictadoMelodico[5][0];

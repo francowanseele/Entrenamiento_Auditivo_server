@@ -130,11 +130,20 @@ function generateDictationFile(req, res) {
                 const nota = notasDictado[i];
                 const figuraSec = figurasDictadoSec[i];
 
-                track.addNote({
-                    name: nota,
-                    time: timeStart + timePartialSec,
-                    duration: figuraSec,
-                });
+                if (nota == 'S') {
+                    // Silence
+                    track.addNote({
+                        midi: 120, 
+                        time: timeStart + timePartialSec,
+                        duration: figuraSec,
+                    });
+                } else {
+                    track.addNote({
+                        name: nota,
+                        time: timeStart + timePartialSec,
+                        duration: figuraSec,
+                    });
+                }
 
                 timePartialSec += figuraSec;
             }
