@@ -37,11 +37,15 @@ const getElemPrioridad = (elems) => {
 };
 
 const removeItemFromArr = (arr, item) => {
+    if (arr.length == 0) return null;
+    
     var i = arr.indexOf(item);
 
     if (i !== -1) {
-        arr.splice(i, 1);
+        arr.splice(i, 1); // 2nd parameter means remove one item only
     }
+
+    return arr;
 };
 
 const removeItemFromArrRegla = (arrayRegla, elem) => {
