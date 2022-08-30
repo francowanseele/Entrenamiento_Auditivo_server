@@ -1,5 +1,3 @@
-const Instituto = require('../models/instituto');
-const Curso = require('../models/curso');
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
 

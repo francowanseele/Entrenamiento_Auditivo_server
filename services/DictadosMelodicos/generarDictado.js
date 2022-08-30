@@ -429,6 +429,7 @@ const generarDictado = (
             // Control para verificar que no se pasa del largo
             if (dictado.length > largoDictado) {
                 if (cantRec < 35) {
+                    // console.log('rec #1: ' + cantRec);
                     // cantidad de intentos
                     return generarDictado(
                         notasConfig,
@@ -485,6 +486,7 @@ const generarDictado = (
                 return dictado;
             } else {
                 if (cantRec < 25) {
+                    // console.log('rec #2: ' + cantRec);
                     // cantidad de intentos
                     return generarDictado(
                         notasConfig,
