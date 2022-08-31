@@ -1,4 +1,3 @@
-// const GiroMelodico = require('../models/giro_melodico');
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
 const formatData = require('../services/formatData');

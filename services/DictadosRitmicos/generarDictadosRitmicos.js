@@ -25,6 +25,16 @@ const permutarConRepeticiones = (permutationOptions, permutationLength) => {
 };
 
 const sumarValores = (compas, denominador) => {
+    const valorDeNotaSumado = (cr) => {
+        let res = 0;
+        const figs = cr.split('-');
+        figs.forEach(f => {
+            res = res + dato.VALOR_DE_NOTA[f];
+        });
+
+        return res;
+    }
+
     let res = 0;
 
     if (compas.length > 0) {
@@ -35,11 +45,11 @@ const sumarValores = (compas, denominador) => {
                 const crs = compas[i].split('_');
                 crs.forEach((cr) => {
                     if (cr != '') {
-                        res = res + dato.VALOR_DE_NOTA[cr] * denominador;
+                        res = res + valorDeNotaSumado(cr) * denominador;
                     }
                 });
             } else {
-                res = res + dato.VALOR_DE_NOTA[compas[i]] * denominador;
+                res = res + valorDeNotaSumado(compas[i]) * denominador;
             }
         }
     }

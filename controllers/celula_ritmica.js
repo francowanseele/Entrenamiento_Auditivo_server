@@ -1,4 +1,3 @@
-const CelulaRitmica = require('../models/celula_ritmica');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const fs = require('fs');

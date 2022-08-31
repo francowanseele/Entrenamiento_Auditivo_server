@@ -1,4 +1,3 @@
-const Compas = require('../models/compas');
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
 
