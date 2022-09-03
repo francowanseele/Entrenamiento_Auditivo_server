@@ -133,7 +133,6 @@ function generateDictationFile(req, res) {
                 if (nota == 'S') {
                     // Silence
                     track.addNote({
-                        midi: 120, 
                         time: timeStart + timePartialSec,
                         duration: figuraSec,
                     });

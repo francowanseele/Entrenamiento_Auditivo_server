@@ -149,7 +149,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
             });
         }
     } catch (err) {
-        logError('obtenerUsuarioRegistrado', error, req);
+        logError('obtenerUsuarioRegistrado', err, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -282,6 +282,8 @@ async function generateDictation(req, res) {
         const { id } = req.params;
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
 
+        // ----- TEST SILENCES ------
+        // const tarjetasAUX = [ { elem: '4', prioridad: 1 }, { elem: '8-8', prioridad: 1 }, {elem: '4S', prioridad: 2} ];
         // console.log('TARJETAS');
         // console.log(tarjetas);
         // console.log('LIGADURAS:');
