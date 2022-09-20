@@ -7,7 +7,7 @@ const acordes = [
         estado: [
             {
                 nombre: 'C',
-                notaInferior: 'C',
+                notaInferior: 'C', // bust be unique in this array
                 duplica: ['C', 'G'],
             },
             {

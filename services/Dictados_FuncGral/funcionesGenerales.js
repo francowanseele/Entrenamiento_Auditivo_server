@@ -36,7 +36,8 @@ const getElemPrioridad = (elems) => {
     return getRandom(elemsPrioridad);
 };
 
-const removeItemFromArr = (arr, item) => {
+const removeItemFromArr = (originalArr, item) => {
+    var arr = JSON.parse(JSON.stringify(originalArr));
     if (arr.length == 0) return null;
     
     var i = arr.indexOf(item);
@@ -46,6 +47,17 @@ const removeItemFromArr = (arr, item) => {
     }
 
     return arr;
+};
+
+const removeAllItemsFromArr = (arr, item) => {
+    let res = [];
+    arr.forEach(elem => {
+        if (elem != item) {
+            res.push(elem);
+        }
+    });
+
+    return res;
 };
 
 const removeItemFromArrRegla = (arrayRegla, elem) => {
@@ -65,5 +77,6 @@ module.exports = {
     getRandom,
     getElemPrioridad,
     removeItemFromArr,
+    removeAllItemsFromArr,
     removeItemFromArrRegla,
 };
