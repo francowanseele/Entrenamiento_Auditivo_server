@@ -115,7 +115,10 @@ const obtenerMovimientosCamino = (camino, notasConfig, nivelPrioridad) => {
             nivelPrioridad
         );
         unCamino.forEach((notaMov) => {
-            notas.push({ nota: notaMov, padre: elem.nota });
+            // fixed response time
+            if (notas.findIndex(object => object.nota == notaMov && object.padre == elem.nota) > -1) {
+                notas.push({ nota: notaMov, padre: elem.nota });
+            }
         });
     });
 
@@ -135,6 +138,8 @@ const finalizarDictado = (
     largoCamino,
     nivelPrioridad
 ) => {
+    // console.log('->');
+    // console.log(camino);
     if (largoCamino != null && cantRec < 10) {
         var elemEncontrado = [];
         for (let i = 0; i < camino.length && elemEncontrado.length == 0; i++) {
@@ -157,6 +162,7 @@ const finalizarDictado = (
                 notasConfig,
                 nivelPrioridad
             );
+            // if (movimientos.length > 1000) return null;
             var notas = finalizarDictado(
                 movimientos,
                 notaFin,
@@ -189,6 +195,7 @@ const finalizarDictado = (
         // general.printError(
         //     'Function "finalizarDictado": camino a la nota fin no encontrada'
         // );
+
     }
 };
 
@@ -429,8 +436,6 @@ const generarDictado = (
             // Control para verificar que no se pasa del largo
             if (dictado.length > largoDictado) {
                 if (cantRec < 35) {
-                    // console.log('rec #1: ' + cantRec);
-                    // cantidad de intentos
                     return generarDictado(
                         notasConfig,
                         notaBase,
@@ -486,8 +491,6 @@ const generarDictado = (
                 return dictado;
             } else {
                 if (cantRec < 25) {
-                    // console.log('rec #2: ' + cantRec);
-                    // cantidad de intentos
                     return generarDictado(
                         notasConfig,
                         notaBase,

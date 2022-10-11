@@ -62,6 +62,7 @@ async function getCelulaRitmica(req, res) {
                 'CelulaRitmica.id'
             );
 
+
         let figuras = [];
         formatData.GroupByIdAndShortByOrder(celulasRitmicas).forEach((crs) => {
             let figura = '';
