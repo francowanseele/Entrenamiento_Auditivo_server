@@ -71,6 +71,23 @@ const removeItemFromArrRegla = (arrayRegla, elem) => {
     return res;
 };
 
+/**
+ * 
+ * @param {['a', 'b', 'c', 'd', 'e']} array1 
+ * @param {['b', 'e']} array2 
+ * @returns ['a', 'c', 'd']
+ */
+const subtractArrays = (array1, array2) => {
+    let res = [];
+    array1.forEach(e1 => {
+        if (array2.indexOf(e1) == -1) {
+            res.push(e1);
+        }
+    });
+
+    return res;
+}
+
 module.exports = {
     printArray,
     printError,
@@ -79,4 +96,5 @@ module.exports = {
     removeItemFromArr,
     removeAllItemsFromArr,
     removeItemFromArrRegla,
+    subtractArrays,
 };
