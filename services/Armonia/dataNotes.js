@@ -43,6 +43,9 @@ const ALL_NOTES = [
     'B6',
 ];
 
+const SIMPLE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
 module.exports = {
     ALL_NOTES,
+    SIMPLE_NOTES,
 };
