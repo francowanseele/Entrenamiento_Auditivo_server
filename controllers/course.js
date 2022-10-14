@@ -318,6 +318,8 @@ async function getConfigDictation(req, res) {
                     celula_ritmica: celula_ritmica,
                     simple: cr[0].Simple,
                     prioridad: cr[0].Prioridad,
+                    id: cr[0].id,
+                    imagen: cr[0].Imagen,
                 });
             });
 
@@ -516,7 +518,7 @@ async function getConfigDictation(req, res) {
                 'NotaReferencia',
                 'BpmMenor',
                 'BpmMayor',
-                'DictadoRitmico'
+                'DictadoRitmico',
             );
         const config = configs[0];
 
@@ -590,6 +592,7 @@ async function getConfigDictation(req, res) {
             })
             .select(
                 'CelulaRitmica.id',
+                'CelulaRitmica.Imagen',
                 'ConfiguracionDictado_CelulaRitmica.Prioridad',
                 'CelulaRitmica.Simple',
                 'CelulaRitmica.Valor',
@@ -704,6 +707,10 @@ async function getConfigDictation(req, res) {
                     menor: config.BpmMenor,
                     mayor: config.BpmMayor,
                 },
+                mayor:
+                    girosMelodicos && girosMelodicos.length > 0
+                        ? girosMelodicos[0].Mayor
+                        : true,
                 dictado_ritmico: config.DictadoRitmico,
                 ligaduraRegla: getLigadurasFormat(ligaduras),
             },
@@ -711,6 +718,40 @@ async function getConfigDictation(req, res) {
         });
     } catch (error) {
         logError('getConfigDictation', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function getConfigDictationByString(req, res) {
+    try {
+        const { searchText } = req.params;
+
+        const configs = await db
+            .knex('ConfiguracionDictado')
+            .whereILike('ConfiguracionDictado.Nombre', `%${searchText}%`)
+            .orWhereILike('ConfiguracionDictado.Descripcion', `%${searchText}%`)
+            .join('Modulo', 'ConfiguracionDictado.ModuloId', '=', 'Modulo.id')
+            .join('Curso', 'Modulo.CursoId', '=', 'Curso.id')
+            .select(
+                'ConfiguracionDictado.id',
+                'ConfiguracionDictado.Nombre',
+                'ConfiguracionDictado.Descripcion',
+                'Modulo.Nombre as ModuloNombre',
+                'Modulo.Descripcion as ModuloDescripcion',
+                'Curso.Nombre as CursoNombre',
+                'Curso.Descripcion as CursoDescripcion'
+            );
+
+        res.status(200).send({
+            ok: true,
+            configs: configs,
+            message: 'Ok',
+        });
+    } catch (error) {
+        logError('getConfigDictationByString', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1620,6 +1661,7 @@ module.exports = {
     getModules,
     getConfigsDictations,
     getConfigDictation,
+    getConfigDictationByString,
     getCoursesCursaStudent,
     addConfigDictation,
     getCalificacionPorCursoYNotasPromedios,
