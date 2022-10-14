@@ -729,6 +729,13 @@ async function getConfigDictationByString(req, res) {
     try {
         const { searchText } = req.params;
 
+        const userId = getAuthenticationToken(req).id;
+
+        const userCourseId = await db
+            .knex('Usuario')
+            .where({ id: userId })
+            .select('Usuario.CursoPersonalId');
+
         const configs = await db
             .knex('ConfiguracionDictado')
             .whereILike('ConfiguracionDictado.Nombre', `%${searchText}%`)
@@ -742,12 +749,19 @@ async function getConfigDictationByString(req, res) {
                 'Modulo.Nombre as ModuloNombre',
                 'Modulo.Descripcion as ModuloDescripcion',
                 'Curso.Nombre as CursoNombre',
-                'Curso.Descripcion as CursoDescripcion'
+                'Curso.Descripcion as CursoDescripcion',
+                'Curso.Personal',
+                'Curso.id as CursoId'
             );
 
         res.status(200).send({
             ok: true,
-            configs: configs,
+            configs: configs.filter(
+                (config) =>
+                    (config.Personal &&
+                        config.CursoId == userCourseId[0].CursoPersonalId) ||
+                    !config.Personal
+            ),
             message: 'Ok',
         });
     } catch (error) {
