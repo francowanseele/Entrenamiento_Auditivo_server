@@ -4,10 +4,11 @@ const md_auth = require('../middleware/authenticated');
 
 const api = express.Router();
 
-api.post('/add-course', [md_auth.ensureAuth], CourseController.addCourse);
+api.post('/add-course', CourseController.addCourse);
 api.post('/update-module/:id', [md_auth.ensureAuth], CourseController.addModule);
 api.get('/get-module-by-curse/:id', [md_auth.ensureAuth], CourseController.getModules);
 api.get('/get-config-dictation/:id', [md_auth.ensureAuth], CourseController.getConfigDictation);
+api.get('/getconfig-dictation-by-string/:searchText', [md_auth.ensureAuth], CourseController.getConfigDictationByString);
 api.get(
     '/get-configs-dictations/:idModule',
     [md_auth.ensureAuth],

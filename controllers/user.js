@@ -1,5 +1,3 @@
-const Usuario = require('../models/usuario');
-const Curso = require('../models/curso');
 const dictadoRitmico = require('../services/DictadosRitmicos/generarDictadosRitmicos');
 const dictadoMelodico = require('../services/DictadosMelodicos/generarDictadosMelodicos');
 const gral = require('../services/funcsGralDictados');
@@ -151,7 +149,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
             });
         }
     } catch (err) {
-        logError('obtenerUsuarioRegistrado', error, req);
+        logError('obtenerUsuarioRegistrado', err, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -231,6 +229,39 @@ async function generateDictation(req, res) {
             return res;
         };
 
+        const getLengthWithoutSilences = (figurasDictado) => {
+            let count = 0;
+            figurasDictado.forEach(f => {
+                if (f.indexOf('S') == -1) {
+                    count = count + 1;
+                }
+            });
+
+            return count;
+        }
+
+        /**
+         * 
+         * @param  {[A, B,     C        ]} notes 
+         * @param  {[4, 4, 4S, 2, 2S, 1S]} figs 
+         * @returns [A, B, S,  C, S,  S]
+         */
+        const getMelodicDictationWithSilences = (notes, figs) => {
+            let notesResult = [];
+            let j = 0;
+            for (let i = 0; i < figs.length; i++) {
+                const f = figs[i];
+                if (f.indexOf('S') == -1) {
+                    notesResult.push(notes[j]);
+                    j++;
+                } else {
+                    notesResult.push('S');
+                }
+            }
+
+            return notesResult;
+        }
+
         const {
             tarjetas,
             nroCompases,
@@ -251,6 +282,8 @@ async function generateDictation(req, res) {
         const { id } = req.params;
         const { idConfigDictation, cantDictation, onlyValidation } = req.query;
 
+        // ----- TEST SILENCES ------
+        // const tarjetasAUX = [ { elem: '4', prioridad: 1 }, { elem: '8-8', prioridad: 1 }, {elem: '4S', prioridad: 2} ];
         // console.log('TARJETAS');
         // console.log(tarjetas);
         // console.log('LIGADURAS:');
@@ -277,12 +310,14 @@ async function generateDictation(req, res) {
         var error_generateDictationMelodic = false;
 
         while (i < nroDic && !error_generateDictationMelodic) {
+            // console.log('while 1');
             const dateNow = new Date();
 
             var generateOk = false;
             var cantRecMax = 50;
             var cantRec = 0;
             while (!generateOk && cantRec < cantRecMax) {
+                // console.log('while 2');
                 // Rhythmic
                 var res_generarDictadoRitmico =
                     dictadoRitmico.generarDictadoRitmico(
@@ -300,23 +335,28 @@ async function generateDictation(req, res) {
                 var denominadorDictadoRitmico =
                     res_generarDictadoRitmico.denominador;
                 var figurasDictado = getFiguras(dictadoRitmico_Compases);
-                var largoDictadoMelodico = figurasDictado.length;
-                // Melodic
-                var res_dictadoMelodico =
-                    dictadoMelodico.generarDictadoMelodico(
-                        notasRegla_trad,
-                        nivelPrioridadRegla,
-                        intervaloNotas_trad,
-                        notasBase_trad,
-                        notasFin_trad,
-                        nivelPrioridadClave,
-                        largoDictadoMelodico,
-                        escalaDiatonicaRegla,
-                        notaReferencia_trad
-                    );
+                var largoDictadoMelodico_SinSilencios = getLengthWithoutSilences(figurasDictado);
 
-                generateOk = res_dictadoMelodico[0];
-                cantRec++;
+                if (largoDictadoMelodico_SinSilencios > 0) {
+                    // Melodic
+                    var res_dictadoMelodico =
+                        dictadoMelodico.generarDictadoMelodico(
+                            notasRegla_trad,
+                            nivelPrioridadRegla,
+                            intervaloNotas_trad,
+                            notasBase_trad,
+                            notasFin_trad,
+                            nivelPrioridadClave,
+                            largoDictadoMelodico_SinSilencios,
+                            escalaDiatonicaRegla,
+                            notaReferencia_trad
+                        );
+    
+                    generateOk = res_dictadoMelodico[0];
+                    cantRec++;
+                } else {
+                    cantRec++;
+                }
             }
 
             if (!res_dictadoMelodico[0]) {
@@ -327,7 +367,7 @@ async function generateDictation(req, res) {
                     message: res_dictadoMelodico[1],
                 });
             } else {
-                const dictadoMelodico_traducido = res_dictadoMelodico[1];
+                const dictadoMelodico_traducido = getMelodicDictationWithSilences(res_dictadoMelodico[1], figurasDictado);
                 const clave = res_dictadoMelodico[2];
                 const escala_diatonica = res_dictadoMelodico[3];
                 const notaRefTrans = res_dictadoMelodico[5][0];
@@ -578,34 +618,38 @@ async function getDictation(req, res) {
 const agregarNuevoResultado = async (req, res) => {
     // console.log(req.body)
     try {
-        const { email, id_dictado, resuelto } = req.body;
-        // busco el usuario implicado, le agrego al dictado correspondiente su nueva autoevaluacion
-        // luego hago un save de ese usuario
-        Usuario.findOne({ email: email }, (err, userActual) => {
-            if (userActual != null) {
-                dictadoActual = userActual.dictados.find( 
-                    (element) => element._id == id_dictado
-                );
-                if (dictadoActual != null) {
-                    dictadoActual.resuelto.push(resuelto);
-                    userActual.save();
-                    res.status(200).send({
-                        ok: true,
-                        message: 'Rsultado guardado',
-                    });
-                } else {
-                    res.status(404).send({
-                        ok: false,
-                        message: 'No se ha encontrado el dictado',
-                    });
-                }
-            } else {
-                res.status(404).send({
-                    ok: false,
-                    message: 'No se ha encontrado el usuario',
-                });
-            }
+        res.status(404).send({
+            ok: false,
+            message: 'Endpoint no implementado :)',
         });
+        // const { email, id_dictado, resuelto } = req.body;
+        // // busco el usuario implicado, le agrego al dictado correspondiente su nueva autoevaluacion
+        // // luego hago un save de ese usuario
+        // Usuario.findOne({ email: email }, (err, userActual) => {
+        //     if (userActual != null) {
+        //         dictadoActual = userActual.dictados.find( 
+        //             (element) => element._id == id_dictado
+        //         );
+        //         if (dictadoActual != null) {
+        //             dictadoActual.resuelto.push(resuelto);
+        //             userActual.save();
+        //             res.status(200).send({
+        //                 ok: true,
+        //                 message: 'Rsultado guardado',
+        //             });
+        //         } else {
+        //             res.status(404).send({
+        //                 ok: false,
+        //                 message: 'No se ha encontrado el dictado',
+        //             });
+        //         }
+        //     } else {
+        //         res.status(404).send({
+        //             ok: false,
+        //             message: 'No se ha encontrado el usuario',
+        //         });
+        //     }
+        // });
     } catch (error) {
         logError('agregarNuevoResultado', error, req);
         res.status(501).send({

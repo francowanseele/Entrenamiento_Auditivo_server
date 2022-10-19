@@ -1,4 +1,3 @@
-const CelulaRitmica = require('../models/celula_ritmica');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const fs = require('fs');
@@ -47,7 +46,7 @@ async function getCelulaRitmica(req, res) {
 
         const celulasRitmicas = await db
             .knex('CelulaRitmica')
-            .where({ 'CelulaRitmica.Simple': simple })
+            .where({ 'CelulaRitmica.Simple': simple, 'CelulaRitmica.Eliminado': false })
             .select(
                 'CelulaRitmica.id',
                 'CelulaRitmica.Valor',
@@ -62,6 +61,7 @@ async function getCelulaRitmica(req, res) {
                 '=',
                 'CelulaRitmica.id'
             );
+
 
         let figuras = [];
         formatData.GroupByIdAndShortByOrder(celulasRitmicas).forEach((crs) => {
@@ -112,6 +112,7 @@ async function CreateCelulaRitmica(req, res) {
                 Simple: simple,
                 Valor: valorTodb,
                 Imagen: profileImage,
+                Eliminado: false,
                 created_by: getAuthenticationToken(req).id,
             })
             .returning(['id', 'Simple', 'Valor']);
@@ -141,12 +142,11 @@ async function CreateCelulaRitmica(req, res) {
 async function DeleteCelulaRitmica(req, res) {
     try {
         const { idCelulaRitmica } = req.body;
-        await db
-            .knex('CelulaRitmica_Figura')
-            .del()
-            .where({ CelulaRitmicaId: idCelulaRitmica });
 
-        await db.knex('CelulaRitmica').del().where({ id: idCelulaRitmica });
+        await db
+            .knex('CelulaRitmica')
+            .where({'CelulaRitmica.id': idCelulaRitmica})
+            .update({ 'Eliminado': true });
 
         res.status(200).send({
             ok: true,

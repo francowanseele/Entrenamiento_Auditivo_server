@@ -161,30 +161,49 @@ const bpmToSec = (bpm) => {
 const translateFigToSec = (fig, negraSec) => {
     switch (fig.toString()) {
         case '1':
+        case '1S':
             return negraSec * 4;
+        case 'd1':
+        case 'd1S':
+            return negraSec * 4 + negraSec * 2;
         case '2':
+        case '2S':
             return negraSec * 2;
         case 'd2':
+        case 'd2S':
             return negraSec * 2 + negraSec * 1;
         case 'dd2':
+        case 'dd2S':
             return negraSec * 2 + negraSec * 1 + negraSec / 2;
         case '4':
+        case '4S':
             return negraSec * 1;
         case 'd4':
+        case 'd4S':
             return negraSec * 1 + negraSec / 2;
         case 'dd4':
+        case 'dd4S':
             return negraSec * 1 + negraSec / 2 + negraSec / 4;
         case '8':
+        case '8S':
             return negraSec / 2;
         case 'd8':
+        case 'd8S':
             return negraSec / 2 + negraSec / 4;
         case 'dd8':
+        case 'dd8S':
             return negraSec / 2 + negraSec / 4 + negraSec / 8;
         case '16':
+        case '16S':
             return negraSec / 4;
+        case 'd16':
+        case 'd16S':
+            return negraSec / 4 + negraSec / 8;
         case '32':
+        case '32S':
             return negraSec / 8;
         case '64':
+        case '64S':
             return negraSec / 16;
 
         default:

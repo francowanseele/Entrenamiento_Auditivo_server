@@ -1,7 +1,3 @@
-const curso = require('../models/curso');
-const Curso = require('../models/curso');
-const usuario = require('../models/usuario');
-const Usuario = require('../models/usuario');
 const db = require('../data/knex');
 const formatData = require('../services/formatData');
 const { inscriptionState } = require('../enums/inscriptionState');
@@ -322,6 +318,8 @@ async function getConfigDictation(req, res) {
                     celula_ritmica: celula_ritmica,
                     simple: cr[0].Simple,
                     prioridad: cr[0].Prioridad,
+                    id: cr[0].id,
+                    imagen: cr[0].Imagen,
                 });
             });
 
@@ -520,7 +518,7 @@ async function getConfigDictation(req, res) {
                 'NotaReferencia',
                 'BpmMenor',
                 'BpmMayor',
-                'DictadoRitmico'
+                'DictadoRitmico',
             );
         const config = configs[0];
 
@@ -594,6 +592,7 @@ async function getConfigDictation(req, res) {
             })
             .select(
                 'CelulaRitmica.id',
+                'CelulaRitmica.Imagen',
                 'ConfiguracionDictado_CelulaRitmica.Prioridad',
                 'CelulaRitmica.Simple',
                 'CelulaRitmica.Valor',
@@ -708,6 +707,10 @@ async function getConfigDictation(req, res) {
                     menor: config.BpmMenor,
                     mayor: config.BpmMayor,
                 },
+                mayor:
+                    girosMelodicos && girosMelodicos.length > 0
+                        ? girosMelodicos[0].Mayor
+                        : true,
                 dictado_ritmico: config.DictadoRitmico,
                 ligaduraRegla: getLigadurasFormat(ligaduras),
             },
@@ -715,6 +718,54 @@ async function getConfigDictation(req, res) {
         });
     } catch (error) {
         logError('getConfigDictation', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function getConfigDictationByString(req, res) {
+    try {
+        const { searchText } = req.params;
+
+        const userId = getAuthenticationToken(req).id;
+
+        const userCourseId = await db
+            .knex('Usuario')
+            .where({ id: userId })
+            .select('Usuario.CursoPersonalId');
+
+        const configs = await db
+            .knex('ConfiguracionDictado')
+            .whereILike('ConfiguracionDictado.Nombre', `%${searchText}%`)
+            .orWhereILike('ConfiguracionDictado.Descripcion', `%${searchText}%`)
+            .join('Modulo', 'ConfiguracionDictado.ModuloId', '=', 'Modulo.id')
+            .join('Curso', 'Modulo.CursoId', '=', 'Curso.id')
+            .select(
+                'ConfiguracionDictado.id',
+                'ConfiguracionDictado.Nombre',
+                'ConfiguracionDictado.Descripcion',
+                'Modulo.Nombre as ModuloNombre',
+                'Modulo.Descripcion as ModuloDescripcion',
+                'Curso.Nombre as CursoNombre',
+                'Curso.Descripcion as CursoDescripcion',
+                'Curso.Personal',
+                'Curso.id as CursoId'
+            );
+
+        res.status(200).send({
+            ok: true,
+            configs: configs.filter(
+                (config) =>
+                    (config.Personal &&
+                        config.CursoId == userCourseId[0].CursoPersonalId) ||
+                    !config.Personal
+            ),
+            message: 'Ok',
+        });
+    } catch (error) {
+        logError('getConfigDictationByString', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1127,100 +1178,100 @@ async function addConfigDictation(req, res) {
 
 async function  getCalificacionPorCursoYNotasPromedios(req, res){
 
-    async function getCursoById(idCourse){
-        return await curso.findById({_id:idCourse}, (err, curseData) =>{
-            if (err) {
-               return 'error del servidor'
-            } else if (!curseData) {
-                return 'no se ha encontrado el curso'
-            } else {
-                return curseData
+    // async function getCursoById(idCourse){
+    //     return await curso.findById({_id:idCourse}, (err, curseData) =>{
+    //         if (err) {
+    //            return 'error del servidor'
+    //         } else if (!curseData) {
+    //             return 'no se ha encontrado el curso'
+    //         } else {
+    //             return curseData
                
-            }
-        })
+    //         }
+    //     })
         
-    }
-    const getNotaPromedio = (resueltosArray) => {
-        let notaTotal = 0;
-        for (let i=0;i<resueltosArray.length; i++){
-            if (resueltosArray[i] && resueltosArray[i].nota) {
-                notaTotal = notaTotal + parseInt(resueltosArray[i].nota);
-            }
-        }
-        const notaRes =(notaTotal / resueltosArray.length)
-        return notaRes
-    }
-    const getErrorMasComun = (resueltosArray) => {
-        let ambos = 0;
-        let ritmicos = 0;
-        let melodicos = 0;
-        for (let i=0;i<resueltosArray.length; i++){
-            if (resueltosArray[i] && resueltosArray[i].tipoError) {
-                if (resueltosArray[i].tipoError == 'ritmico'){
-                    ritmicos = ritmicos + 1;
-                }else if (resueltosArray[i].tipoError == 'melodico'){
-                    melodicos = melodicos +1;
-                }
-                else if (resueltosArray[i].tipoError == 'ambos'){
-                    ambos = ambos + 1;
-                }
-            }
-        }
-        if ( ritmicos != 0 || ambos != 0 || melodicos != 0 ){
-            if (( ritmicos < ambos ) && ( melodicos < ambos )){
-                return 'ambos'
-            }else  if (( ambos < ritmicos ) && ( melodicos < ritmicos )){
-                return 'ritmicos'
-            }else  if (( ritmicos < melodicos ) && ( ambos < melodicos )){
-                return 'melodicos'
-            }
-        }else return 'no especifica'
-    }
+    // }
+    // const getNotaPromedio = (resueltosArray) => {
+    //     let notaTotal = 0;
+    //     for (let i=0;i<resueltosArray.length; i++){
+    //         if (resueltosArray[i] && resueltosArray[i].nota) {
+    //             notaTotal = notaTotal + parseInt(resueltosArray[i].nota);
+    //         }
+    //     }
+    //     const notaRes =(notaTotal / resueltosArray.length)
+    //     return notaRes
+    // }
+    // const getErrorMasComun = (resueltosArray) => {
+    //     let ambos = 0;
+    //     let ritmicos = 0;
+    //     let melodicos = 0;
+    //     for (let i=0;i<resueltosArray.length; i++){
+    //         if (resueltosArray[i] && resueltosArray[i].tipoError) {
+    //             if (resueltosArray[i].tipoError == 'ritmico'){
+    //                 ritmicos = ritmicos + 1;
+    //             }else if (resueltosArray[i].tipoError == 'melodico'){
+    //                 melodicos = melodicos +1;
+    //             }
+    //             else if (resueltosArray[i].tipoError == 'ambos'){
+    //                 ambos = ambos + 1;
+    //             }
+    //         }
+    //     }
+    //     if ( ritmicos != 0 || ambos != 0 || melodicos != 0 ){
+    //         if (( ritmicos < ambos ) && ( melodicos < ambos )){
+    //             return 'ambos'
+    //         }else  if (( ambos < ritmicos ) && ( melodicos < ritmicos )){
+    //             return 'ritmicos'
+    //         }else  if (( ritmicos < melodicos ) && ( ambos < melodicos )){
+    //             return 'melodicos'
+    //         }
+    //     }else return 'no especifica'
+    // }
 
-    async function getNameCourseCalifs(resParam){
-        let nombreModulo;
-        let resFinal = resParam;
-        let resCurrent = [];
-        currentModulos = [];
-        let totalNotasModulo = 0;
-        let cantConfiguraciones = 0;
-        let totalNotasCurso = 0;
-        let cantModulos = 0;
-        for(let course in resFinal){
-            await getCursoById(course).then((currentCurso)=>{
-                    currentModulos = currentCurso.modulo;
-                    nombreModulo = '';
-                    totalNotasCurso = 0;
-                    for (moduleCurrent in resFinal[course].modulos){
-                        cantModulos = cantModulos + 1;
-                        totalNotasModulo = 0;
-                        cantConfiguraciones = 0;
-                        for ( currmod in currentModulos ){
-                            if((currentModulos[currmod]._id) == (moduleCurrent)  ){
-                                nombreModulo = currentModulos[currmod].nombre;
-                                for (conf in resFinal[course].modulos[moduleCurrent].configuraciones){
-                                    cantConfiguraciones = cantConfiguraciones + 1;
-                                    totalNotasModulo = totalNotasModulo + resFinal[course].modulos[moduleCurrent].configuraciones[conf].promedio;
-                                    for (confBase in currentModulos[currmod].configuracion_dictado){
-                                        if (currentModulos[currmod].configuracion_dictado[confBase]._id == conf){
-                                            resFinal[course].modulos[moduleCurrent].configuraciones[conf].nombre_configuracion = currentModulos[currmod].configuracion_dictado[confBase].nombre 
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        resFinal[course].modulos[moduleCurrent].promedio = (totalNotasModulo / cantConfiguraciones)
-                        resFinal[course].modulos[moduleCurrent].nombre_modulo = nombreModulo;
-                        totalNotasCurso = totalNotasCurso + (totalNotasModulo / cantConfiguraciones)
-                    }
-                    resFinal[course].nombre_curso = currentCurso.nombre;
-                    resFinal[course].promedio = (totalNotasCurso / cantModulos )
-            }).then(()=>{
-                resCurrent = resFinal
-            })
-        }
-        return resCurrent
-    }
+    // async function getNameCourseCalifs(resParam){
+    //     let nombreModulo;
+    //     let resFinal = resParam;
+    //     let resCurrent = [];
+    //     currentModulos = [];
+    //     let totalNotasModulo = 0;
+    //     let cantConfiguraciones = 0;
+    //     let totalNotasCurso = 0;
+    //     let cantModulos = 0;
+    //     for(let course in resFinal){
+    //         await getCursoById(course).then((currentCurso)=>{
+    //                 currentModulos = currentCurso.modulo;
+    //                 nombreModulo = '';
+    //                 totalNotasCurso = 0;
+    //                 for (moduleCurrent in resFinal[course].modulos){
+    //                     cantModulos = cantModulos + 1;
+    //                     totalNotasModulo = 0;
+    //                     cantConfiguraciones = 0;
+    //                     for ( currmod in currentModulos ){
+    //                         if((currentModulos[currmod]._id) == (moduleCurrent)  ){
+    //                             nombreModulo = currentModulos[currmod].nombre;
+    //                             for (conf in resFinal[course].modulos[moduleCurrent].configuraciones){
+    //                                 cantConfiguraciones = cantConfiguraciones + 1;
+    //                                 totalNotasModulo = totalNotasModulo + resFinal[course].modulos[moduleCurrent].configuraciones[conf].promedio;
+    //                                 for (confBase in currentModulos[currmod].configuracion_dictado){
+    //                                     if (currentModulos[currmod].configuracion_dictado[confBase]._id == conf){
+    //                                         resFinal[course].modulos[moduleCurrent].configuraciones[conf].nombre_configuracion = currentModulos[currmod].configuracion_dictado[confBase].nombre 
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                     resFinal[course].modulos[moduleCurrent].promedio = (totalNotasModulo / cantConfiguraciones)
+    //                     resFinal[course].modulos[moduleCurrent].nombre_modulo = nombreModulo;
+    //                     totalNotasCurso = totalNotasCurso + (totalNotasModulo / cantConfiguraciones)
+    //                 }
+    //                 resFinal[course].nombre_curso = currentCurso.nombre;
+    //                 resFinal[course].promedio = (totalNotasCurso / cantModulos )
+    //         }).then(()=>{
+    //             resCurrent = resFinal
+    //         })
+    //     }
+    //     return resCurrent
+    // }
 
     try {
         res.status(200).send({
@@ -1624,6 +1675,7 @@ module.exports = {
     getModules,
     getConfigsDictations,
     getConfigDictation,
+    getConfigDictationByString,
     getCoursesCursaStudent,
     addConfigDictation,
     getCalificacionPorCursoYNotasPromedios,

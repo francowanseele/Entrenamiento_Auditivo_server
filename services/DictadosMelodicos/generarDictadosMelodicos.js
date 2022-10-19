@@ -204,6 +204,7 @@ const generarDictadoMelodico = (
         nivelPrioridadRegla,
         0
     );
+
     if (!dictadoGenerado) {
         return [false, 'Dictado null'];
     }

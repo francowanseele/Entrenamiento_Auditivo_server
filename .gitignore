@@ -1,5 +1,7 @@
 node_modules
 files/dictados/*
+files/.DS_Store
+files/dictados/.DS_Store
 .env
 
 # macOS
