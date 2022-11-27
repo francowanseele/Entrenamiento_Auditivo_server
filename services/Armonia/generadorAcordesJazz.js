@@ -267,7 +267,6 @@ const fixConsecutivePair = (acorde, i, allNotes) => {
             acordeResult = removeAllItemsFromArr(acordeResult, nextNote); // Note which has interval 2m
             action = 'deleted';
         }
-        
     }
 
     return { acorde: acordeResult, action: action }; 
@@ -306,7 +305,30 @@ const completeAcorde = (acorde, allNotes) => {
     } while (acordeResult != null && i < acordeResult.length - 1);
 
     // Check all notes be in acordeResult
-    // TODO: is it necessary? Never execute the action 'deleted' so always has all notes
+    const notesToAdd = getMissingNotes(acordeResult, allNotes); // TODO:
+
+    const noteRange = {
+        higherNote: getHigherNote(voices.tensiones),
+        lowerNote: getLowerNote(voices.tetrada_triada),
+    };
+    notesToAdd.forEach((n) => {
+        let notesToAvoid = [];
+        let noteToTry = null;
+        let noteResult = null;
+        do {
+            // Get different altura
+            noteToTry = getAltura(n, null, notesToAvoid, noteRange);
+
+            if (noteToTry) {
+                notesToAvoid.push(noteToTry);
+                noteResult = noteToTry;
+            }
+        } while (noteResult == null && noteToTry != null);
+
+        if (noteResult) {
+            acordeResult = insertInOrder(acordeResult, noteResult);
+        }
+    });
 
     return acordeResult;
 }
