@@ -375,4 +375,5 @@ module.exports = {
     modificarAlturaNotas,
     getNota,
     getAlteraciones,
+    getNotaTransformada,
 };

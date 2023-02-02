@@ -12,8 +12,14 @@ const lessOrEqualThan = (note1, note2) => {
 
 /**
  *
- * @param {E#2 || E# || Ebb4 || Ebb} note
- * @returns {{note: E, alteracion: bb, altura: 4} || {note: E, alteracion: bb, altura: ''}}
+ * @param { Ab2 || Abb2 || A## || A2 || A } note
+ * @returns {
+ *  { note: 'A', alteracion: 'b', altura: '2' } 
+ *  { note: 'A', alteracion: 'bb', altura: '2' } 
+ *  { note: 'A', alteracion: '##', altura: '' } 
+ *  { note: 'A', alteracion: '', altura: '2' } 
+ *  { note: 'A', alteracion: '', altura: '' }
+ * }
  */
 const destructuringNote = (note) => {
     if (

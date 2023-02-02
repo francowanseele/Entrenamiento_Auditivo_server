@@ -1,6 +1,11 @@
 const { Scale, ScaleType } = require("@tonaljs/tonal");
 const { ChordType } = require("@tonaljs/tonal");
 const { Note, Interval } = require('@tonaljs/tonal');
+const { getNotaTransformada } = require("../DictadosMelodicos/transformarEscala");
+const { transformarAEscalaDiatonica } = require("../EscalasDiatonicas/moduleAngloSaxonNomenclature");
+const { calcularDiatonicaMayorMenor } = require("../EscalasDiatonicas/validacion");
+const { generarTetradaJazz } = require("./generadorAcordesJazz");
+// const { fixDistances } = require("./generadorAcordesJazz");
 
 // console.log(ScaleType.names());
 /*
@@ -137,7 +142,86 @@ const { Note, Interval } = require('@tonaljs/tonal');
 
 // console.log(Interval.distance('C2', 'D2'));
 
-console.log(Interval.distance('F3', 'E4'))
-console.log(Interval.distance('F3', 'A4'))
-console.log(Interval.distance('F3', 'C5'))
-console.log(Interval.distance('F2', 'F3'))
+// console.log(Interval.distance('F3', 'E4'))
+// console.log(Interval.distance('F3', 'A4'))
+// console.log(Interval.distance('F3', 'C5'))
+// console.log(Interval.distance('F2', 'F3'))
+
+
+// console.log(Interval.semitones('5P'));
+// console.log(Interval.get('3m'));
+// console.log(Interval.get('9m'));
+
+
+// console.log(Note.transpose('C', '9m'));
+// console.log(Note.transpose('C', '9M'));
+// console.log(Note.transpose('C', '11P'));
+// console.log(Note.transpose('C', '11A'));
+// console.log(Note.transpose('C', '13m'));
+// console.log(Note.transpose('C', '13M'));
+
+
+
+
+// console.log(Note.chroma('Db'))
+
+// console.log(Note.transpose('G#2', '2m')); // Db2
+// console.log(Note.transpose('G#3', '2m')); // Db2
+// console.log(Note.transpose('D#4', '2m')); // Db2
+// console.log(Note.transpose('E4', '2m')); // Db2
+// console.log(Note.transpose('B4', '2m')); // Db2
+// console.log(Note.transpose('E4', '3M')); // Fb2
+// console.log(Note.transpose('C2', '4P')); // Fb2
+
+
+// console.log(Note.transpose('E3', '2m')); 
+// console.log(Note.transpose('G#3', '2m')); 
+// console.log(Note.transpose('D4', '2m')); 
+
+// console.log('----');
+
+// console.log(Note.transpose('A3', '2m')); 
+// console.log(Note.transpose('A4', '2m')); 
+
+
+
+// C#4 C##4 E4 
+// console.log(Interval.distance('C#4', 'C##4'))
+// console.log(Interval.distance('C##4', 'E4'))
+// console.log(Interval.distance('F#4', 'A4'))
+// console.log(Interval.distance('D3', 'F#4'))
+// console.log(Interval.distance('C4', 'E4'))
+// console.log(Interval.distance('E4', 'G4'))
+// console.log(Interval.distance('G4', 'Gb5'))
+// console.log(Interval.distance('Gb5', 'G#5'))
+
+// fixDistances (['D3', 'F#3', 'A3', 'C4', 'E5', 'G5'], i, [], ['D', 'F#', 'A', 'C'])
+
+
+// console.log(Note.pitchClass('G##5'));
+
+
+// console.log(transformarAEscalaDiatonica(['Do4', 'Re4', 'Mi4'], 'Re'))
+
+
+// nroInvolucrados
+// console.log(Interval.get(Interval.distance('B4', 'G3')));
+// console.log(Interval.get(Interval.distance('G3', 'B4')));
+// console.log(Interval.get(Interval.distance('G', 'G')));
+
+
+// const { acc, letter, oct } = Note.get('C#')
+
+// console.log(letter + ' ' + acc + ' ' + oct);
+
+// console.log(Note.get('C'));
+// console.log(Note.get('C4'));
+// console.log(Note.get('C#'));
+// console.log(Note.get('C#4'));
+
+
+// console.log(calcularDiatonicaMayorMenor('Fa#', 'M'));
+
+
+console.log(transformarAEscalaDiatonica(['D'], 'F#'));
+console.log(generarTetradaJazz('6sus2', 'G#'));

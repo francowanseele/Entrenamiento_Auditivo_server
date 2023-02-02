@@ -1,9 +1,12 @@
 const { Note, Interval } = require('@tonaljs/tonal');
 const { getHigherNote, getLowerNote, voices } = require('../../enums/voicesJazz');
 const { getRandom, removeAllItemsFromArr, subtractArrays } = require('../Dictados_FuncGral/funcionesGenerales');
-const { acordesJazz } = require('./dataAcordesJazz');
-const { SIMPLE_NOTES } = require('./dataNotes');
+const { logError } = require('../errorService');
+const { ALTERACIONES_ESCALA_DIATONICA } = require('../EscalasDiatonicas/datosAngloSaxonNomenclature');
+const { transformarAEscalaDiatonica, applyAlteraciones } = require('../EscalasDiatonicas/moduleAngloSaxonNomenclature');
+const { acordesJazz, intervaloTensiones, nombreCifrado_codigoTension_byNote } = require('./dataAcordesJazz');
 const { lessOrEqualThan, destructuringNote, removeAltura } = require('./generadorAcordesServices');
+const { acordeType } = require('../../enums/acordeType');
 
 /**
  *
@@ -137,13 +140,30 @@ const generarTetradaJazz = (encryptedName, keyNote) => {
     return result;
 };
 
+
+const getNotesProhibidasEnBajo = (encryptedName, keyNote) => {
+    const acorde = acordesJazz.find((e) => e.nombreCifrado == encryptedName);
+
+    var result = [];
+    var lastNote = keyNote;
+    if (acorde.prohibidasEnBajo.length > 0) {
+        acorde.prohibidasEnBajo.forEach((i) => {
+            lastNote = Note.transpose(keyNote, i);
+            result.push(lastNote);
+        });
+    }
+
+    return result;
+}
+
 /**
  * 
  * @param { 'A2', 'G#3', 'C#4', 'E4' ]} acorde 
  * @param {1} i 
  * @param {[A3]} notesToAvoid 
  * @param {[A G# C# E]} allNotes 
- * @returns { {acorde: acordeResult,newNotes: newNotes} } check distance between acorde[i] and acorde[i + 1] -> if is not correct try to add notes until distances are ok. Add notes avoiding 2m intervals and checking intervals between any other pair.
+ * @returns { {acorde: acordeResult,newNotes: newNotes} } check distance between acorde[i] and acorde[i + 1] 
+ *          -> if is not correct try to add notes until distances are ok. Add notes avoiding 2m intervals and checking intervals between any other pair.
  */
 const fixDistances = (acorde, i, notesToAvoid, allNotes) => {
     // Avoid 2m intervals
@@ -153,6 +173,7 @@ const fixDistances = (acorde, i, notesToAvoid, allNotes) => {
 
     if (!acorde[i + 1]) return acorde;
 
+    let previousNote = acorde[i];
     let currentNote = acorde[i];
     let nextNote = acorde[i + 1];
 
@@ -174,9 +195,9 @@ const fixDistances = (acorde, i, notesToAvoid, allNotes) => {
         const lowerNoteAux = Note.transpose(currentNote, '1A');
 
         const noteRange = {
-            higherNote: lessOrEqualThan(higherNoteAux, getHigherNote(voices.tensiones)) 
+            higherNote: lessOrEqualThan(higherNoteAux, getHigherNote(voices.tetrada_triada)) 
                 ? higherNoteAux
-                : getHigherNote(voices.tensiones),
+                : getHigherNote(voices.tetrada_triada),
             lowerNote: lessOrEqualThan(lowerNoteAux, getLowerNote(voices.tetrada_triada))
                 ? getLowerNote(voices.tetrada_triada)
                 : lowerNoteAux, 
@@ -199,6 +220,7 @@ const fixDistances = (acorde, i, notesToAvoid, allNotes) => {
                 checkProhibitedIntervalsBetweenAnyPair(acordeResult)
             ) {
                 newNotes.push(note);
+                previousNote = currentNote;
                 currentNote = note;
                 added = true;
             } else {
@@ -208,10 +230,45 @@ const fixDistances = (acorde, i, notesToAvoid, allNotes) => {
             
         } while (!added);
 
-        mustToAddNote =
+        // Check if new distances are correct
+        let mustToAdd1 =
             Interval.add(Interval.distance(nextNote, currentNote), '6M').charAt(0) == '-' ||
             Interval.add(Interval.distance(nextNote, currentNote), '6m').charAt(0) == '-';
+
+        let mustToAdd2 = false;
+        if (i == 0) {
+            mustToAdd2 =
+                Interval.add(Interval.distance(currentNote, previousNote), '11P').charAt(0) == '-';
+        } else {
+            mustToAdd2 =
+                Interval.add(Interval.distance(currentNote, previousNote), '6M').charAt(0) == '-' ||
+                Interval.add(Interval.distance(currentNote, previousNote), '6m').charAt(0) == '-';
+        }
+
+        if (mustToAdd1) {
+            previousNote = currentNote;
+        } 
+        
+        if (mustToAdd2) {
+            nextNote = currentNote;
+            currentNote = previousNote;
+            previousNote = currentNote;
+        }
+        
+        if (mustToAdd1 && mustToAdd2) {
+            // ESTO NO DEBERÍA PASAR .....
+            logError('fixDistances', 'A note was added (to try to fix distances problem) but two notes more have to be added to fix te problem (one before the note added and one after the note added).', null);
+        }
+
+        mustToAddNote = mustToAdd1 || mustToAdd2;
     }
+
+    // Check distances between voices (6m/6M or 11P)
+    // if(!checkProhibitedDistancesBetweenVoices(acordeResult)) {
+    //     console.log('..');
+    //     console.log(acordeResult);
+    //     console.log('..');
+    // }
 
     return {
         acorde: acordeResult,
@@ -277,6 +334,27 @@ const fixConsecutivePair = (acorde, i, allNotes) => {
  * 
  * @param {[ 'D3', 'F#3', 'G3', 'B3' ]} acorde 
  * @param {[ 'G', 'B', 'D', 'F#' ]} allNotes 
+ * @returns return all notas which are in allNotes but not in acorde 
+ */
+const getMissingNotes = (acorde, allNotes) => {
+    let result = [];
+    allNotes.forEach(note => {
+        let isInAcorde = false;
+        acorde.forEach(noteAcorde => {
+            const n = removeAltura(noteAcorde);
+            if (n == note) isInAcorde = true;
+        });
+
+        if (!isInAcorde) result.push(note);
+    });
+
+    return result;
+}
+
+/**
+ * 
+ * @param {[ 'D3', 'F#3', 'G3', 'B3' ]} acorde 
+ * @param {[ 'G', 'B', 'D', 'F#' ]} allNotes 
  * @returns check all notes be in acorde; distances between any pair and consecutive pairs -> return an avaliable acorde
  */
 const completeAcorde = (acorde, allNotes) => {
@@ -286,7 +364,7 @@ const completeAcorde = (acorde, allNotes) => {
     let acordeResult = acorde;
     let i = 0;
     do {
-        acordeResult = fixDistances(acordeResult, i, [], allNotes).acorde;
+        acordeResult = fixDistances(acordeResult, i, [], allNotes).acorde; 
         
         if (acordeResult == null) return null;
 
@@ -294,110 +372,75 @@ const completeAcorde = (acorde, allNotes) => {
 
         acordeResult = fixedConsecutivePairResult.acorde;
 
-        if (fixedConsecutivePairResult.action == 'deleted') {
-            console.log('one note was delted.....');
-            acordeResult = fixDistances(acordeResult, i, [], allNotes).acorde;
+        // if (fixedConsecutivePairResult.action == 'deleted') {
+        //     console.log('JUST TO CHECK => one note was delted.....');
+        //     acordeResult = fixDistances(acordeResult, i, [], allNotes).acorde;
             
-            if (acordeResult == null) return null;
-        }
+        //     if (acordeResult == null) return null;
+        // }
 
         i++;
     } while (acordeResult != null && i < acordeResult.length - 1);
 
     // Check all notes be in acordeResult
-    const notesToAdd = getMissingNotes(acordeResult, allNotes); // TODO:
+    const notesToAdd = getMissingNotes(acordeResult, allNotes);
 
     const noteRange = {
-        higherNote: getHigherNote(voices.tensiones),
+        higherNote: getHigherNote(voices.tetrada_triada),
         lowerNote: getLowerNote(voices.tetrada_triada),
     };
     notesToAdd.forEach((n) => {
         let notesToAvoid = [];
         let noteToTry = null;
         let noteResult = null;
+        let added = false;
         do {
             // Get different altura
             noteToTry = getAltura(n, null, notesToAvoid, noteRange);
 
             if (noteToTry) {
                 notesToAvoid.push(noteToTry);
-                noteResult = noteToTry;
-            }
-        } while (noteResult == null && noteToTry != null);
 
-        if (noteResult) {
-            acordeResult = insertInOrder(acordeResult, noteResult);
-        }
+                const acordeToTest = insertInOrder(acordeResult, noteToTry);
+                if (checkProhibitedIntervalsBetweenConsecutivePair(acordeToTest) && checkProhibitedIntervalsBetweenAnyPair(acordeToTest)) {
+                    acordeResult = acordeToTest;
+                    added = true;
+                } else {
+                    if (!checkProhibitedIntervalsBetweenConsecutivePair(acordeToTest)) {
+                        console.log('checkProhibitedIntervalsBetweenConsecutivePair' + ' noteToTry ' + noteToTry);
+                    }
+
+                    if (!checkProhibitedIntervalsBetweenAnyPair(acordeToTest)) {
+                        console.log('checkProhibitedIntervalsBetweenAnyPair' + ' noteToTry ' + noteToTry);
+                    }
+                }
+            }
+
+        } while (noteToTry != null && !added);
+
+        if (!added) {
+            // logError('completeAcorde', 'No se pudo incluir todas las notas necesarias en el acorde');
+            console.log(acordeResult);
+            console.log(notesToAdd);
+            console.log('--------------------------------------');
+
+            if (!checkTetradaInAcorde(acordeResult, allNotes)) acordeResult = null;
+        } 
     });
+
+    // After check all notes be in acorde, could be still distances are wrong
+    let j = 0;
+    while (acordeResult && j < acordeResult.length - 1) {
+        acordeResult = fixDistances(acordeResult, j, [], allNotes).acorde;
+        if (acordeResult == null) return null;
+
+        j++;
+    }
 
     return acordeResult;
 }
 
-/**
- * 
- * @param {['A2', 'Eb3', 'Bbb5']} acorde -> acorde has to be in order
- * @returns 'ok' | 'fail' | 'next_3M'
- */
-const checkProhibitedIntervals = (acorde) => {
-    /**
-     * Entre voces consecutivas: 2m (*solo puede existir si: 
-     *  existe otra nota consecutiva más aguda, que esté a una 4j y 3M de las notas que 
-     *  conforman la 2m)
-     * ------------------------------
-     * Entre cualquier par de voces: 9m ni sus octavas, ya sean notas consecutivas o no. 
-     *  (solo puede existir contra el bajo)
-     */
 
-    if (acorde.length == 0 || acorde.length == 1) return 'ok'
-
-    // Check any pair
-    let ok = true;
-    if (acorde.length > 2) {
-        // Not apply to interval BAJO
-        for (let i = 1; i < acorde.length - 1; i++) {
-            const note1 = acorde[i];
-            
-            for (let j = i + 1; j < acorde.length; j++) {
-                const note2 = acorde[j];
-                
-                ok =
-                    ok &&
-                    Interval.distance(note1, note2) != '8P' &&
-                    Interval.distance(note1, note2) != '9m';
-            }
-        }
-    } 
-
-    if (ok) {
-        // check consecutive notes
-        let result = 'ok';
-        for (let i = 0; i < acorde.length - 1 && result == 'ok'; i++) {            
-            if (Interval.distance(acorde[i], acorde[i + 1]) == '2m') {
-                if (acorde[i + 2]) {
-                    if (
-                        !(
-                            Interval.distance(acorde[i + 1], acorde[i + 2]) ==
-                                '3M' &&
-                            Interval.distance(acorde[i], acorde[i + 2]) == '4P'
-                        )
-                    ) {
-                        result = 'fail';
-                    }
-                } else {
-                    if (acorde.length < 4) {
-                        result = 'next_3M';
-                    } else {
-                        result = 'fail';
-                    }
-                }
-            }
-        }
-
-        return result;
-    } else { 
-        return 'fail';
-    }
-}
 
 /**
  * 
@@ -445,29 +488,69 @@ const checkProhibitedIntervalsBetweenAnyPair = (acorde) => {
      *  conforman la 2m)
      */
 
-    let result = 'ok';
-    let i = 0;
-    for (i = 0; i < acorde.length - 1 && result == 'ok'; i++) {            
-        if (Interval.distance(acorde[i], acorde[i + 1]) == '2m') {
-            if (acorde[i + 2]) {
-                if (
-                    !(
-                        Interval.distance(acorde[i + 1], acorde[i + 2]) == '3M' 
-                        && Interval.distance(acorde[i], acorde[i + 2]) == '4P'
-                    )
-                ) {
-                    result = 'fail';
+    let result = true;
+    if (acorde.length > 1) {
+        for (let i = 0; i < acorde.length - 1 && result; i++) {            
+            if (Interval.distance(acorde[i], acorde[i + 1]) == '2m') {
+                if (acorde[i + 2]) {
+                    if (
+                        !(
+                            Interval.distance(acorde[i + 1], acorde[i + 2]) == '3M'
+                            && Interval.distance(acorde[i], acorde[i + 2]) == '4P'
+                        )
+                    ) {
+                        result = false;
+                    }
+                } else {
+                    result = false;
                 }
-            } else {
-                result = 'next_3M';
             }
         }
     }
 
-    return {
-        status: result,
-        position: i,
-    };
+    return result;
+}
+
+/**
+ * 
+ * @param {[A2, C#4, G4]} acorde 
+ * @returns Return false if exist distance bigger than 11P (with bajo) or 6m/6M (between any other note)
+ *          Return true if not
+ */
+const checkProhibitedDistancesBetweenVoices = (acorde) => {
+    let ok = true;
+    for (let i = 0; i < acorde.length - 1; i++) {
+        if (i == 0) {
+            ok = ok && Interval.add(Interval.distance(acorde[i+1], acorde[i]), '11P').charAt(0) != '-';
+        } else {
+            ok = ok && (
+                Interval.add(Interval.distance(acorde[i+1], acorde[i]), '6M').charAt(0) != '-' &&
+                Interval.add(Interval.distance(acorde[i+1], acorde[i]), '6m').charAt(0) != '-'
+            );
+        }
+    }
+
+    return ok;
+}
+
+
+const checkNotExistEnarmoniasInAcorde = (acorde) => {
+    let noEnarmonia = true;
+
+    acorde.forEach(a1 => {
+        acorde.forEach(a2 => {
+            if (Note.pitchClass(a1) != Note.pitchClass(a2)) {
+                noEnarmonia = noEnarmonia && !isEnarmonia(a1, a2);
+            }
+        });
+    });
+
+    return noEnarmonia;
+}
+
+
+const checkTetradaInAcorde = (acorde, tetrada) => {
+    return getMissingNotes(acorde, tetrada).length == 0
 }
 
 /**
@@ -519,18 +602,26 @@ const insertInOrder = (acorde, noteToInsert) => {
  * @param {[E, G#]} allNotes notes from tetrada, all this notes has to be in acorde
  * @param {[A2, C#5]} acorde acorde until this moment. In each recurtion it will have a new note
  * @param {[E]} notesNamesToAvoid this notes can not be selected as next note in the acorde, but in the next recurtion has to be included
+ * @param {[E]} notesProhibidasEnBajo
  * @returns recursive function. Returns an acorde with a minimum of 4 notes, with all notes of allNotes. 
- *          This functions don't check consecutive distances.
+ *          --- This functions don't check consecutive distances. ---
  */
-const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid) => {
+const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhibidasEnBajo) => {
+    // TODO: For triadas, change number of 4 by 3
+
     // Check if acorde is ok or fail
     const status = checkProhibitedIntervalsBetweenAnyPair(acorde);
     if (!status) return null;
-    if (status && acorde.length == 4) return acorde;
+    if (status && allNotes.length == 0) return acorde;
+    let allNotesAux = allNotes;
+
+    if (getVoiceTypeFromAcorde(acorde) == voices.bajo) {
+        allNotesAux = subtractArrays(allNotes, notesProhibidasEnBajo);
+    }
 
     // New note
     let note = getNote(
-        subtractArrays(allNotes, notesNamesToAvoid),
+        subtractArrays(allNotesAux, notesNamesToAvoid),
         getVoiceTypeFromAcorde(acorde),
         [],
         null
@@ -543,59 +634,298 @@ const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid) => {
     acordeResult = getIncompleteAcordeJazz(
         removeAllItemsFromArr(allNotes, removeAltura(note)),
         acordeResult,
-        []
+        [],
+        notesProhibidasEnBajo
     );
 
     if (acordeResult) return acordeResult;
 
     // Recursive with the same acorde but new note will be avoided as next note in acorde
-    return getIncompleteAcordeJazz(allNotes, acorde, [removeAltura(note)]);
+    return getIncompleteAcordeJazz(allNotes, acorde, [removeAltura(note)], notesProhibidasEnBajo);
 };
 
-const generarAcordeJazz = (encryptedName) => {
+
+const isEnarmonia = (note1, note2) => {
+    return Note.chroma(note1) == Note.chroma(note2);
+}
+
+/**
+ * 
+ * @param {nombre: 'Novena Mayor', codigo: '9', tipo: '9', intervalo: '9M', semitonos: 2, cantidadNombres: 2} tension 
+ * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
+ * @param {B} keyNote 
+ * @returns true if exist enarmonía when the tension is applied to acorde
+ *              if not false
+ */
+const checkExistEnarmonias = (tension, acorde, keyNote) => {
+    const noteResult = Note.transpose(keyNote, tension.intervalo);
+
+    let existEnarmonia = false;
+    // Start i = 0 because we have to check Enarmonías in the first note too (interval BAJO)
+    for (let i = 0; i < acorde.length; i++) {
+        const n = acorde[i];
+        
+        existEnarmonia = existEnarmonia || isEnarmonia(n, noteResult);
+    }
+
+    return existEnarmonia;
+}
+
+
+const checkTensionAlreadyApplaied = (tension, tensionesApplied) => {
+    const tApplied = tensionesApplied.find(t => t.tipo == tension.tipo);
+
+    if (!tApplied) {
+        return false;
+    } else {
+        if (
+            (tApplied.codigo == 'b9' && tension.codigo == '#9') ||
+            (tension.codigo == 'b9' && tApplied.codigo == '#9')
+        ) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+/**
+ * 
+ * @param {nombre: 'Novena Mayor', codigo: '9', tipo: '9', intervalo: '9M', semitonos: 2, cantidadNombres: 2} tension 
+ * @param {[ tension1, tension2 ]} tensionesApplied 
+ * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
+ * @param {B} keyNote 
+ * @returns true if Tension will be applied
+ *          false if:   1. Tension type already exists, 
+ *                      2. Enarmonía exist in interval tétrada/triada
+ *                      3. 0.5 of probability to be applied or not
+ */
+const isTensionApplied = (tension, tensionesApplied, acorde, keyNote) => {
+    // Check if tension with same name already applaied
+    if (checkTensionAlreadyApplaied(tension, tensionesApplied)) return false;
+
+    // Check if there are any Enarmonía
+    if (checkExistEnarmonias(tension, acorde, keyNote)) return false;
+
+    // Filter randomly if Tension is applied or not
+    const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
+    if (rdm % 2 == 0) return false
+    
+    return true;
+}
+
+/**
+ * 
+ * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
+ * @param {{nombre: 'Novena menor',codigo: 'b9',tipo: '9',intervalo: '9m',semitonos: 1,cantidadNombres: 2,}} tension 
+ * @param {C} keyNote 
+ * @returns returns the acorde after apply tension. 
+ *          If is not possible to apply, return same acorde and accordeApplied = false 
+ *          {acorde, acordeApplied}
+ */
+const applyTensionToAcorde = (acorde, tension, keyNote) => {
+    const newNote = Note.transpose(keyNote, tension.intervalo);
+
+    let acordeResult = acorde;
+    let notesToAvoid = [];
+    let noteToTry = null;
+    let acordeApplied = false;
+        
+    do {
+        // Get different altura
+        noteToTry = getAltura(newNote, voices.tensiones, notesToAvoid, null);
+
+        if (noteToTry) {
+            notesToAvoid.push(noteToTry);
+            const acordeToCheck = insertInOrder(acorde, noteToTry);
+            acordeApplied = checkProhibitedIntervalsBetweenAnyPair(acordeToCheck) 
+                            && checkProhibitedIntervalsBetweenConsecutivePair(acordeToCheck) 
+                            && checkProhibitedDistancesBetweenVoices(acordeToCheck);
+            if (acordeApplied) acordeResult = acordeToCheck;
+        }
+    } while (noteToTry != null && !acordeApplied);
+
+    return {
+        acorde: acordeResult,
+        acordeApplied: acordeApplied,
+    }
+}
+
+/**
+ * 
+ * @param {[{nombre: 'Novena menor',codigo: 'b9',tipo: '9',intervalo: '9m',semitonos: 1,cantidadNombres: 2,}]} intervaloTensionesAux 
+ * @param {{nombre: 'Novena menor',codigo: 'b9',tipo: '9',intervalo: '9m',semitonos: 1,cantidadNombres: 2,}} tension 
+ * @returns returns intervaloTensionesAux list without tension
+ */
+const deleteTension = (intervaloTensionesAux, tension) => {
+    let res = [];
+
+    intervaloTensionesAux.forEach(t => {
+        if (t.codigo != tension.codigo) {
+            res.push(t);
+        }
+    });
+
+    return res;
+}
+
+/**
+ * 
+ * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
+ * @param {*} keyNote 
+ * @param {*} possibleTensiones
+ * @return an array of notes (ex C#5, Eb5) which belongs to tensiones section. 
+ * That notes can't be the same notes of the tetrada.
+ */
+const addTensiones = (acorde, keyNote, possibleTensiones) => {
+    let intervaloTensionesAux = possibleTensiones;
+    let acordeAux = acorde;
+    let tensionesApplied = [];
+
+    if (acorde) {
+        do {
+            // TODO: insted of get random tensiones, get posibles tensiones, order it and then apply in a loop
+            // in this way we could avoid distances bigguer than 6m/6M or 11P
+            // However distances are checked when a tension is applied
+            const tension = getRandom(intervaloTensionesAux);
+
+            if (isTensionApplied(tension, tensionesApplied, acorde, keyNote)) { 
+                const result = applyTensionToAcorde(acordeAux, tension, keyNote);
+                acordeAux = result.acorde;
+                if (result.acordeApplied) tensionesApplied.push(tension);
+            }
+            
+            intervaloTensionesAux = deleteTension(intervaloTensionesAux, tension);
+        } while (intervaloTensionesAux.length > 0);
+    }
+
+    return {
+        acorde: acordeAux,
+        tensionesApplied: tensionesApplied,
+    };
+}
+
+/**
+ * 
+ * @param {[{nombre: 'Novena menor',codigo: 'b9',tipo: '9',intervalo: '9m',semitonos: 1,cantidadNombres: 2,}]} tensionesApplied 
+ * @returns 'b9 11'
+ */
+const printTensiones = (tensionesApplied) => {
+    let tensionesAppliedOrdered = tensionesApplied
+    tensionesAppliedOrdered.sort(function(a, b){return a.semitonos - b.semitonos});
+
+    let res = '';
+
+    tensionesAppliedOrdered.forEach(t => {
+        res = res + t.codigo + ' ';
+    });
+
+    return res;
+}
+
+const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones) => {
     const MAX_ITERATION = 15;
     let acorde = null;
+    let tensionesApplied = [];
+    let tetrada;
 
-    let i = 0;
-    do {    
-        // Get tetrada
-        const keyNote = getRandom(SIMPLE_NOTES);
-        const tetrada = generarTetradaJazz(encryptedName, keyNote);
+    // Get tetrada
+    tetrada = generarTetradaJazz(encryptedName, keyNote);
+    const notesProhibidasEnBajo = getNotesProhibidasEnBajo(encryptedName, keyNote);
 
-        let j = 0;
-        do {
-            // Get acorde
-            acorde = getIncompleteAcordeJazz(tetrada, [], []);
-            acorde = completeAcorde(acorde, tetrada);
-            i++;
-        } while (acorde == null && j < MAX_ITERATION);
+    let j = 0;
+    do {
+        // Get acorde
+        acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo);
+        acorde = completeAcorde(acorde, tetrada);
+        if (possibleTensiones.length > 0) {
+            const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones);
+            acorde = resultTensiones.acorde;
+            tensionesApplied = resultTensiones.tensionesApplied;
+        }
+        j++;
+    } while (acorde == null && j < MAX_ITERATION);
 
-    } while (acorde == null && i < MAX_ITERATION);
+    let name = '';
 
-    return acorde;
+    if (acorde) {
+        if (keyNote == removeAltura(acorde[0])) {
+            name = keyNote + ' ' + encryptedName + ' ' + printTensiones(tensionesApplied); 
+        } else {
+            name = keyNote + ' ' + encryptedName + ' ' + printTensiones(tensionesApplied) + '/ ' + removeAltura(acorde[0]); 
+        }
+    }
+
+    // JUST TO CHECK
+    if (!checkProhibitedIntervalsBetweenConsecutivePair(acorde)) console.log('///////////////////////////////////////////////// WRONG.. checkProhibitedIntervalsBetweenConsecutivePair')
+    if (!checkProhibitedIntervalsBetweenAnyPair(acorde)) console.log('///////////////////////////////////////////////// WRONG... checkProhibitedIntervalsBetweenAnyPair')
+    if (!checkProhibitedDistancesBetweenVoices(acorde)) console.log('///////////////////////////////////////////////// WRONG... fixDistances -> there is a distance bigger than 11P or 6m/6M');
+    if (!checkNotExistEnarmoniasInAcorde(acorde)) console.log('///////////////////////////////////////////////// WRONG... existEnarmonia');
+    if (!checkTetradaInAcorde(acorde, tetrada)) {
+        console.log('///////////////////////////////////////////////// WRONG... missing notes in acorde');
+        console.log(tetrada);
+        console.log(acorde);
+    }
+
+    return {
+        name,
+        acorde,
+    };
+}
+
+/**
+ * 
+ * @param {string} note note with no altura. Ex C
+ * @param {acordeType} acordeType enum acordeType (tetrada or triada)
+ * @returns acorde
+ */
+const generarAcordeJazzFromNote = (note, acordeType) => {
+    // Get tetrada and posible tensiones for note
+    const nombreCifrado_codigoTension_Posibles = nombreCifrado_codigoTension_byNote.find(x => x.keyNote == note && x.acordeType == acordeType);
+    const nombreCifrado_codigoTension = getRandom(nombreCifrado_codigoTension_Posibles.nombreCifrado_codigoTension);
+    
+    // Get EscalaDiatónica randomly and transpose note to EscalaDiatónica
+    const tonality = getRandom(ALTERACIONES_ESCALA_DIATONICA);
+    const newNote = transformarAEscalaDiatonica([note], tonality.escala); // with alteraciones applied
+
+    const possibleTensiones = intervaloTensiones.filter(i => nombreCifrado_codigoTension.codigosTensiones.indexOf(i.codigo) > -1);
+
+    // nombreCifrado_codigoTension.codigosTensiones
+
+    const result = generarAcordeJazz(nombreCifrado_codigoTension.nombreCifrado, newNote[0], possibleTensiones);
+
+    // TODO: define if apply or not alteraciones
+    // const acorde = applyAlteraciones(result.acorde, tonality.escala);
+
+    return {
+        name: result.name,
+        acorde: result.acorde,
+        tonality: tonality.escala,
+    };
 }
 
 module.exports = {
     generarTetradaJazz,
     generarAcordeJazz,
+    fixDistances,
 };
 
-console.log('Maj7 -> ' + generarAcordeJazz('Maj7'));
-console.log('7 -> ' + generarAcordeJazz('7'));
-console.log('m7 -> ' + generarAcordeJazz('m7'));
-console.log('m7b5 -> ' + generarAcordeJazz('m7b5'));
-console.log('AugMaj7 -> ' + generarAcordeJazz('AugMaj7'));
-console.log('07 -> ' + generarAcordeJazz('07'));
-console.log('6 -> ' + generarAcordeJazz('6'));
-console.log('m6 -> ' + generarAcordeJazz('m6'));
-console.log('7(#5) -> ' + generarAcordeJazz('7(#5)'));
-console.log('7(b5 -> ' + generarAcordeJazz('7(b5)'));
-console.log('7sus2 -> ' + generarAcordeJazz('7sus2'));
-console.log('7sus4 -> ' + generarAcordeJazz('7sus4'));
-console.log('6sus2 -> ' + generarAcordeJazz('6sus2'));
-console.log('6sus4 -> ' + generarAcordeJazz('6sus4'));
-console.log('maj7sus2 -> ' + generarAcordeJazz('maj7sus2'));
-console.log('maj7sus4 -> ' + generarAcordeJazz('maj7sus4'));
+// console.log('Maj7 -> ' + generarAcordeJazz('Maj7'));
+// console.log('7 -> ' + generarAcordeJazz('7'));
+// console.log('m7 -> ' + generarAcordeJazz('m7'));
+// console.log('m7b5 -> ' + generarAcordeJazz('m7b5'));
+// console.log('AugMaj7 -> ' + generarAcordeJazz('AugMaj7'));
+// console.log('07 -> ' + generarAcordeJazz('07'));
+// console.log('6 -> ' + generarAcordeJazz('6'));
+// console.log('m6 -> ' + generarAcordeJazz('m6'));
+// console.log('7(#5) -> ' + generarAcordeJazz('7(#5)'));
+// console.log('7(b5 -> ' + generarAcordeJazz('7(b5)'));
+// console.log('7sus2 -> ' + generarAcordeJazz('7sus2'));
+// console.log('7sus4 -> ' + generarAcordeJazz('7sus4'));
+// console.log('6sus2 -> ' + generarAcordeJazz('6sus2'));
+// console.log('6sus4 -> ' + generarAcordeJazz('6sus4'));
+// console.log('maj7sus2 -> ' + generarAcordeJazz('maj7sus2'));
+// console.log('maj7sus4 -> ' + generarAcordeJazz('maj7sus4'));
 
 // ------------------------------------------------------------
 // THIS ACORDE CAN NOT BE COMPLETED
@@ -603,36 +933,62 @@ console.log('maj7sus4 -> ' + generarAcordeJazz('maj7sus4'));
 // console.log(completeAcorde([ 'F2', 'E4', 'A4', 'C5' ], [ 'F', 'A', 'C', 'E' ]));
 // ------------------------------------------------------------
 
-// console.log('Maj7 -> ');
-// console.log('7 -> ');
-// console.log('m7 -> ');
-// console.log('m7b5 -> ');
-// console.log('AugMaj7 -> ');
-// console.log('07 -> ');
-// console.log('6 -> ');
-// console.log('m6 -> ');
-// console.log('7(#5) -> ');
-// console.log('7(b5 -> ');
-// console.log('7sus2 -> ');
-// console.log('7sus4 -> ');
-// console.log('6sus2 -> ');
-// console.log('6sus4 -> ');
-// console.log('maj7sus2 -> ');
-// console.log('maj7sus4 -> ');
 
-// console.log(generarAcordeJazz('Maj7'));
-// console.log(generarAcordeJazz('7'));
-// console.log(generarAcordeJazz('m7'));
-// console.log(generarAcordeJazz('m7b5'));
-// console.log(generarAcordeJazz('AugMaj7'));
-// console.log(generarAcordeJazz('07'));
-// console.log(generarAcordeJazz('6'));
-// console.log(generarAcordeJazz('m6'));
-// console.log(generarAcordeJazz('7(#5)'));
-// console.log(generarAcordeJazz('7(b5)'));
-// console.log(generarAcordeJazz('7sus2'));
-// console.log(generarAcordeJazz('7sus4'));
-// console.log(generarAcordeJazz('6sus2'));
-// console.log(generarAcordeJazz('6sus4'));
-// console.log(generarAcordeJazz('maj7sus2'));
-// console.log(generarAcordeJazz('maj7sus4'));
+
+const printToSee = (elem) => {
+    let res = '';
+    if (elem.tonality) {
+        res = elem.name + ' (ESCALA: ' + elem.tonality + ')' + ' -->> ';
+    } else {
+        res = elem.name + ' -->> ';
+    }
+    elem.acorde.forEach(n => {
+        res = res + n + ' ';
+    });
+
+    return res;
+}
+
+
+// console.log(printToSee(generarAcordeJazz('Maj7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('m7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('m7b5', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('AugMaj7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('07', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('6', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('m6', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('7(#5)', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('7(b5)', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('7sus2', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('7sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('6sus2', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('6sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('maj7sus2', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+// console.log(printToSee(generarAcordeJazz('maj7sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
+
+
+console.log('----------------------------------------')
+console.log('TÉTRADAS')
+console.log('----------------------------------------')
+console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.tetrada)));
+console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.tetrada)));
+console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.tetrada)));
+console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.tetrada)));
+console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.tetrada)));
+console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.tetrada)));
+console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.tetrada)));
+
+console.log('----------------------------------------')
+console.log('TRÍADAS')
+console.log('----------------------------------------')
+console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.triada)));
+console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.triada)));
+console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.triada)));
+console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.triada)));
+console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.triada)));
+console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.triada)));
+console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.triada)));
+
+
+// console.log(generarTetradaJazz('Maj7', 'C'));

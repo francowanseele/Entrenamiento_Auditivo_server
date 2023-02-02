@@ -441,7 +441,8 @@ const generarAcordesBarroco = (name) => {
     );
 };
 
-// console.log(generarAcordesBarroco('Cm').acorde);
+console.log(generarAcordesBarroco('Cm').acorde);
+console.log(generarAcordesBarroco('C').acorde);
 
 module.exports = {
     generarAcordesBarroco,

@@ -1,4 +1,5 @@
 const NOTAS_BASICAS = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'];
+const NOTAS_BASICAS_NOM_ANGLO = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const NOTAS_ALTURA = [
     'Do1',
     'Re1',
@@ -64,4 +65,5 @@ module.exports = {
     ESCALAS_DIATONICAS,
     NOTAS_ALTURA,
     NOTAS_BASICAS,
+    NOTAS_BASICAS_NOM_ANGLO,
 };
