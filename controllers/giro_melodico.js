@@ -20,13 +20,15 @@ async function addGiroMelodico(req, res) {
             return objectToInsert;
         };
 
-        const { giro_melodico, mayor } = req.body;
+        const { giro_melodico, mayor, grupoId } = req.body;
 
         const giroMelodicoAdded = await db
             .knex('GiroMelodico')
             .insert({
                 Mayor: mayor,
                 DelSistema: true,
+                GrupoId: grupoId,
+                Eliminado: false,
                 created_by: getAuthenticationToken(req).id,
             })
             .returning(['id']);
@@ -49,6 +51,32 @@ async function addGiroMelodico(req, res) {
     }
 }
 
+async function editGiroMelodico(req, res) {
+    try {
+        const { id } = req.params;
+        const { grupoId } = req.body;
+
+        await db
+            .knex('GiroMelodico')
+            .where({ 'GiroMelodico.id': id })
+            .update({
+                'GrupoId': grupoId,
+                'updated_by': getAuthenticationToken(req).id,
+            });
+
+        res.status(200).send({
+            ok: true,
+            message: 'Giro Melódico editado correctamente',
+        });
+    } catch (error) {
+        logError('addGiroMelodico', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 async function getGiroMelodico(req, res) {
     try {
         const { mayor } = req.body;
@@ -58,12 +86,14 @@ async function getGiroMelodico(req, res) {
             .where({
                 'GiroMelodico.Mayor': mayor,
                 'GiroMelodico.DelSistema': true,
+                'GiroMelodico.Eliminado': false,
             })
             .select(
                 'GiroMelodico.id',
                 'GiroMelodico_Nota.Nota',
                 'GiroMelodico_Nota.Orden',
-                'GiroMelodico.Mayor'
+                'GiroMelodico.Mayor',
+                'GiroMelodico.GrupoId'
             )
             .join(
                 'GiroMelodico_Nota',
@@ -86,7 +116,35 @@ async function getGiroMelodico(req, res) {
     }
 }
 
+async function removeGiroMelodico(req, res) {
+    try {
+        const { id } = req.params;
+
+        await db
+            .knex('GiroMelodico')
+            .where({ 'GiroMelodico.id': id })
+            .update({
+                'Eliminado': true,
+                'updated_by': getAuthenticationToken(req).id,
+            });
+
+        res.status(200).send({
+            ok: true,
+            message: 'Giro Melódico eliminado correctamente',
+        });
+    } catch (error) {
+        logError('addGiroMelodico', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+
 module.exports = {
     addGiroMelodico,
     getGiroMelodico,
+    editGiroMelodico,
+    removeGiroMelodico,
 };
