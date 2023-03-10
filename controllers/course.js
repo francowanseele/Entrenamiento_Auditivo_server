@@ -255,7 +255,7 @@ async function getModules(req, res) {
                 'Modulo.Descripcion',
                 'ConfiguracionDictado.Nombre as NombreConfigDictado',
                 'ConfiguracionDictado.Descripcion as DescripcionConfigDictado',
-                'ConfiguracionDictado.id as idConfigDictado'
+                'ConfiguracionDictado.id as idConfigDictado',
             )
             .leftJoin(
                 'ConfiguracionDictado',
@@ -264,9 +264,27 @@ async function getModules(req, res) {
                 'Modulo.id'
             );
 
+        const modulesAcordesJazz = await db
+            .knex('Modulo')
+            .where({ 'Modulo.CursoId': id })
+            .select(
+                'Modulo.id',
+                'Modulo.Nombre',
+                'Modulo.Descripcion',
+                'ConfiguracionAcordeJazz.Nombre as NombreAcordeJazz',
+                'ConfiguracionAcordeJazz.Descripcion as DescripcionAcordeJazz',
+                'ConfiguracionAcordeJazz.id as idAcordeJazz'
+            )
+            .leftJoin(
+                'ConfiguracionAcordeJazz',
+                'ConfiguracionAcordeJazz.ModuloId',
+                '=',
+                'Modulo.id'
+            );
+
         res.status(200).send({
             ok: true,
-            modules: formatData.GroupByModuleAndConfigDict(modules),
+            modules: formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz),
             message: 'Ok',
         });
     } catch (error) {

@@ -1,6 +1,6 @@
 const { Note, Interval } = require('@tonaljs/tonal');
 const { getHigherNote, getLowerNote, voices } = require('../../enums/voicesJazz');
-const { getRandom, removeAllItemsFromArr, subtractArrays } = require('../Dictados_FuncGral/funcionesGenerales');
+const { getRandom, removeAllItemsFromArr, subtractArrays, getElemPrioridad } = require('../Dictados_FuncGral/funcionesGenerales');
 const { logError } = require('../errorService');
 const { ALTERACIONES_ESCALA_DIATONICA } = require('../EscalasDiatonicas/datosAngloSaxonNomenclature');
 const { transformarAEscalaDiatonica, applyAlteraciones } = require('../EscalasDiatonicas/moduleAngloSaxonNomenclature');
@@ -810,11 +810,14 @@ const addTensiones = (acorde, keyNote, possibleTensiones) => {
  * @param {[{nombre: 'Novena menor',codigo: 'b9',tipo: '9',intervalo: '9m',semitonos: 1,cantidadNombres: 2,}]} tensionesApplied 
  * @returns 'b9 11'
  */
-const printTensiones = (tensionesApplied) => {
+const printTensiones = (tensionesApplied, tipo) => {
     let tensionesAppliedOrdered = tensionesApplied
     tensionesAppliedOrdered.sort(function(a, b){return a.semitonos - b.semitonos});
 
     let res = '';
+    if (tipo == acordeType.triada && tensionesAppliedOrdered.length > 0) {
+        res = 'add ';
+    }
 
     tensionesAppliedOrdered.forEach(t => {
         res = res + t.codigo + ' ';
@@ -823,7 +826,26 @@ const printTensiones = (tensionesApplied) => {
     return res;
 }
 
-const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones) => {
+const getReferenceNoteInRange = (note) => {
+    // Note between E3 - D#4
+    let result = note;
+    let lowerInterval = Interval.distance('E3', result);
+    let higherInterval = Interval.distance(result, 'D#4');
+
+    while (lowerInterval.charAt(0) == '-') {
+        result = Note.transpose(result, '8P');
+        lowerInterval = Interval.distance('E3', result);
+    }
+
+    while (higherInterval.charAt(0) == '-') {
+        result = Note.transpose(result, '-8P');
+        higherInterval = Interval.distance(result, 'D#4');
+    }
+
+    return result;
+}
+
+const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -850,9 +872,9 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones) => {
 
     if (acorde) {
         if (keyNote == removeAltura(acorde[0])) {
-            name = keyNote + ' ' + encryptedName + ' ' + printTensiones(tensionesApplied); 
+            name = keyNote + ' ' + encryptedName + ' ' + printTensiones(tensionesApplied, tipo); 
         } else {
-            name = keyNote + ' ' + encryptedName + ' ' + printTensiones(tensionesApplied) + '/ ' + removeAltura(acorde[0]); 
+            name = keyNote + ' ' + encryptedName + ' ' + printTensiones(tensionesApplied, tipo) + '/ ' + removeAltura(acorde[0]); 
         }
     }
 
@@ -870,6 +892,7 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones) => {
     return {
         name,
         acorde,
+        referenceNote: getReferenceNoteInRange(keyNote + '4'), // just add altura
     };
 }
 
@@ -880,11 +903,13 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones) => {
  * @returns acorde
  */
 const generarAcordeJazzFromNote = (note, acordeType) => {
+    // TODO: nombreCifrado_codigoTension_byNote -> get from parameter, Configuración_CampoArmonico (mismo formato)
     // Get tetrada and posible tensiones for note
     const nombreCifrado_codigoTension_Posibles = nombreCifrado_codigoTension_byNote.find(x => x.keyNote == note && x.acordeType == acordeType);
     const nombreCifrado_codigoTension = getRandom(nombreCifrado_codigoTension_Posibles.nombreCifrado_codigoTension);
     
     // Get EscalaDiatónica randomly and transpose note to EscalaDiatónica
+    // TODO: get tonality from tonality available (Configuracion_CampoArmonico)
     const tonality = getRandom(ALTERACIONES_ESCALA_DIATONICA);
     const newNote = transformarAEscalaDiatonica([note], tonality.escala); // with alteraciones applied
 
@@ -892,7 +917,7 @@ const generarAcordeJazzFromNote = (note, acordeType) => {
 
     // nombreCifrado_codigoTension.codigosTensiones
 
-    const result = generarAcordeJazz(nombreCifrado_codigoTension.nombreCifrado, newNote[0], possibleTensiones);
+    const result = generarAcordeJazz(nombreCifrado_codigoTension.nombreCifrado, newNote[0], possibleTensiones, 0);
 
     // TODO: define if apply or not alteraciones
     // const acorde = applyAlteraciones(result.acorde, tonality.escala);
@@ -901,6 +926,107 @@ const generarAcordeJazzFromNote = (note, acordeType) => {
         name: result.name,
         acorde: result.acorde,
         tonality: tonality.escala,
+        referenceNote: result.referenceNote,
+    };
+}
+
+const getDifferentsEscalas = (dataCamposArmonicos) => {
+    let res = [];
+
+    dataCamposArmonicos.forEach(ca => {
+        if (res.find(x => x.Escala == ca.Escala) == null) {
+            res.push({
+                elem: ca.Escala,
+                prioridad: ca.EscalaPrioridad,
+            });
+        }
+    });
+
+    return res;
+}
+
+const getDifferentsKeyNotes = (dataCamposArmonicos) => {
+    let res = [];
+
+    dataCamposArmonicos.forEach(ca => {
+        if (res.find(x => x.KeyNote == ca.KeyNote) == null) {
+            res.push({
+                elem: ca.KeyNote,
+                prioridad: ca.KeyNotePrioridad,
+            });
+        }
+    });
+
+    return res;
+}
+
+const getDifferentsTensiones = (tensiones) => {
+    if (tensiones == '') {
+        return [];
+    }
+
+    let tensionesStr = tensiones.replace('add','');
+    tensionesStr = tensionesStr.replace(' ', '');
+
+    const tensionesArr = tensionesStr.split(',');
+
+    return intervaloTensiones.filter(i => tensionesArr.indexOf(i.codigo) > -1);
+}
+
+/**
+ * 
+ * @param {[Object]} dataCamposArmonicos {
+    Escala: escalaCampoArmonico.mayor,
+    EscalaPrioridad: 1,
+    KeyNote: 'C',
+    KeyNotePrioridad: 1,
+    NombreCifrado: nombreCifrado_TetradaTriada.tetrada_Maj7,
+    Tension:
+        intervaloTensiones.novenaMayor +
+        ', ' +
+        intervaloTensiones.tercenaMayor,
+    Tipo: acordeType.tetrada,
+}
+ * @param {[{elem: string, prioridad: int}]} tonality [{elem: 'Do', prioridad: 3}] ¡¡¡ATENCIÓN!!! elem es Do y NO es C
+ * @returns acorde = { name: result.name, acorde: result.acorde, tonality: tonality.escala }
+ */
+const getAcordeJazz = (dataCamposArmonicos, tonality) => {
+    // get tonality
+    const tonalitySelected = getElemPrioridad(tonality);
+
+    // get escala based on priority
+    const escala = getElemPrioridad(getDifferentsEscalas(dataCamposArmonicos));
+
+    // get key note based on priority
+    const keyNote = getElemPrioridad(getDifferentsKeyNotes(dataCamposArmonicos.filter((x) => x.Escala == escala)));
+
+    const nombresCifrados_tensiones = dataCamposArmonicos.filter((x) => 
+        x.Escala == escala && x.KeyNote == keyNote
+    );
+    const nombreCifrado_tension = getRandom(nombresCifrados_tensiones);
+    
+    // get nombreCifrado
+    const nombreCifrado = nombreCifrado_tension.NombreCifrado;
+
+    // get tensiones
+    const tensiones = getDifferentsTensiones(nombreCifrado_tension.Tension);
+
+    const alt = ALTERACIONES_ESCALA_DIATONICA.find(x => x.escalaTraducida == tonalitySelected);
+
+    // transpose keyNote to tonalitySelected
+    const newNote = transformarAEscalaDiatonica([keyNote], alt.escala); // with alteraciones applied
+
+    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo);
+
+    // TODO: define if apply or not alteraciones
+    // const acorde = applyAlteraciones(result.acorde, tonality.escala);
+
+    return {
+        name: result.name,
+        acorde: result.acorde,
+        tonality: alt.escala,
+        type: nombreCifrado_tension.Tipo,
+        referenceNote: result.referenceNote,
     };
 }
 
@@ -908,6 +1034,7 @@ module.exports = {
     generarTetradaJazz,
     generarAcordeJazz,
     fixDistances,
+    getAcordeJazz,
 };
 
 // console.log('Maj7 -> ' + generarAcordeJazz('Maj7'));
@@ -968,27 +1095,28 @@ const printToSee = (elem) => {
 // console.log(printToSee(generarAcordeJazz('maj7sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
 
 
-console.log('----------------------------------------')
-console.log('TÉTRADAS')
-console.log('----------------------------------------')
-console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.tetrada)));
-console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.tetrada)));
-console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.tetrada)));
-console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.tetrada)));
-console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.tetrada)));
-console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.tetrada)));
-console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.tetrada)));
+// console.log('----------------------------------------')
+// console.log('TÉTRADAS')
+// console.log('----------------------------------------')
+// console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.tetrada)));
+// console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.tetrada)));
+// console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.tetrada)));
+// console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.tetrada)));
+// console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.tetrada)));
+// console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.tetrada)));
+// console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.tetrada)));
 
-console.log('----------------------------------------')
-console.log('TRÍADAS')
-console.log('----------------------------------------')
-console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.triada)));
-console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.triada)));
-console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.triada)));
-console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.triada)));
-console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.triada)));
-console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.triada)));
-console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.triada)));
+// console.log('----------------------------------------')
+// console.log('TRÍADAS')
+// console.log('----------------------------------------')
+// console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.triada)));
+// console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.triada)));
+// console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.triada)));
+// console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.triada)));
+// console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.triada)));
+// console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.triada)));
+// console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.triada)));
 
 
+// console.log(generarAcordeJazzFromNote('C', acordeType.tetrada));
 // console.log(generarTetradaJazz('Maj7', 'C'));

@@ -1,5 +1,6 @@
 const transformar = require('./DictadosMelodicos/transformarEscala');
 const datoEscalaDiatonica = require('./EscalasDiatonicas/datos');
+const datoEscalaDiatonicaAnglo = require('./EscalasDiatonicas/datosAngloSaxonNomenclature');
 
 const translateNotes = (dictado) => {
     var dictado_Trans = [];
@@ -237,6 +238,15 @@ const getCompasSec = (numerador, pulsoSec) => {
     return pulsoSec * numerador;
 }
 
+/**
+ * 
+ * @param {string} tonality ex: Do
+ * @return {string} ex C
+ */
+const translateTonality = (tonality) => {
+    return datoEscalaDiatonicaAnglo.ALTERACIONES_ESCALA_DIATONICA.find(x => x.escalaTraducida == tonality)?.escala;
+}
+
 module.exports = {
     translateNotes,
     translateToMyNotes,
@@ -246,4 +256,5 @@ module.exports = {
     translateDictadoFigToSec, 
     getCompasSec,
     translateFigToSec,
+    translateTonality,
 };

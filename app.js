@@ -13,6 +13,8 @@ const celulaRitmicaRoutes = require('./routers/celula_ritmica');
 const instituteRoutes = require('./routers/institute');
 const authRoutes = require('./routers/auth');
 const giroMelodicoGrupoRoutes = require('./routers/giro_melodico_grupo');
+const CAJRoutes = require('./routers/configuracionAcordesJazz');
+const acordesRoutes = require('./routers/acordes');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -44,6 +46,8 @@ app.use(`/api`, celulaRitmicaRoutes);
 app.use(`/api`, instituteRoutes);
 app.use(`/api`, authRoutes);
 app.use(`/api`, giroMelodicoGrupoRoutes);
+app.use(`/api`, CAJRoutes);
+app.use(`/api`, acordesRoutes);
 
 // Export
 module.exports = app;

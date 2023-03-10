@@ -20,15 +20,18 @@ const GroupByIdAndShortByOrder = (arr) => {
     return result;
 };
 
-const GroupByModuleAndConfigDict = (data) => {
+const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz) => {
     let res = [];
-    data.forEach((d) => {
+
+    // Dictado
+    dataConfigDictation.forEach((d) => {
         const i = res.findIndex((module) => module.id == d.id);
         if (i > -1) {
             res[i].configuracion_dictado.push({
                 id: d.idConfigDictado,
                 Nombre: d.NombreConfigDictado,
                 Descripcion: d.DescripcionConfigDictado,
+                Tipo: 'ConfiguracionDictado', // table name
             });
         } else {
             res.push({
@@ -40,6 +43,34 @@ const GroupByModuleAndConfigDict = (data) => {
                         id: d.idConfigDictado,
                         Nombre: d.NombreConfigDictado,
                         Descripcion: d.DescripcionConfigDictado,
+                        Tipo: 'ConfiguracionDictado', // table name
+                    },
+                ],
+            });
+        }
+    });
+
+    // Acorde Jazz
+    dataConfigAcordesJazz.forEach(d => {
+        const i = res.findIndex((module) => module.id == d.id);
+        if (i > -1) {
+            res[i].configuracion_dictado.push({
+                Nombre: d.NombreAcordeJazz,
+                Descripcion: d.DescripcionAcordeJazz,
+                id: d.idAcordeJazz,
+                Tipo: 'ConfiguracionAcordeJazz', // table name
+            });
+        } else {
+            res.push({
+                id: d.id,
+                Nombre: d.Nombre,
+                Descripcion: d.Descripcion,
+                configuracion_dictado: [
+                    {
+                        Nombre: d.NombreAcordeJazz,
+                        Descripcion: d.DescripcionAcordeJazz,
+                        id: d.idAcordeJazz,
+                        Tipo: 'ConfiguracionAcordeJazz', // table name
                     },
                 ],
             });

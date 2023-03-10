@@ -4,6 +4,7 @@ const { Note, Interval } = require('@tonaljs/tonal');
 const { getNotaTransformada } = require("../DictadosMelodicos/transformarEscala");
 const { transformarAEscalaDiatonica } = require("../EscalasDiatonicas/moduleAngloSaxonNomenclature");
 const { calcularDiatonicaMayorMenor } = require("../EscalasDiatonicas/validacion");
+const { translateNotes } = require("../funcsGralDictados");
 const { generarTetradaJazz } = require("./generadorAcordesJazz");
 // const { fixDistances } = require("./generadorAcordesJazz");
 
@@ -223,5 +224,22 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 // console.log(calcularDiatonicaMayorMenor('Fa#', 'M'));
 
 
-console.log(transformarAEscalaDiatonica(['D'], 'F#'));
-console.log(generarTetradaJazz('6sus2', 'G#'));
+// console.log(transformarAEscalaDiatonica(['D'], 'F#'));
+// console.log(generarTetradaJazz('6sus2', 'G#'));
+
+// console.log(translateNotes(['Do']));
+
+
+// console.log(Interval.distance('E3', 'A3'));
+// console.log(Interval.distance('A3', 'D#4'));
+// console.log('---------------------');
+
+
+// console.log(Interval.distance('E3', 'A4'));
+// console.log(Interval.distance('A4', 'D#4'));
+
+// console.log(Note.transpose('A4', '-8P'));
+
+
+
+
