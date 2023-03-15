@@ -138,13 +138,13 @@ async function getAllCourseRegardlessInstituteUser(_, res) {
 // Get courses with institute which user is register
 async function getAllCourse(req, res) {
     try {
-        const { idUser } = req.query;
+        const user = getAuthenticationToken(req);
 
         const courses = await db
             .knex('Usuario')
-            .where({ 'Usuario.id': idUser })
+            .where({ 'Usuario.id': user.id })
             .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal')
-            .join('Usuario_Instituto', 'Usuario.id', '=', 'Usuario_Instituto.UsuarioId')
+            .join('Usuario_Instituto', 'Usuario.Email', '=', 'Usuario_Instituto.Email')
             .join('Instituto', 'Usuario_Instituto.InstitutoId', '=', 'Instituto.id')
             .join('Curso', 'Instituto.id', '=', 'Curso.InstitutoId')
             .groupBy('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
@@ -153,10 +153,6 @@ async function getAllCourse(req, res) {
             .knex('Curso')
             .whereNull('Curso.InstitutoId')
             .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
-
-        // const courses = await db.knex
-        //     .select('id', 'Nombre', 'Descripcion', 'Personal')
-        //     .from('Curso');
 
         res.status(200).send({
             ok: true,

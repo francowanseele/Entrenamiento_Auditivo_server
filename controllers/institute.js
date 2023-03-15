@@ -1,5 +1,6 @@
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
+const { getAuthenticationToken } = require('../services/headers');
 
 async function addInstitute(req, res) {
     try {
@@ -115,15 +116,18 @@ async function getInstitute(_, res) {
 
 async function getInstituteByUser(req, res) {
     try {
-        const { idUser } = req.query;
+        const user = getAuthenticationToken(req);
 
         const institutes = await db
             .knex('Usuario_Instituto')
-            .where({ 'Usuario_Instituto.UsuarioId': idUser })
+            .where({ 
+                'Usuario_Instituto.Email': user.email,
+                'Usuario_Instituto.EsDocente': user.isTeacher,
+            })
             .select(
                 'Instituto.id as InstitutoId',
                 'Instituto.Nombre',
-                'Usuario_Instituto.UsuarioId as UserId'
+                'Usuario_Instituto.Email as Email'
             )
             .join(
                 'Instituto',
