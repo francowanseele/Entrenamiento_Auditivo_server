@@ -302,7 +302,7 @@ function generateAcordeJazzFile(req, res) {
     try {
         const trackAcordeSound = (track, notesArray) => {
             track.addNote({
-                midi: 0,
+                midi: 120,
                 time: 0,
                 duration: 1,
             })
