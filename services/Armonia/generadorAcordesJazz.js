@@ -7,6 +7,7 @@ const { transformarAEscalaDiatonica, applyAlteraciones } = require('../EscalasDi
 const { acordesJazz, intervaloTensiones, nombreCifrado_codigoTension_byNote } = require('./dataAcordesJazz');
 const { lessOrEqualThan, destructuringNote, removeAltura } = require('./generadorAcordesServices');
 const { acordeType } = require('../../enums/acordeType');
+const { estadoAcorde } = require('../../enums/estadoAcorde');
 
 /**
  *
@@ -338,15 +339,17 @@ const fixConsecutivePair = (acorde, i, allNotes) => {
  */
 const getMissingNotes = (acorde, allNotes) => {
     let result = [];
-    allNotes.forEach(note => {
-        let isInAcorde = false;
-        acorde.forEach(noteAcorde => {
-            const n = removeAltura(noteAcorde);
-            if (n == note) isInAcorde = true;
-        });
+    if (acorde) {
+        allNotes.forEach(note => {
+            let isInAcorde = false;
+            acorde.forEach(noteAcorde => {
+                const n = removeAltura(noteAcorde);
+                if (n == note) isInAcorde = true;
+            });
 
-        if (!isInAcorde) result.push(note);
-    });
+            if (!isInAcorde) result.push(note);
+        });
+    }
 
     return result;
 }
@@ -358,6 +361,7 @@ const getMissingNotes = (acorde, allNotes) => {
  * @returns check all notes be in acorde; distances between any pair and consecutive pairs -> return an avaliable acorde
  */
 const completeAcorde = (acorde, allNotes) => {
+    if (acorde == null) return null;
     let ok = checkProhibitedIntervalsBetweenAnyPair(acorde);
     if (!ok) return null;
 
@@ -453,11 +457,11 @@ const checkProhibitedIntervalsBetweenAnyPair = (acorde) => {
      *  (solo puede existir contra el bajo)
      */
 
-    if (acorde.length < 3) return true;
+    if (acorde && acorde.length < 3) return true;
 
     // Check any pair
     let ok = true;
-    if (acorde.length > 2) {
+    if (acorde && acorde.length > 2) {
         // Not apply to interval BAJO
         for (let i = 1; i < acorde.length - 1; i++) {
             const note1 = acorde[i];
@@ -489,7 +493,7 @@ const checkProhibitedIntervalsBetweenAnyPair = (acorde) => {
      */
 
     let result = true;
-    if (acorde.length > 1) {
+    if (acorde && acorde.length > 1) {
         for (let i = 0; i < acorde.length - 1 && result; i++) {            
             if (Interval.distance(acorde[i], acorde[i + 1]) == '2m') {
                 if (acorde[i + 2]) {
@@ -519,14 +523,16 @@ const checkProhibitedIntervalsBetweenAnyPair = (acorde) => {
  */
 const checkProhibitedDistancesBetweenVoices = (acorde) => {
     let ok = true;
-    for (let i = 0; i < acorde.length - 1; i++) {
-        if (i == 0) {
-            ok = ok && Interval.add(Interval.distance(acorde[i+1], acorde[i]), '11P').charAt(0) != '-';
-        } else {
-            ok = ok && (
-                Interval.add(Interval.distance(acorde[i+1], acorde[i]), '6M').charAt(0) != '-' &&
-                Interval.add(Interval.distance(acorde[i+1], acorde[i]), '6m').charAt(0) != '-'
-            );
+    if (acorde) {
+        for (let i = 0; i < acorde.length - 1; i++) {
+            if (i == 0) {
+                ok = ok && Interval.add(Interval.distance(acorde[i+1], acorde[i]), '11P').charAt(0) != '-';
+            } else {
+                ok = ok && (
+                    Interval.add(Interval.distance(acorde[i+1], acorde[i]), '6M').charAt(0) != '-' &&
+                    Interval.add(Interval.distance(acorde[i+1], acorde[i]), '6m').charAt(0) != '-'
+                );
+            }
         }
     }
 
@@ -537,13 +543,15 @@ const checkProhibitedDistancesBetweenVoices = (acorde) => {
 const checkNotExistEnarmoniasInAcorde = (acorde) => {
     let noEnarmonia = true;
 
-    acorde.forEach(a1 => {
-        acorde.forEach(a2 => {
-            if (Note.pitchClass(a1) != Note.pitchClass(a2)) {
-                noEnarmonia = noEnarmonia && !isEnarmonia(a1, a2);
-            }
+    if (acorde) {
+        acorde.forEach(a1 => {
+            acorde.forEach(a2 => {
+                if (Note.pitchClass(a1) != Note.pitchClass(a2)) {
+                    noEnarmonia = noEnarmonia && !isEnarmonia(a1, a2);
+                }
+            });
         });
-    });
+    }
 
     return noEnarmonia;
 }
@@ -597,35 +605,76 @@ const insertInOrder = (acorde, noteToInsert) => {
     return res;
 }
 
+const getFirstNoteBasedOnEstado = (estadosAcorde, tetrada, notesProhibidasEnBajo, notesNamesToAvoid) => {
+    let estadosAcordeAux = estadosAcorde;
+    let noteResult = null;
+
+    do {
+        const estado = getRandom(estadosAcordeAux);
+        estadosAcordeAux = removeAllItemsFromArr(estadosAcordeAux, estado);
+
+        switch (estado) {
+            case estadoAcorde.fundamental:
+                noteResult = tetrada[0];
+                break;
+            case estadoAcorde.primeraInversion:
+                noteResult = tetrada[1];
+                break;
+            case estadoAcorde.segundaInversion:
+                noteResult = tetrada[2];
+                break;
+            case estadoAcorde.terceraInversion:
+                noteResult = tetrada[3];
+                break;
+            default:
+                noteResult = null;
+                break;
+        }
+
+        if (notesProhibidasEnBajo.indexOf(noteResult) != -1 || notesNamesToAvoid.indexOf(noteResult) != -1) noteResult = null;
+    } while (estadosAcordeAux.length > 0 && noteResult == null);
+
+    // noteResult can be null if there are no option to get first note based on estadosAcorde
+    return noteResult;
+}
+
 /**
  * 
  * @param {[E, G#]} allNotes notes from tetrada, all this notes has to be in acorde
  * @param {[A2, C#5]} acorde acorde until this moment. In each recurtion it will have a new note
  * @param {[E]} notesNamesToAvoid this notes can not be selected as next note in the acorde, but in the next recurtion has to be included
  * @param {[E]} notesProhibidasEnBajo
+ * @param {[estadoAcorde.fundamental]} estadosAcorde
  * @returns recursive function. Returns an acorde with a minimum of 4 notes, with all notes of allNotes. 
  *          --- This functions don't check consecutive distances. ---
  */
-const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhibidasEnBajo) => {
-    // TODO: For triadas, change number of 4 by 3
-
+const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhibidasEnBajo, estadosAcorde, tetrada) => {
     // Check if acorde is ok or fail
     const status = checkProhibitedIntervalsBetweenAnyPair(acorde);
     if (!status) return null;
     if (status && allNotes.length == 0) return acorde;
     let allNotesAux = allNotes;
+    let note = null;
 
     if (getVoiceTypeFromAcorde(acorde) == voices.bajo) {
-        allNotesAux = subtractArrays(allNotes, notesProhibidasEnBajo);
+        const notaBajo = getFirstNoteBasedOnEstado(estadosAcorde, tetrada, notesProhibidasEnBajo, notesNamesToAvoid);
+        // New note
+        note = getNote(
+            [notaBajo],
+            getVoiceTypeFromAcorde(acorde),
+            [],
+            null
+        );
+    } else {
+        // New note
+        note = getNote(
+            subtractArrays(allNotesAux, notesNamesToAvoid),
+            getVoiceTypeFromAcorde(acorde),
+            [],
+            null
+        );
     }
 
-    // New note
-    let note = getNote(
-        subtractArrays(allNotesAux, notesNamesToAvoid),
-        getVoiceTypeFromAcorde(acorde),
-        [],
-        null
-    );
     if (note == null) return null;
 
     let acordeResult = insertInOrder(acorde, note);
@@ -635,13 +684,15 @@ const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhi
         removeAllItemsFromArr(allNotes, removeAltura(note)),
         acordeResult,
         [],
-        notesProhibidasEnBajo
+        notesProhibidasEnBajo,
+        estadosAcorde,
+        tetrada
     );
 
     if (acordeResult) return acordeResult;
 
     // Recursive with the same acorde but new note will be avoided as next note in acorde
-    return getIncompleteAcordeJazz(allNotes, acorde, [removeAltura(note)], notesProhibidasEnBajo);
+    return getIncompleteAcordeJazz(allNotes, acorde, [removeAltura(note)], notesProhibidasEnBajo, estadosAcorde, tetrada);
 };
 
 
@@ -845,7 +896,7 @@ const getReferenceNoteInRange = (note) => {
     return result;
 }
 
-const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo) => {
+const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -858,7 +909,7 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo) => {
     let j = 0;
     do {
         // Get acorde
-        acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo);
+        acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo, estadosAcorde, tetrada);
         acorde = completeAcorde(acorde, tetrada);
         if (possibleTensiones.length > 0) {
             const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones);
@@ -878,7 +929,7 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo) => {
         }
     }
 
-    // JUST TO CHECK
+    // JUST TO CHECK 
     if (!checkProhibitedIntervalsBetweenConsecutivePair(acorde)) console.log('///////////////////////////////////////////////// WRONG.. checkProhibitedIntervalsBetweenConsecutivePair')
     if (!checkProhibitedIntervalsBetweenAnyPair(acorde)) console.log('///////////////////////////////////////////////// WRONG... checkProhibitedIntervalsBetweenAnyPair')
     if (!checkProhibitedDistancesBetweenVoices(acorde)) console.log('///////////////////////////////////////////////// WRONG... fixDistances -> there is a distance bigger than 11P or 6m/6M');
@@ -973,6 +1024,11 @@ const getDifferentsTensiones = (tensiones) => {
     return intervaloTensiones.filter(i => tensionesArr.indexOf(i.codigo) > -1);
 }
 
+const getEstadosAcorde = (estadosAcordeStr) => {
+    const estadosAcordeWithoutBlancSpaces = estadosAcordeStr.replace(' ', '');
+    return estadosAcordeWithoutBlancSpaces.split(',').map((x) => parseInt(x));
+}
+
 /**
  * 
  * @param {[Object]} dataCamposArmonicos {
@@ -986,6 +1042,7 @@ const getDifferentsTensiones = (tensiones) => {
         ', ' +
         intervaloTensiones.tercenaMayor,
     Tipo: acordeType.tetrada,
+    EstadosAcorde: 'estadoAcorde.fundamental, estadoAcorde.terceraInversion'
 }
  * @param {[{elem: string, prioridad: int}]} tonality [{elem: 'Do', prioridad: 3}] ¡¡¡ATENCIÓN!!! elem es Do y NO es C
  * @returns acorde = { name: result.name, acorde: result.acorde, tonality: tonality.escala }
@@ -1016,7 +1073,12 @@ const getAcordeJazz = (dataCamposArmonicos, tonality) => {
     // transpose keyNote to tonalitySelected
     const newNote = transformarAEscalaDiatonica([keyNote], alt.escala); // with alteraciones applied
 
-    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo);
+    // get estado de acorde
+    const estadosAcordeArray = getEstadosAcorde(
+        dataCamposArmonicos.find((x) => x.Escala == escala && x.KeyNote == keyNote).EstadosAcorde
+    );
+
+    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray);
 
     // TODO: define if apply or not alteraciones
     // const acorde = applyAlteraciones(result.acorde, tonality.escala);
@@ -1120,3 +1182,9 @@ const printToSee = (elem) => {
 
 // console.log(generarAcordeJazzFromNote('C', acordeType.tetrada));
 // console.log(generarTetradaJazz('Maj7', 'C'));
+
+
+// console.log(generarAcordeJazz('Maj7', 'C', intervaloTensiones, acordeType.tetrada, [estadoAcorde.primeraInversion, estadoAcorde.fundamental]))
+// console.log(generarTetradaJazz('Maj7', 'C'))
+
+

@@ -16,6 +16,7 @@ const { getAuthenticationToken } = require('../services/headers');
  *          Tension: string,
  *          Tipo: 0 | 1 (tetrada | triada),
  *          ConfiguracionAcordeJazzId: int,
+ *          EstadosAcorde: string,
  *      }],
  *      escalaDiatonicaRegla: [{
  *          Tonalidad: string,
@@ -37,6 +38,7 @@ async function add(req, res) {
                 NombreCifrado: ca.NombreCifrado,
                 Tension: ca.Tension,
                 Tipo: ca.Tipo,
+                EstadosAcorde: ca.EstadosAcorde,
                 ConfiguracionAcordeJazzId: cajId,
             });
         });
@@ -157,6 +159,7 @@ async function get(req, res) {
                 'ConfiguracionAcordeJazz_CampoArmonico.Tension',
                 'ConfiguracionAcordeJazz_CampoArmonico.Tipo',
                 'ConfiguracionAcordeJazz_CampoArmonico.ConfiguracionAcordeJazzId',
+                'ConfiguracionAcordeJazz_CampoArmonico.EstadosAcorde',
             );
 
         const tonalities = await db
