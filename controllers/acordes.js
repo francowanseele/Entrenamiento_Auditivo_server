@@ -1,18 +1,6 @@
-const dictadoRitmico = require('../services/DictadosRitmicos/generarDictadosRitmicos');
-const dictadoMelodico = require('../services/DictadosMelodicos/generarDictadosMelodicos');
-const gral = require('../services/funcsGralDictados');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
 const db = require('../data/knex');
-const {
-    GroupByIdAndShortByOrder,
-    GetFigurasSeparadasPorLigaduras,
-} = require('../services/formatData');
-const { roles } = require('../enums/roles');
 const { logError } = require('../services/errorService');
-const jwt = require('../services/jwt');
 const { getAcordeJazz } = require('../services/Armonia/generadorAcordesJazz');
-const { RowDescriptionMessage } = require('pg-protocol/dist/messages');
 const { getAuthenticationToken } = require('../services/headers');
 
 async function generateAcordeJazz(req, res) {

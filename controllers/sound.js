@@ -394,9 +394,106 @@ function generateAcordeJazzFile(req, res) {
     }
 }
 
+function generateIntervaloFile(req, res) {
+    try {
+        const trackSound = (track, notesArray) => {
+            track.addNote({
+                midi: 120,
+                time: 0,
+                duration: 1,
+            })
+
+            notesArray.forEach(n => {
+                track.addNote({
+                    name: n,
+                    time: 1,
+                    duration: 2,
+                });
+            });
+
+            return track;
+        };
+
+        const { notes, referenceNote } = req.body; // ex: Ab2,Bb3,C4,Db4,F4
+        const id = getAuthenticationToken(req).id;
+
+        // Intervalo
+        var midi = new Midi();
+        var track = midi.addTrack();
+        track = trackSound(
+            track,
+            notes.split(',')
+        );
+
+        // NOTE REF
+        var midiReferenceNote = new Midi();
+        var trackReferenceNote = midiReferenceNote.addTrack();
+        trackReferenceNote = trackSound(
+            trackReferenceNote,
+            [referenceNote]
+        );
+
+        // Intervalo
+        const nameFileMidi = id.toString();
+        const nameFileMp3 = nameFileMidi + '_out';
+        fs.writeFileSync(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidi}.mid`,
+            new Buffer(midi.toArray())
+        );
+
+        // NOTE REF
+        const nameFileMidi_noteRef = id.toString() + '_note_ref';
+        const nameFileMp3_noteRef = nameFileMidi_noteRef + '_out';
+        fs.writeFileSync(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidi_noteRef}.mid`,
+            new Buffer(midiReferenceNote.toArray())
+        );
+
+        //Intervalo
+        // Dictado -> if exist file mp3 DELETE
+        const filePathMp3 = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mp3`;
+        fs.exists(filePathMp3, (exists) => {
+            if (exists) {
+                fs.unlinkSync(filePathMp3);
+            }
+        });
+
+        // NOTE REF
+        // Dictado -> if exist file mp3 DELETE
+        const filePathMp3_noteRef = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3_noteRef}.mp3`;
+        fs.exists(filePathMp3_noteRef, (exists) => {
+            if (exists) {
+                fs.unlinkSync(filePathMp3_noteRef);
+            }
+        });
+
+        // Intervalo
+        // Dictado -> Midi to mp3
+        const comand = comands.miditomp3(nameFileMidi, nameFileMp3);
+        exec(comand);
+
+        // NOTE REF
+        // Dictado -> Midi to mp3
+        const comand_noteRef = comands.miditomp3(nameFileMidi_noteRef, nameFileMp3_noteRef);
+        exec(comand_noteRef);
+
+        res.status(200).send({
+            ok: true,
+            message: 'Generación correcta de los Intervalo en .mid y .mp3.',
+        });
+    } catch (error) {
+        logError('sound/generateIntervaloFile', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     generateDictationFile,
     tramsitDictation,
     tramsitNoteReference,
     generateAcordeJazzFile,
+    generateIntervaloFile,
 };

@@ -234,12 +234,13 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 // console.log(Interval.distance('A3', 'D#4'));
 // console.log('---------------------');
 
-
-// console.log(Interval.distance('E3', 'A4'));
-// console.log(Interval.distance('A4', 'D#4'));
+// console.log(Interval.distance('G3', 'D6'));
+// console.log(Interval.distance('B1', 'F4'));
 
 // console.log(Note.transpose('A4', '-8P'));
+console.log(Note.transpose('C4', '4A'));
+console.log(Note.transpose('C4', '4P'));
 
 
-
+// console.log(Interval.names());
 

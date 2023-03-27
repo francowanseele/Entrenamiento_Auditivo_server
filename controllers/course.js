@@ -3,6 +3,7 @@ const formatData = require('../services/formatData');
 const { inscriptionState } = require('../enums/inscriptionState');
 const { logError } = require('../services/errorService');
 const { getAuthenticationToken } = require('../services/headers');
+const { tipoConfiguracion } = require('../enums/tipoConfiguracion');
 
 async function addCourse(req, res) {
     try {
@@ -278,9 +279,28 @@ async function getModules(req, res) {
                 'Modulo.id'
             );
 
+        const modulesIntervalo = await db
+            .knex('Modulo')
+            .where({ 'Modulo.CursoId': id })
+            .select(
+                'Modulo.id',
+                'Modulo.Nombre',
+                'Modulo.Descripcion',
+                'ConfiguracionIntervalo.Nombre as NombreConfigIntervalo',
+                'ConfiguracionIntervalo.Descripcion as DescripcionConfigIntervalo',
+                'ConfiguracionIntervalo.id as idConfigIntervalo'
+            )
+            .leftJoin(
+                'ConfiguracionIntervalo',
+                'ConfiguracionIntervalo.ModuloId',
+                '=',
+                'Modulo.id'
+            );
+
+
         res.status(200).send({
             ok: true,
-            modules: formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz),
+            modules: formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz, modulesIntervalo),
             message: 'Ok',
         });
     } catch (error) {
@@ -515,221 +535,287 @@ async function getConfigDictation(req, res) {
 
         const { id } = req.params;
 
-        const configs = await db
-            .knex('ConfiguracionDictado')
-            .where({ 'ConfiguracionDictado.id': id })
-            .select(
-                'id',
-                'Nombre',
-                'Descripcion',
-                'CreadorUsuarioId',
-                'TesituraClaveSolId',
-                'TesituraClaveFaId',
-                'PrioridadClaveSol',
-                'PrioridadClaveFa',
-                'NumeroCompases',
-                'Simple',
-                'NotaReferencia',
-                'BpmMenor',
-                'BpmMayor',
-                'DictadoRitmico',
-            );
-        const config = configs[0];
+        const { tipo } = req.query;
 
-        const girosMelodicos = await db
-            .knex('ConfiguracionDictado_GiroMelodico')
-            .where({
-                'ConfiguracionDictado_GiroMelodico.ConfiguracionDictadoId':
-                    config.id,
-            })
-            .select(
-                'GiroMelodico.id',
-                'ConfiguracionDictado_GiroMelodico.Prioridad',
-                'ConfiguracionDictado_GiroMelodico.LecturaAmbasDirecciones',
-                'GiroMelodico.Mayor',
-                'GiroMelodico.DelSistema',
-                'GiroMelodico_Nota.Nota',
-                'GiroMelodico_Nota.Orden'
-            )
-            .join(
-                'GiroMelodico',
-                'GiroMelodico.id',
-                '=',
-                'ConfiguracionDictado_GiroMelodico.GiroMelodicoId'
-            )
-            .join(
-                'GiroMelodico_Nota',
-                'GiroMelodico_Nota.GiroMelodicoId',
-                '=',
-                'GiroMelodico.id'
-            );
+        if (tipo == tipoConfiguracion.ConfiguracionIntervalo) {
+            const configsIntervalo = await db
+                .knex('ConfiguracionIntervalo')
+                .where({ 'ConfiguracionIntervalo.id': id })
+                .select(
+                    'id',
+                    'Nombre',
+                    'Descripcion',
+                    'CreadorUsuarioId',
+                    'PrioridadClaveSol',
+                    'PrioridadClaveFa',
+                    'Direccion',
+                    'Tipo',
+                );
+            const configIntervalo = configsIntervalo[0];
 
-        const tesitura = await db
-            .knex('Tesitura')
-            .where({ 'Tesitura.id': config.TesituraClaveSolId })
-            .orWhere({ 'Tesitura.id': config.TesituraClaveFaId })
-            .select(
-                'Clave as clave',
-                'NotaMenor as nota_menor',
-                'NotaMayor as nota_mayor'
-            );
+            const confInt_Int = await db
+                .knex('ConfiguracionIntervalo_Intervalo')
+                .where({ 'ConfiguracionIntervalo_Intervalo.ConfiguracionIntervaloId': configIntervalo.id })
+                .select(
+                    'Intervalo',
+                    'Prioridad',
+                );
 
-        const notasInicio = await db
-            .knex('ConfiguracionDictado_NotaInicio')
-            .where({
-                'ConfiguracionDictado_NotaInicio.ConfiguracionDictadoId':
-                    config.id,
-            })
-            .select('Nota');
-
-        const notasFin = await db
-            .knex('ConfiguracionDictado_NotaFin')
-            .where({
-                'ConfiguracionDictado_NotaFin.ConfiguracionDictadoId':
-                    config.id,
-            })
-            .select('Nota');
-
-        const tonalidades = await db
-            .knex('ConfiguracionDictado_Tonalidad')
-            .where({
-                'ConfiguracionDictado_Tonalidad.ConfiguracionDictadoId':
-                    config.id,
-            })
-            .select('Tonalidad as escala_diatonica', 'Prioridad as prioridad');
-
-        const celulasRitmicas = await db
-            .knex('ConfiguracionDictado_CelulaRitmica')
-            .where({
-                'ConfiguracionDictado_CelulaRitmica.ConfiguracionDictadoId':
-                    config.id,
-            })
-            .select(
-                'CelulaRitmica.id',
-                'CelulaRitmica.Imagen',
-                'ConfiguracionDictado_CelulaRitmica.Prioridad',
-                'CelulaRitmica.Simple',
-                'CelulaRitmica.Valor',
-                'CelulaRitmica_Figura.Figura',
-                'CelulaRitmica_Figura.Orden'
-            )
-            .join(
-                'CelulaRitmica',
-                'CelulaRitmica.id',
-                '=',
-                'ConfiguracionDictado_CelulaRitmica.CelulaRitmicaId'
-            )
-            .join(
-                'CelulaRitmica_Figura',
-                'CelulaRitmica_Figura.CelulaRitmicaId',
-                '=',
-                'CelulaRitmica.id'
-            );
-
-        const compas = await db
-            .knex('ConfiguracionDictado_Compas')
-            .where({
-                'ConfiguracionDictado_Compas.ConfiguracionDictadoId': config.id,
-            })
-            .select(
-                'Compas.Nombre',
-                'Compas.Simple',
-                'ConfiguracionDictado_Compas.Prioridad',
-                'Compas.id'
-            )
-            .join(
-                'Compas',
-                'Compas.id',
-                '=',
-                'ConfiguracionDictado_Compas.CompasId'
-            );
-
-        const ligaduras = await db
-            .knex('ConfiguracionDictado_Ligadura')
-            .where({
-                'ConfiguracionDictado_Ligadura.ConfiguracionDictadoId':
-                    config.id,
-            })
-            .select(
-                'ConfiguracionDictado_Ligadura.id',
-                'ConfiguracionDictado_Ligadura.Prioridad',
-                'ConfiguracionDictado_Ligadura.Must',
-                'FirstCR.id as FirstCRId',
-                'FirstCR_Fig.Figura as FirstCRFigura',
-                'FirstCR_Fig.Orden as FirstCROrden',
-                'SecondCR.id as SecondCRId',
-                'SecondCR_Fig.Figura as SecondCRFigura',
-                'SecondCR_Fig.Orden as SecondCROrden'
-            )
-            .join(
-                'CelulaRitmica as FirstCR',
-                'FirstCR.id',
-                '=',
-                'ConfiguracionDictado_Ligadura.FirstCelulaRitmicaId'
-            )
-            .join(
-                'CelulaRitmica as SecondCR',
-                'SecondCR.id',
-                '=',
-                'ConfiguracionDictado_Ligadura.SecondCelulaRitmicaId'
-            )
-            .join(
-                'CelulaRitmica_Figura as FirstCR_Fig',
-                'FirstCR_Fig.CelulaRitmicaId',
-                '=',
-                'FirstCR.id'
-            )
-            .join(
-                'CelulaRitmica_Figura as SecondCR_Fig',
-                'SecondCR_Fig.CelulaRitmicaId',
-                '=',
-                'SecondCR.id'
-            );
-
-        res.status(200).send({
-            ok: true,
-            config: {
-                id: config.id,
-                creado: config.CreadorUsuarioId,
-                nombre: config.Nombre,
-                descripcion: config.Descripcion,
-                giro_melodico_regla: getGirosMelodicosFormat(
-                    formatData.GroupByIdAndShortByOrder(girosMelodicos)
-                ),
-                tesitura: tesitura,
-                notas_inicio: getNotasInArray(notasInicio),
-                notas_fin: getNotasInArray(notasFin),
-                clave_prioridad: [
-                    {
-                        clave: 'Sol',
-                        prioridad: config.PrioridadClaveSol,
-                    },
-                    {
-                        clave: 'Fa',
-                        prioridad: config.PrioridadClaveFa,
-                    },
-                ],
-                escala_diatonica_regla: tonalidades,
-                celula_ritmica_regla: getCelulaRitmicaFormat(
-                    formatData.GroupByIdAndShortByOrder(celulasRitmicas)
-                ),
-                compas_regla: getCompasFormat(compas),
-                nro_compases: config.NumeroCompases,
-                simple: config.Simple,
-                nota_base: config.NotaReferencia,
-                bpm: {
-                    menor: config.BpmMenor,
-                    mayor: config.BpmMayor,
+            res.status(200).send({
+                ok: true,
+                config: {
+                    configIntervalo: configIntervalo,
+                    configIntervalo_Intervalo: confInt_Int,
                 },
-                mayor:
-                    girosMelodicos && girosMelodicos.length > 0
-                        ? girosMelodicos[0].Mayor
-                        : true,
-                dictado_ritmico: config.DictadoRitmico,
-                ligaduraRegla: getLigadurasFormat(ligaduras),
-            },
-            message: 'Ok',
-        });
+                message: 'Ok',
+            });
+        } else if (tipo == tipoConfiguracion.ConfiguracionAcordeJazz) {
+            const configsAcorde = await db
+                .knex('ConfiguracionAcordeJazz')
+                .where({ 'ConfiguracionAcordeJazz.id': id })
+                .select(
+                    'id',
+                    'Nombre',
+                    'Descripcion',
+                    'CreadorUsuarioId',
+                )
+
+            const configAcorde = configsAcorde[0];
+
+            const configAcordeTonalidad = await db
+                .knex('ConfiguracionAcordeJazz_Tonalidad')
+                .where({ 'ConfiguracionAcordeJazz_Tonalidad.ConfiguracionAcordeJazzId': configAcorde.id })
+                .select(
+                    'Tonalidad',
+                    'Prioridad'
+                );
+
+            // TODO: Config acorde campo armonico incluir datos
+            res.status(200).send({
+                ok: true,
+                config: {
+                    configAcorde: configAcorde,
+                    configAcordeTonalidad: configAcordeTonalidad,                    
+                },
+                message: 'Ok',
+            });
+        } else {
+            const configs = await db
+                .knex('ConfiguracionDictado')
+                .where({ 'ConfiguracionDictado.id': id })
+                .select(
+                    'id',
+                    'Nombre',
+                    'Descripcion',
+                    'CreadorUsuarioId',
+                    'TesituraClaveSolId',
+                    'TesituraClaveFaId',
+                    'PrioridadClaveSol',
+                    'PrioridadClaveFa',
+                    'NumeroCompases',
+                    'Simple',
+                    'NotaReferencia',
+                    'BpmMenor',
+                    'BpmMayor',
+                    'DictadoRitmico',
+                );
+            const config = configs[0];
+
+            const girosMelodicos = await db
+                .knex('ConfiguracionDictado_GiroMelodico')
+                .where({
+                    'ConfiguracionDictado_GiroMelodico.ConfiguracionDictadoId':
+                        config.id,
+                })
+                .select(
+                    'GiroMelodico.id',
+                    'ConfiguracionDictado_GiroMelodico.Prioridad',
+                    'ConfiguracionDictado_GiroMelodico.LecturaAmbasDirecciones',
+                    'GiroMelodico.Mayor',
+                    'GiroMelodico.DelSistema',
+                    'GiroMelodico_Nota.Nota',
+                    'GiroMelodico_Nota.Orden'
+                )
+                .join(
+                    'GiroMelodico',
+                    'GiroMelodico.id',
+                    '=',
+                    'ConfiguracionDictado_GiroMelodico.GiroMelodicoId'
+                )
+                .join(
+                    'GiroMelodico_Nota',
+                    'GiroMelodico_Nota.GiroMelodicoId',
+                    '=',
+                    'GiroMelodico.id'
+                );
+
+            const tesitura = await db
+                .knex('Tesitura')
+                .where({ 'Tesitura.id': config.TesituraClaveSolId })
+                .orWhere({ 'Tesitura.id': config.TesituraClaveFaId })
+                .select(
+                    'Clave as clave',
+                    'NotaMenor as nota_menor',
+                    'NotaMayor as nota_mayor'
+                );
+
+            const notasInicio = await db
+                .knex('ConfiguracionDictado_NotaInicio')
+                .where({
+                    'ConfiguracionDictado_NotaInicio.ConfiguracionDictadoId':
+                        config.id,
+                })
+                .select('Nota');
+
+            const notasFin = await db
+                .knex('ConfiguracionDictado_NotaFin')
+                .where({
+                    'ConfiguracionDictado_NotaFin.ConfiguracionDictadoId':
+                        config.id,
+                })
+                .select('Nota');
+
+            const tonalidades = await db
+                .knex('ConfiguracionDictado_Tonalidad')
+                .where({
+                    'ConfiguracionDictado_Tonalidad.ConfiguracionDictadoId':
+                        config.id,
+                })
+                .select('Tonalidad as escala_diatonica', 'Prioridad as prioridad');
+
+            const celulasRitmicas = await db
+                .knex('ConfiguracionDictado_CelulaRitmica')
+                .where({
+                    'ConfiguracionDictado_CelulaRitmica.ConfiguracionDictadoId':
+                        config.id,
+                })
+                .select(
+                    'CelulaRitmica.id',
+                    'CelulaRitmica.Imagen',
+                    'ConfiguracionDictado_CelulaRitmica.Prioridad',
+                    'CelulaRitmica.Simple',
+                    'CelulaRitmica.Valor',
+                    'CelulaRitmica_Figura.Figura',
+                    'CelulaRitmica_Figura.Orden'
+                )
+                .join(
+                    'CelulaRitmica',
+                    'CelulaRitmica.id',
+                    '=',
+                    'ConfiguracionDictado_CelulaRitmica.CelulaRitmicaId'
+                )
+                .join(
+                    'CelulaRitmica_Figura',
+                    'CelulaRitmica_Figura.CelulaRitmicaId',
+                    '=',
+                    'CelulaRitmica.id'
+                );
+
+            const compas = await db
+                .knex('ConfiguracionDictado_Compas')
+                .where({
+                    'ConfiguracionDictado_Compas.ConfiguracionDictadoId': config.id,
+                })
+                .select(
+                    'Compas.Nombre',
+                    'Compas.Simple',
+                    'ConfiguracionDictado_Compas.Prioridad',
+                    'Compas.id'
+                )
+                .join(
+                    'Compas',
+                    'Compas.id',
+                    '=',
+                    'ConfiguracionDictado_Compas.CompasId'
+                );
+
+            const ligaduras = await db
+                .knex('ConfiguracionDictado_Ligadura')
+                .where({
+                    'ConfiguracionDictado_Ligadura.ConfiguracionDictadoId':
+                        config.id,
+                })
+                .select(
+                    'ConfiguracionDictado_Ligadura.id',
+                    'ConfiguracionDictado_Ligadura.Prioridad',
+                    'ConfiguracionDictado_Ligadura.Must',
+                    'FirstCR.id as FirstCRId',
+                    'FirstCR_Fig.Figura as FirstCRFigura',
+                    'FirstCR_Fig.Orden as FirstCROrden',
+                    'SecondCR.id as SecondCRId',
+                    'SecondCR_Fig.Figura as SecondCRFigura',
+                    'SecondCR_Fig.Orden as SecondCROrden'
+                )
+                .join(
+                    'CelulaRitmica as FirstCR',
+                    'FirstCR.id',
+                    '=',
+                    'ConfiguracionDictado_Ligadura.FirstCelulaRitmicaId'
+                )
+                .join(
+                    'CelulaRitmica as SecondCR',
+                    'SecondCR.id',
+                    '=',
+                    'ConfiguracionDictado_Ligadura.SecondCelulaRitmicaId'
+                )
+                .join(
+                    'CelulaRitmica_Figura as FirstCR_Fig',
+                    'FirstCR_Fig.CelulaRitmicaId',
+                    '=',
+                    'FirstCR.id'
+                )
+                .join(
+                    'CelulaRitmica_Figura as SecondCR_Fig',
+                    'SecondCR_Fig.CelulaRitmicaId',
+                    '=',
+                    'SecondCR.id'
+                );
+
+            res.status(200).send({
+                ok: true,
+                config: {
+                    id: config.id,
+                    creado: config.CreadorUsuarioId,
+                    nombre: config.Nombre,
+                    descripcion: config.Descripcion,
+                    giro_melodico_regla: getGirosMelodicosFormat(
+                        formatData.GroupByIdAndShortByOrder(girosMelodicos)
+                    ),
+                    tesitura: tesitura,
+                    notas_inicio: getNotasInArray(notasInicio),
+                    notas_fin: getNotasInArray(notasFin),
+                    clave_prioridad: [
+                        {
+                            clave: 'Sol',
+                            prioridad: config.PrioridadClaveSol,
+                        },
+                        {
+                            clave: 'Fa',
+                            prioridad: config.PrioridadClaveFa,
+                        },
+                    ],
+                    escala_diatonica_regla: tonalidades,
+                    celula_ritmica_regla: getCelulaRitmicaFormat(
+                        formatData.GroupByIdAndShortByOrder(celulasRitmicas)
+                    ),
+                    compas_regla: getCompasFormat(compas),
+                    nro_compases: config.NumeroCompases,
+                    simple: config.Simple,
+                    nota_base: config.NotaReferencia,
+                    bpm: {
+                        menor: config.BpmMenor,
+                        mayor: config.BpmMayor,
+                    },
+                    mayor:
+                        girosMelodicos && girosMelodicos.length > 0
+                            ? girosMelodicos[0].Mayor
+                            : true,
+                    dictado_ritmico: config.DictadoRitmico,
+                    ligaduraRegla: getLigadurasFormat(ligaduras),
+                },
+                message: 'Ok',
+            });
+        }
     } catch (error) {
         logError('getConfigDictation', error, req);
         res.status(501).send({
@@ -1538,26 +1624,47 @@ async function editModule(req, res) {
 async function editConfigDictation(req, res) {
     try {
         const { id } = req.params;
-        const { idUser, idConfigDictation } = req.query;
+        const { idUser, idConfigDictation, tipo } = req.query;
         const { name, description } = req.body;
 
         // Check if user has permission
         if (await userCanEditCourse(idUser, id)) {
-            const configDictationUpdated = await db
-                .knex('ConfiguracionDictado')
-                .where({ 'ConfiguracionDictado.id': idConfigDictation })
-                .update({
-                    'Nombre': name,
-                    'Descripcion': description,
-                })
-                .returning(['id', 'Nombre', 'Descripcion']);
+            let configUpdated = null;
+            if (tipo == tipoConfiguracion.ConfiguracionDictado) {
+                configUpdated = await db
+                    .knex('ConfiguracionDictado')
+                    .where({ 'ConfiguracionDictado.id': idConfigDictation })
+                    .update({
+                        'Nombre': name,
+                        'Descripcion': description,
+                    })
+                    .returning(['id', 'Nombre', 'Descripcion']);
+            } else if (tipo == tipoConfiguracion.ConfiguracionAcordeJazz) {
+                configUpdated = await db
+                    .knex('ConfiguracionAcordeJazz')
+                    .where({ 'ConfiguracionAcordeJazz.id': idConfigDictation })
+                    .update({
+                        'Nombre': name,
+                        'Descripcion': description,
+                    })
+                    .returning(['id', 'Nombre', 'Descripcion']);
+            } else if (tipo == tipoConfiguracion.ConfiguracionIntervalo) {
+                configUpdated = await db
+                    .knex('ConfiguracionIntervalo')
+                    .where({ 'ConfiguracionIntervalo.id': idConfigDictation })
+                    .update({
+                        'Nombre': name,
+                        'Descripcion': description,
+                    })
+                    .returning(['id', 'Nombre', 'Descripcion']);
+            }
 
-            if (configDictationUpdated && configDictationUpdated.length > 0) {
+            if (configUpdated && configUpdated.length > 0) {
                 res.status(200).send({
                     ok: true,
                     permiso: true,
-                    configDictation: configDictationUpdated[0],
-                    message: 'Configuración de dictado editado correctamente',
+                    configDictation: configUpdated[0],
+                    message: 'Configuración editado correctamente',
                 });
             }
         } else {

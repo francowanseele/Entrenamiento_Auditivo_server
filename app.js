@@ -15,6 +15,8 @@ const authRoutes = require('./routers/auth');
 const giroMelodicoGrupoRoutes = require('./routers/giro_melodico_grupo');
 const CAJRoutes = require('./routers/configuracionAcordesJazz');
 const acordesRoutes = require('./routers/acordes');
+const configIntervaloRoutes = require('./routers/configuracionIntervalo');
+const intervalosRoutes = require('./routers/intervalo');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -48,6 +50,8 @@ app.use(`/api`, authRoutes);
 app.use(`/api`, giroMelodicoGrupoRoutes);
 app.use(`/api`, CAJRoutes);
 app.use(`/api`, acordesRoutes);
+app.use(`/api`, configIntervaloRoutes);
+app.use(`/api`, intervalosRoutes);
 
 // Export
 module.exports = app;
