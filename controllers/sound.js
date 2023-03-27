@@ -9,6 +9,7 @@ const comands = require('../services/comands');
 const funcGralDictado = require('../services/funcsGralDictados');
 const { logError } = require('../services/errorService');
 const { getAuthenticationToken } = require('../services/headers');
+const { tipoIntervalo } = require('../enums/tipoIntervalo');
 
 function tramsitDictation(req, res) {
     try {
@@ -396,25 +397,37 @@ function generateAcordeJazzFile(req, res) {
 
 function generateIntervaloFile(req, res) {
     try {
-        const trackSound = (track, notesArray) => {
+        const trackSound = (track, notesArray, type) => {
             track.addNote({
                 midi: 120,
                 time: 0,
                 duration: 1,
             })
 
-            notesArray.forEach(n => {
-                track.addNote({
-                    name: n,
-                    time: 1,
-                    duration: 2,
+            if (type && type == tipoIntervalo.melodico) {
+                for (let i = 0; i < notesArray.length; i++) {
+                    const n = notesArray[i];
+                    track.addNote({
+                        name: n,
+                        time: i,
+                        duration: 1,
+                    });
+                }
+            } else {
+                notesArray.forEach(n => {
+                    track.addNote({
+                        name: n,
+                        time: 1,
+                        duration: 2,
+                    });
                 });
-            });
+            }
+
 
             return track;
         };
 
-        const { notes, referenceNote } = req.body; // ex: Ab2,Bb3,C4,Db4,F4
+        const { notes, referenceNote, type } = req.body; // ex: Ab2,Bb3,C4,Db4,F4
         const id = getAuthenticationToken(req).id;
 
         // Intervalo
@@ -422,7 +435,8 @@ function generateIntervaloFile(req, res) {
         var track = midi.addTrack();
         track = trackSound(
             track,
-            notes.split(',')
+            notes.split(','),
+            type
         );
 
         // NOTE REF
