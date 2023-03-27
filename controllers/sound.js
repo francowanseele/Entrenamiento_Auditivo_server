@@ -302,16 +302,10 @@ function generateDictationFile(req, res) {
 function generateAcordeJazzFile(req, res) {
     try {
         const trackAcordeSound = (track, notesArray) => {
-            track.addNote({
-                midi: 120,
-                time: 0,
-                duration: 1,
-            })
-
             notesArray.forEach(n => {
                 track.addNote({
                     name: n,
-                    time: 1,
+                    time: 0,
                     duration: 2,
                 });
             });
@@ -398,13 +392,7 @@ function generateAcordeJazzFile(req, res) {
 function generateIntervaloFile(req, res) {
     try {
         const trackSound = (track, notesArray, type) => {
-            track.addNote({
-                midi: 120,
-                time: 0,
-                duration: 1,
-            })
-
-            if (type && type == tipoIntervalo.melodico) {
+            if (type !== null && type == tipoIntervalo.melodico) {
                 for (let i = 0; i < notesArray.length; i++) {
                     const n = notesArray[i];
                     track.addNote({
