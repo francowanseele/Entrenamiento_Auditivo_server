@@ -129,7 +129,7 @@ async function generarIntervalo(req, res) {
 
                 res.status(200).send({
                     ok: true,
-                    intervalos: intervalosSaved,
+                    intervalos: intervalosSaved.map((i) => { return {...i, Resuelto: []} }),
                     message: 'Intervalo generado correctamente.',
                 });
             }
@@ -165,9 +165,30 @@ async function getIntervalos(req, res) {
                 'Intervalo.ConfiguracionIntervaloId'
             );
 
+        let intervaloIds = intervalos.map((i) => { return i.id });
+
+        const califications = await db
+            .knex('Calificacion')
+            .whereIn('IntervaloId', intervaloIds)
+            .select(
+                'id',
+                'Nota',
+                'Correcto',
+                'IntervaloId',
+                'UsuarioId',
+                'created_at'
+            );
+
+        const intervalosResult = intervalos.map((i) => {
+            return {
+                ...i,
+                Resuelto: califications.filter((c) => c.IntervaloId == i.id)
+            }
+        })
+
         res.status(200).send({
             ok: true,
-            intervalos: intervalos,
+            intervalos: intervalosResult,
             message: 'Intervalos obtenidos correctamente.',
         });
     } catch (error) {

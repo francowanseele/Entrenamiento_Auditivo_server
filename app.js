@@ -17,6 +17,7 @@ const CAJRoutes = require('./routers/configuracionAcordesJazz');
 const acordesRoutes = require('./routers/acordes');
 const configIntervaloRoutes = require('./routers/configuracionIntervalo');
 const intervalosRoutes = require('./routers/intervalo');
+const calificacionRoutes = require('./routers/calificacion');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -52,6 +53,7 @@ app.use(`/api`, CAJRoutes);
 app.use(`/api`, acordesRoutes);
 app.use(`/api`, configIntervaloRoutes);
 app.use(`/api`, intervalosRoutes);
+app.use(`/api`, calificacionRoutes);
 
 // Export
 module.exports = app;

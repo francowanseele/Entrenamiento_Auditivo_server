@@ -486,7 +486,7 @@ async function generateDictation(req, res) {
                         ok: true,
                         issueConfig: false,
                         message: 'Ok',
-                        dictations: dicts,
+                        dictations: dicts.map((d) => { return {...d, Resueto: []} }),
                     });
                 });
             } else {
@@ -541,27 +541,28 @@ async function getDictation(req, res) {
                 'Dictado.DictadoRitmico'
             );
 
+        
+        let dictationsIds = [];
+        dicts.forEach(d => {
+            if (dictationsIds.indexOf(d.id) == -1) {
+                dictationsIds.push(d.id)
+            }
+        });
+
         const califications = await db
-            .knex('Dictado')
-            .where({
-                'Dictado.ConfiguracionDictadoId': idConfigDictation,
-                'Dictado.CreadorUsuarioId': id,
-            })
-            .join(
-                'Dictado_Calificacion',
-                'Dictado_Calificacion.DictadoId',
-                '=',
-                'Dictado.id'
-            )
+            .knex('Calificacion')
+            .whereIn('DictadoId', dictationsIds)
             .select(
-                'Dictado.id',
-                'Dictado_Calificacion.Calificacion',
-                'Dictado_Calificacion.TipoError',
-                'Dictado_Calificacion.created_at'
+                'id',
+                'Nota',
+                'DictadoId',
+                'Correcto',
+                'UsuarioId',
+                'created_at'
             );
 
-        const dictations = [];
         const dictsGrouped = GroupByIdAndShortByOrder(dicts);
+        const dictations = [];
         dictsGrouped.forEach((d) => {
             let figuras = [];
             let figurasPulso = [];
@@ -589,7 +590,7 @@ async function getDictation(req, res) {
                 nota_base: d[0].NotaReferencia,
                 numerador: d[0].Nombre.split('/')[0],
                 denominador: d[0].Nombre.split('/')[1],
-                resuelto: califications.filter((c) => c.id === d[0].id),
+                resuelto: califications.filter((c) => c.DictadoId === d[0].id),
                 bpm: d[0].Bpm,
                 dictado_ritmico: d[0].DictadoRitmico,
             });

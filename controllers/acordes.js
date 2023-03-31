@@ -99,7 +99,7 @@ async function generateAcordeJazz(req, res) {
 
                 res.status(200).send({
                     ok: true,
-                    acordes: acordesSaved,
+                    acordes: acordesSaved.map((a) => { return {...a, Resuelto: []} }),
                     message: 'Acorde generado correctamente.',
                 });
             }
@@ -133,9 +133,30 @@ async function getAcordesJazz(req, res) {
                 'AcordeJazz.NotaReferencia',
             );
 
+        let acordeJazzIds = acordesJazz.map((a) => { return a.id });
+        
+        const califications = await db
+            .knex('Calificacion')
+            .whereIn('AcordeJazzid', acordeJazzIds)
+            .select(
+                'id',
+                'Nota',
+                'Correcto',
+                'AcordeJazzid as AcordeJazzId',
+                'UsuarioId',
+                'created_at'
+            );
+
+        const acordesJazzResult = acordesJazz.map((a) => {
+            return {
+                ...a,
+                Resuelto: califications.filter((c) => c.AcordeJazzId == a.id)
+            }
+        })
+
         res.status(200).send({
             ok: true,
-            acordesJazz: acordesJazz,
+            acordesJazz: acordesJazzResult,
             message: 'Acordes obtenidos correctamente.',
         });
     } catch (error) {
