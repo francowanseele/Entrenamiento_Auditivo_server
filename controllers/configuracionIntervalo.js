@@ -55,6 +55,7 @@ async function add(req, res) {
                     PrioridadClaveFa: dataIntervalos.PrioridadClaveFa,
                     Direccion: dataIntervalos.Direccion,
                     Tipo: dataIntervalos.Tipo,
+                    Eliminado: false,
                 })
                 .returning(['id'])
                 .transacting(trx);

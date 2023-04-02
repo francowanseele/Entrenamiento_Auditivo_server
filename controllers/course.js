@@ -17,6 +17,7 @@ async function addCourse(req, res) {
                 Personal: personal,
                 InstitutoId: idInstitute,
                 CreadoPor: idUser,
+                Eliminado: false,
             })
             .returning(['id', 'Nombre', 'Descripcion']);
 
@@ -96,7 +97,7 @@ async function getCoursesCursaStudent(req, res) {
 
         const courses = await db
             .knex('UsuarioCursa_Curso')
-            .where({ UsuarioId: idUser })
+            .where({ UsuarioId: idUser, 'Curso.Eliminado': false })
             .select('Curso.id', 'Curso.Nombre')
             .join('Curso', 'UsuarioCursa_Curso.CursoId', '=', 'Curso.id');
 
@@ -118,6 +119,7 @@ async function getAllCourseRegardlessInstituteUser(_, res) {
     try {
         const courses = await db
             .knex('Curso')
+            .where({'Curso.Eliminado': false})
             .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
 
         res.status(200).send({
@@ -143,7 +145,7 @@ async function getAllCourse(req, res) {
 
         const courses = await db
             .knex('Usuario')
-            .where({ 'Usuario.id': user.id })
+            .where({ 'Usuario.id': user.id, 'Curso.Eliminado': false })
             .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal')
             .join('Usuario_Instituto', 'Usuario.Email', '=', 'Usuario_Instituto.Email')
             .join('Instituto', 'Usuario_Instituto.InstitutoId', '=', 'Instituto.id')
@@ -153,6 +155,7 @@ async function getAllCourse(req, res) {
         const coursesWithoutInstitute = await db
             .knex('Curso')
             .whereNull('Curso.InstitutoId')
+            .where({'Curso.Eliminado': false})
             .select('Curso.id', 'Curso.Nombre', 'Curso.Descripcion', 'Curso.Personal');
 
         res.status(200).send({
@@ -202,7 +205,7 @@ async function addModule(req, res) {
         // Check if module name exist in the course
         const moduleInCourse = await db
             .knex('Modulo')
-            .where({ 'Modulo.Nombre': name, 'Curso.id': id })
+            .where({ 'Modulo.Nombre': name, 'Curso.id': id, 'Modulo.Eliminado': false })
             .count({ count: 'Modulo.id' })
             .join('Curso', 'Modulo.CursoId', '=', 'Curso.id');
 
@@ -222,6 +225,7 @@ async function addModule(req, res) {
                     Descripcion: description,
                     CursoId: id,
                     created_by: getAuthenticationToken(req).id,
+                    Eliminado: false,
                 })
                 .returning(['id', 'Nombre', 'Descripcion', 'CursoId']);
 
@@ -245,7 +249,7 @@ async function getModules(req, res) {
         const { id } = req.params;
         const modules = await db
             .knex('Modulo')
-            .where({ 'Modulo.CursoId': id })
+            .where({ 'Modulo.CursoId': id, 'Modulo.Eliminado': false, 'ConfiguracionDictado.Eliminado': false })
             .select(
                 'Modulo.id',
                 'Modulo.Nombre',
@@ -253,50 +257,46 @@ async function getModules(req, res) {
                 'ConfiguracionDictado.Nombre as NombreConfigDictado',
                 'ConfiguracionDictado.Descripcion as DescripcionConfigDictado',
                 'ConfiguracionDictado.id as idConfigDictado',
+                'ConfiguracionDictado.Eliminado'
             )
-            .leftJoin(
-                'ConfiguracionDictado',
-                'ConfiguracionDictado.ModuloId',
-                '=',
-                'Modulo.id'
-            );
+            .leftJoin('ConfiguracionDictado', function () { this
+                .on('ConfiguracionDictado.ModuloId', 'Modulo.id')
+                .on('ConfiguracionDictado.Eliminado', db.knex.raw('?', [false]))
+            });
 
         const modulesAcordesJazz = await db
             .knex('Modulo')
-            .where({ 'Modulo.CursoId': id })
+            .where({ 'Modulo.CursoId': id, 'Modulo.Eliminado': false, 'ConfiguracionAcordeJazz.Eliminado': false })
             .select(
                 'Modulo.id',
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
                 'ConfiguracionAcordeJazz.Nombre as NombreAcordeJazz',
                 'ConfiguracionAcordeJazz.Descripcion as DescripcionAcordeJazz',
-                'ConfiguracionAcordeJazz.id as idAcordeJazz'
+                'ConfiguracionAcordeJazz.id as idAcordeJazz',
+                'ConfiguracionAcordeJazz.Eliminado'
             )
-            .leftJoin(
-                'ConfiguracionAcordeJazz',
-                'ConfiguracionAcordeJazz.ModuloId',
-                '=',
-                'Modulo.id'
-            );
+            .leftJoin('ConfiguracionAcordeJazz', function () { this
+                .on('ConfiguracionAcordeJazz.ModuloId', 'Modulo.id')
+                .on('ConfiguracionAcordeJazz.Eliminado', db.knex.raw('?', [false]))
+            });
 
         const modulesIntervalo = await db
             .knex('Modulo')
-            .where({ 'Modulo.CursoId': id })
+            .where({ 'Modulo.CursoId': id, 'Modulo.Eliminado': false })
             .select(
                 'Modulo.id',
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
                 'ConfiguracionIntervalo.Nombre as NombreConfigIntervalo',
                 'ConfiguracionIntervalo.Descripcion as DescripcionConfigIntervalo',
-                'ConfiguracionIntervalo.id as idConfigIntervalo'
+                'ConfiguracionIntervalo.id as idConfigIntervalo',
+                'ConfiguracionIntervalo.Eliminado'
             )
-            .leftJoin(
-                'ConfiguracionIntervalo',
-                'ConfiguracionIntervalo.ModuloId',
-                '=',
-                'Modulo.id'
-            );
-
+            .leftJoin('ConfiguracionIntervalo', function () { this
+                .on('ConfiguracionIntervalo.ModuloId', 'Modulo.id')
+                .on('ConfiguracionIntervalo.Eliminado', db.knex.raw('?', [false]))
+            });
 
         res.status(200).send({
             ok: true,
@@ -318,7 +318,7 @@ async function getConfigsDictations(req, res) {
 
         const configs = await db
             .knex('ConfiguracionDictado')
-            .where({ ModuloId: idModule })
+            .where({ ModuloId: idModule, 'ConfiguracionDictado.Eliminado': false })
             .select('id', 'Nombre', 'Descripcion');
 
         res.status(200).send({
@@ -840,6 +840,7 @@ async function getConfigDictationByString(req, res) {
             .knex('ConfiguracionDictado')
             .whereILike('ConfiguracionDictado.Nombre', `%${searchText}%`)
             .orWhereILike('ConfiguracionDictado.Descripcion', `%${searchText}%`)
+            .where({'Curso.Eliminado': false, 'Modulo.Eliminado': false, 'ConfiguracionDictado.Eliminado': false})
             .join('Modulo', 'ConfiguracionDictado.ModuloId', '=', 'Modulo.id')
             .join('Curso', 'Modulo.CursoId', '=', 'Curso.id')
             .select(
@@ -1182,6 +1183,7 @@ async function addConfigDictation(req, res) {
                     TesituraClaveFaId: tesituraFa.id,
                     ModuloId: idModule,
                     CreadorUsuarioId: idUserCreate,
+                    Eliminado: false,
                 })
                 .returning(['id'])
                 .transacting(trx);
@@ -1519,7 +1521,7 @@ async function getTeacherCourses(req, res) {
 
         const courses = await db
             .knex('UsuarioDicta_Curso')
-            .where({ UsuarioId: idUser })
+            .where({ UsuarioId: idUser, 'Curso.Eliminado': false })
             .select('Curso.id', 'Curso.Nombre')
             .join('Curso', 'UsuarioDicta_Curso.CursoId', '=', 'Curso.id');
 
@@ -1579,6 +1581,34 @@ async function editCourse(req, res) {
     }
 }
 
+async function removeCourse(req, res) {
+    try {
+        const { id } = req.params;
+
+        const courseUpdated = await db
+            .knex('Curso')
+            .where({ 'Curso.id': id })
+            .update({
+                'Eliminado': true
+            })
+            .returning(['id', 'Nombre', 'Descripcion']);
+
+        if (courseUpdated && courseUpdated.length > 0) {
+            res.status(200).send({
+                ok: true,
+                course: courseUpdated[0],
+                message: 'Curso Eliminado correctamente',
+            });
+        }
+    } catch (error) {
+        logError('removeCourse', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 async function editModule(req, res) {
     try {
         const { id } = req.params;
@@ -1614,6 +1644,34 @@ async function editModule(req, res) {
         }
     } catch (error) {
         logError('editModule', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function removeModule(req, res) {
+    try {
+        const { id } = req.params;
+
+        const moduleUpdated = await db
+            .knex('Modulo')
+            .where({ 'Modulo.id': id })
+            .update({
+                'Eliminado': true,
+            })
+            .returning(['id', 'Nombre', 'Descripcion']);
+
+        if (moduleUpdated && moduleUpdated.length > 0) {
+            res.status(200).send({
+                ok: true,
+                module: moduleUpdated[0],
+                message: 'Modulo Eliminado correctamente',
+            });
+        }
+    } catch (error) {
+        logError('removeModule', error, req);
         res.status(501).send({
             ok: false,
             message: error.message,
@@ -1673,6 +1731,54 @@ async function editConfigDictation(req, res) {
                 permiso: false,
                 configDictation: null,
                 message: 'El usuario no tiene permisos para editar el curso',
+            });
+        }
+    } catch (error) {
+        logError('editConfigDictation', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
+async function removeConfiguration(req, res) {
+    try {
+        const { id } = req.params;
+        const { tipo } = req.query;
+
+        let configUpdated = null;
+        if (tipo == tipoConfiguracion.ConfiguracionDictado) {
+            configUpdated = await db
+                .knex('ConfiguracionDictado')
+                .where({ 'ConfiguracionDictado.id': id })
+                .update({
+                    'Eliminado': true,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+        } else if (tipo == tipoConfiguracion.ConfiguracionAcordeJazz) {
+            configUpdated = await db
+                .knex('ConfiguracionAcordeJazz')
+                .where({ 'ConfiguracionAcordeJazz.id': id })
+                .update({
+                    'Eliminado': true,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+        } else if (tipo == tipoConfiguracion.ConfiguracionIntervalo) {
+            configUpdated = await db
+                .knex('ConfiguracionIntervalo')
+                .where({ 'ConfiguracionIntervalo.id': id })
+                .update({
+                    'Eliminado': true,
+                })
+                .returning(['id', 'Nombre', 'Descripcion']);
+        }
+
+        if (configUpdated && configUpdated.length > 0) {
+            res.status(200).send({
+                ok: true,
+                configDictation: configUpdated[0],
+                message: 'Configuración Eliminada correctamente',
             });
         }
     } catch (error) {
@@ -1810,4 +1916,7 @@ module.exports = {
     unregisterStudenFromCourse,
     unregisterTeacherFromCourse,
     userHasPermissionToEditCourse,
+    removeCourse,
+    removeModule,
+    removeConfiguration,
 };

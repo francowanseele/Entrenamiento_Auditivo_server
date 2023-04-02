@@ -77,6 +77,7 @@ async function add(req, res) {
                     Descripcion: description,
                     CreadorUsuarioId: getAuthenticationToken(req).id,
                     ModuloId: idModule,
+                    Eliminado: false,
                 })
                 .returning(['id'])
                 .transacting(trx);

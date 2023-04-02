@@ -73,7 +73,7 @@ async function getCourses(req, res) {
 
         const cursos = await db
             .knex('Instituto')
-            .where({ 'Instituto.id': id })
+            .where({ 'Instituto.id': id, 'Curso.Eliminado': false })
             .select(
                 'Curso.id',
                 'Curso.Nombre',

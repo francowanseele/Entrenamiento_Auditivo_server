@@ -1,6 +1,7 @@
 const express = require('express');
 const CourseController = require('../controllers/course');
 const md_auth = require('../middleware/authenticated');
+const md_admin = require('../middleware/role');
 
 const api = express.Router();
 
@@ -31,6 +32,9 @@ api.post('/get-curso-personal', [md_auth.ensureAuth], CourseController.getPerson
 api.put('/edit-course/:id', [md_auth.ensureAuth], CourseController.editCourse);
 api.put('/edit-module/:id', [md_auth.ensureAuth], CourseController.editModule);
 api.put('/edit-config-dictation/:id', [md_auth.ensureAuth], CourseController.editConfigDictation);
+api.delete('/remove-course/:id', [md_auth.ensureAuth, md_admin.isAdmin], CourseController.removeCourse);
+api.delete('/remove-module/:id', [md_auth.ensureAuth, md_admin.isAdmin], CourseController.removeModule);
+api.delete('/remove-configuration/:id', [md_auth.ensureAuth, md_admin.isAdmin], CourseController.removeConfiguration);
 api.put('/unregister-student-course', [md_auth.ensureAuth], CourseController.unregisterStudenFromCourse);
 api.put('/unregister-teacher-course', [md_auth.ensureAuth], CourseController.unregisterTeacherFromCourse);
 api.get('/user-has-permission-edit/:id', [md_auth.ensureAuth], CourseController.userHasPermissionToEditCourse);
