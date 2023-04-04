@@ -18,6 +18,7 @@ const acordesRoutes = require('./routers/acordes');
 const configIntervaloRoutes = require('./routers/configuracionIntervalo');
 const intervalosRoutes = require('./routers/intervalo');
 const calificacionRoutes = require('./routers/calificacion');
+const versionCheckRoutes = require('./routers/versionCheck');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -54,6 +55,7 @@ app.use(`/api`, acordesRoutes);
 app.use(`/api`, configIntervaloRoutes);
 app.use(`/api`, intervalosRoutes);
 app.use(`/api`, calificacionRoutes);
+app.use(`/api`, versionCheckRoutes);
 
 // Export
 module.exports = app;
