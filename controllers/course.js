@@ -254,9 +254,11 @@ async function getModules(req, res) {
                 'Modulo.id',
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
+                'Modulo.created_at as CreationDateModulo',
                 'ConfiguracionDictado.Nombre as NombreConfigDictado',
                 'ConfiguracionDictado.Descripcion as DescripcionConfigDictado',
                 'ConfiguracionDictado.id as idConfigDictado',
+                'ConfiguracionDictado.created_at as CreationDateConfigDictado',
                 'ConfiguracionDictado.Eliminado'
             )
             .leftJoin('ConfiguracionDictado', function () { this
@@ -271,9 +273,11 @@ async function getModules(req, res) {
                 'Modulo.id',
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
+                'Modulo.created_at as CreationDateModulo',
                 'ConfiguracionAcordeJazz.Nombre as NombreAcordeJazz',
                 'ConfiguracionAcordeJazz.Descripcion as DescripcionAcordeJazz',
                 'ConfiguracionAcordeJazz.id as idAcordeJazz',
+                'ConfiguracionAcordeJazz.created_at as CreationDateAcordeJazz',
                 'ConfiguracionAcordeJazz.Eliminado'
             )
             .leftJoin('ConfiguracionAcordeJazz', function () { this
@@ -288,9 +292,11 @@ async function getModules(req, res) {
                 'Modulo.id',
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
+                'Modulo.created_at as CreationDateModulo',
                 'ConfiguracionIntervalo.Nombre as NombreConfigIntervalo',
                 'ConfiguracionIntervalo.Descripcion as DescripcionConfigIntervalo',
                 'ConfiguracionIntervalo.id as idConfigIntervalo',
+                'ConfiguracionIntervalo.created_at as CreationDateConfigIntervalo',
                 'ConfiguracionIntervalo.Eliminado'
             )
             .leftJoin('ConfiguracionIntervalo', function () { this
@@ -300,7 +306,7 @@ async function getModules(req, res) {
 
         res.status(200).send({
             ok: true,
-            modules: formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz, modulesIntervalo),
+            modules: formatData.orderByDateModuleAndConfig(formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz, modulesIntervalo)),
             message: 'Ok',
         });
     } catch (error) {

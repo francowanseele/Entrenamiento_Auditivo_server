@@ -20,6 +20,27 @@ const GroupByIdAndShortByOrder = (arr) => {
     return result;
 };
 
+const orderByDateModuleAndConfig = (modules) => {
+    let res;
+    res = modules.sort(function(a,b){
+        return new Date(b.FechaCreacion) - new Date(a.FechaCreacion);
+    });
+
+    let ret = [];
+    res.forEach(m => {
+        const configOrded = m.configuracion_dictado.sort(function(a,b){
+            return new Date(b.FechaCreacion) - new Date(a.FechaCreacion);
+        })
+
+        ret.push({
+            ...m,
+            configuracion_dictado: configOrded,
+        });
+    });
+
+    return ret;
+}
+
 const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, modulesIntervalo) => {
     let res = [];
 
@@ -32,18 +53,21 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Nombre: d.NombreConfigDictado,
                 Descripcion: d.DescripcionConfigDictado,
                 Tipo: 'ConfiguracionDictado', // table name
+                FechaCreacion: d.CreationDateConfigDictado,
             });
         } else {
             res.push({
                 id: d.id,
                 Nombre: d.Nombre,
                 Descripcion: d.Descripcion,
+                FechaCreacion: d.CreationDateModulo,
                 configuracion_dictado: [
                     {
                         id: d.idConfigDictado,
                         Nombre: d.NombreConfigDictado,
                         Descripcion: d.DescripcionConfigDictado,
                         Tipo: 'ConfiguracionDictado', // table name
+                        FechaCreacion: d.CreationDateConfigDictado,
                     },
                 ],
             });
@@ -59,18 +83,21 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Descripcion: d.DescripcionAcordeJazz,
                 id: d.idAcordeJazz,
                 Tipo: 'ConfiguracionAcordeJazz', // table name
+                FechaCreacion: d.CreationDateAcordeJazz,
             });
         } else {
             res.push({
                 id: d.id,
                 Nombre: d.Nombre,
                 Descripcion: d.Descripcion,
+                FechaCreacion: d.CreationDateModulo,
                 configuracion_dictado: [
                     {
                         Nombre: d.NombreAcordeJazz,
                         Descripcion: d.DescripcionAcordeJazz,
                         id: d.idAcordeJazz,
                         Tipo: 'ConfiguracionAcordeJazz', // table name
+                        FechaCreacion: d.CreationDateAcordeJazz,
                     },
                 ],
             });
@@ -86,18 +113,21 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Descripcion: d.DescripcionConfigIntervalo,
                 id: d.idConfigIntervalo,
                 Tipo: 'ConfiguracionIntervalo', // table name
+                FechaCreacion: d.CreationDateConfigIntervalo,
             });
         } else {
             res.push({
                 id: d.id,
                 Nombre: d.Nombre,
                 Descripcion: d.Descripcion,
+                FechaCreacion: d.CreationDateModulo,
                 configuracion_dictado: [
                     {
                         Nombre: d.NombreConfigIntervalo,
                         Descripcion: d.DescripcionConfigIntervalo,
                         id: d.idConfigIntervalo,
                         Tipo: 'ConfiguracionIntervalo', // table name
+                        FechaCreacion: d.CreationDateConfigIntervalo,
                     },
                 ],
             });
@@ -175,4 +205,5 @@ module.exports = {
     GroupByIdAndShortByOrder,
     GroupByModuleAndConfigDict,
     GetFigurasSeparadasPorLigaduras,
+    orderByDateModuleAndConfig,
 };
