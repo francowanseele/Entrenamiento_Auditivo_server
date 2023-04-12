@@ -23,13 +23,13 @@ const GroupByIdAndShortByOrder = (arr) => {
 const orderByDateModuleAndConfig = (modules) => {
     let res;
     res = modules.sort(function(a,b){
-        return new Date(b.FechaCreacion) - new Date(a.FechaCreacion);
+        return new Date(a.FechaCreacion) - new Date(b.FechaCreacion);
     });
 
     let ret = [];
     res.forEach(m => {
         const configOrded = m.configuracion_dictado.sort(function(a,b){
-            return new Date(b.FechaCreacion) - new Date(a.FechaCreacion);
+            return new Date(a.FechaCreacion) - new Date(b.FechaCreacion);
         })
 
         ret.push({
