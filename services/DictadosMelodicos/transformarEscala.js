@@ -106,8 +106,19 @@ const getNroNotasInvolucradas = (notaIni, notaFin) => {
 
 // ej de nota = 'Do4'
 const getNotaTransformada = (nota, nroMov) => {
-    var numNota = parseInt(nota.slice(-1));
-    const nombreNota = nota.slice(0, -1);
+    const alteracionesSostenido = nota.match(/#/g) || []
+    const alteracionesBmol = nota.match(/b/g) || []
+    let nuevaNota = nota
+    if (alteracionesSostenido.length) {
+        nuevaNota = nuevaNota.replaceAll('#', '')
+    }
+    if (alteracionesBmol.length) {
+        nuevaNota = nuevaNota.replaceAll('b', '')
+    }
+    
+    // nuevaNota es del tipo Do4 or C4 (sin ateraciones)
+    var numNota = parseInt(nuevaNota.slice(-1));
+    const nombreNota = nuevaNota.slice(0, -1);
 
     if (!numNota) {
         general.printError(
@@ -128,7 +139,24 @@ const getNotaTransformada = (nota, nroMov) => {
         numNota--;
     }
 
-    return notasBase[i_tarns].concat(numNota.toString());
+    if (alteracionesSostenido.length && alteracionesBmol.length) {
+        console.log('hay alteraciones # y b');
+        console.log(nota);
+    }
+
+    if (alteracionesSostenido.length || alteracionesBmol.length) {
+        // Existe alteracion
+        if (nota.slice(-1) == '#' || nota.slice(-1) == 'b') {
+            // Alteraciones al final (Do4#)
+            return notasBase[i_tarns].concat(numNota.toString(), alteracionesSostenido.join(''), alteracionesBmol.join(''));
+        } else {
+            // Alteraciones entre nota y altura (C#4)
+            return notasBase[i_tarns].concat(alteracionesSostenido.join(''), alteracionesBmol.join(''), numNota.toString());
+        }
+    } else {
+        // No Existe alteracion
+        return notasBase[i_tarns].concat(numNota.toString());
+    }
 };
 
 const removeAlteraciones = (nota) => {

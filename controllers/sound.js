@@ -3,6 +3,7 @@ const path = require('path');
 const { Midi } = require('@tonejs/midi');
 const MidiWriter = require('midi-writer-js');
 const { exec } = require('child_process');
+const { Note } = require('@tonaljs/tonal');
 
 const cte = require('../services/constants');
 const comands = require('../services/comands');
@@ -141,7 +142,7 @@ function generateDictationFile(req, res) {
                     });
                 } else {
                     track.addNote({
-                        name: nota,
+                        name: Note.simplify(nota),
                         time: timeStart + timePartialSec,
                         duration: figuraSec,
                     });
@@ -209,6 +210,7 @@ function generateDictationFile(req, res) {
             trackDictation,
             compasSec * 2 // indica que arranque luego del sonido de los sticks (que tiene una duración de 1 compasSec)
         );
+
         // ----------------------------------------------
         //#endregion
 

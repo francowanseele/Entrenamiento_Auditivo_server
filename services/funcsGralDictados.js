@@ -127,6 +127,9 @@ const applyTransformation = (notas, escala) => {
                 const nombreAlt = alt.slice(0, 1);
                 if (nombreNota == nombreAlt) {
                     notaAlterada = alt + nota.slice(1, nota.length);
+                    // if there is #b or b#, is like there is no alteracion
+                    notaAlterada = notaAlterada.replaceAll('#b','')
+                    notaAlterada = notaAlterada.replaceAll('b#','')
                 }
             });
 
