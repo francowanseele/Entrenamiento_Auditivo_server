@@ -8,6 +8,7 @@ const { acordesJazz, intervaloTensiones, nombreCifrado_codigoTension_byNote } = 
 const { lessOrEqualThan, destructuringNote, removeAltura } = require('./generadorAcordesServices');
 const { acordeType } = require('../../enums/acordeType');
 const { estadoAcorde } = require('../../enums/estadoAcorde');
+const { referenciaReglaAcorde } = require('../../enums/referenciaReglaAcorde');
 
 /**
  *
@@ -896,7 +897,7 @@ const getReferenceNoteInRange = (note) => {
     return result;
 }
 
-const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde) => {
+const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde, referenceRule) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -940,10 +941,21 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, esta
         console.log(acorde);
     }
 
+    let referenceNoteResult = null;
+    if (referenceRule == null) {
+        referenceNoteResult = getReferenceNoteInRange(keyNote + '4') // just add altura
+    } else {
+        if (referenceRule == referenciaReglaAcorde.fundamental) {
+            referenceNoteResult = getReferenceNoteInRange(keyNote + '4') // just add altura
+        } else if (referenceRule == referenciaReglaAcorde.bajo) {
+            referenceNoteResult = getReferenceNoteInRange(removeAltura(acorde[0]) + '4') // just add altura
+        }
+    }
+
     return {
         name,
         acorde,
-        referenceNote: getReferenceNoteInRange(keyNote + '4'), // just add altura
+        referenceNote: referenceNoteResult, // getReferenceNoteInRange(keyNote + '4'), // just add altura
     };
 }
 
@@ -1047,7 +1059,7 @@ const getEstadosAcorde = (estadosAcordeStr) => {
  * @param {[{elem: string, prioridad: int}]} tonality [{elem: 'Do', prioridad: 3}] ¡¡¡ATENCIÓN!!! elem es Do y NO es C
  * @returns acorde = { name: result.name, acorde: result.acorde, tonality: tonality.escala }
  */
-const getAcordeJazz = (dataCamposArmonicos, tonality) => {
+const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule) => {
     // get tonality
     const tonalitySelected = getElemPrioridad(tonality);
 
@@ -1078,7 +1090,7 @@ const getAcordeJazz = (dataCamposArmonicos, tonality) => {
         dataCamposArmonicos.find((x) => x.Escala == escala && x.KeyNote == keyNote).EstadosAcorde
     );
 
-    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray);
+    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule);
 
     // TODO: define if apply or not alteraciones
     // const acorde = applyAlteraciones(result.acorde, tonality.escala);

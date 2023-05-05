@@ -41,7 +41,7 @@ async function generateAcordeJazz(req, res) {
             let acorde = null;
             let i = 0;
             while (!(acorde && acorde.name && acorde.acorde && acorde.tonality) && i < 20) {
-                acorde = getAcordeJazz(dataCamposArmonicos, escalaDiatonicaRegla);
+                acorde = getAcordeJazz(dataCamposArmonicos, escalaDiatonicaRegla, null);
                 i++;
             }
 
@@ -57,6 +57,18 @@ async function generateAcordeJazz(req, res) {
                 });
             }
         } else {
+            const cajs = await db
+                .knex('ConfiguracionAcordeJazz')
+                .where({ 'ConfiguracionAcordeJazz.id': idCAJ })
+                .select(
+                    'ConfiguracionAcordeJazz.id',
+                    'ConfiguracionAcordeJazz.Nombre',
+                    'ConfiguracionAcordeJazz.Descripcion',
+                    'ConfiguracionAcordeJazz.ModuloId',
+                    'ConfiguracionAcordeJazz.ReferenciaRegla',
+                );
+            const caj = cajs[0];
+            
             const nroDic = parseInt(cantDictation);
             let i = 0;
             let generateOk = true;
@@ -68,7 +80,7 @@ async function generateAcordeJazz(req, res) {
                 let cantRec = 0;
                 let acorde = null;
                 while (!generateOk && cantRec < cantRecMax) {
-                    acorde = getAcordeJazz(dataCamposArmonicos, escalaDiatonicaRegla);
+                    acorde = getAcordeJazz(dataCamposArmonicos, escalaDiatonicaRegla, caj.ReferenciaRegla);
                     generateOk = acorde && acorde.name && acorde.acorde && acorde.tonality;
                     cantRec++;
                 }

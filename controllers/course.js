@@ -226,6 +226,7 @@ async function addModule(req, res) {
                     CursoId: id,
                     created_by: getAuthenticationToken(req).id,
                     Eliminado: false,
+                    Orden: 9999,
                 })
                 .returning(['id', 'Nombre', 'Descripcion', 'CursoId']);
 
@@ -255,10 +256,12 @@ async function getModules(req, res) {
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
                 'Modulo.created_at as CreationDateModulo',
+                'Modulo.Orden as OrdenModulo',
                 'ConfiguracionDictado.Nombre as NombreConfigDictado',
                 'ConfiguracionDictado.Descripcion as DescripcionConfigDictado',
                 'ConfiguracionDictado.id as idConfigDictado',
                 'ConfiguracionDictado.created_at as CreationDateConfigDictado',
+                'ConfiguracionDictado.Orden as OrdenConfigDictado',
                 'ConfiguracionDictado.Eliminado'
             )
             .leftJoin('ConfiguracionDictado', function () { this
@@ -274,10 +277,12 @@ async function getModules(req, res) {
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
                 'Modulo.created_at as CreationDateModulo',
+                'Modulo.Orden as OrdenModulo',
                 'ConfiguracionAcordeJazz.Nombre as NombreAcordeJazz',
                 'ConfiguracionAcordeJazz.Descripcion as DescripcionAcordeJazz',
                 'ConfiguracionAcordeJazz.id as idAcordeJazz',
                 'ConfiguracionAcordeJazz.created_at as CreationDateAcordeJazz',
+                'ConfiguracionAcordeJazz.Orden as OrdenAcordeJazz',
                 'ConfiguracionAcordeJazz.Eliminado'
             )
             .leftJoin('ConfiguracionAcordeJazz', function () { this
@@ -293,10 +298,12 @@ async function getModules(req, res) {
                 'Modulo.Nombre',
                 'Modulo.Descripcion',
                 'Modulo.created_at as CreationDateModulo',
+                'Modulo.Orden as OrdenModulo',
                 'ConfiguracionIntervalo.Nombre as NombreConfigIntervalo',
                 'ConfiguracionIntervalo.Descripcion as DescripcionConfigIntervalo',
                 'ConfiguracionIntervalo.id as idConfigIntervalo',
                 'ConfiguracionIntervalo.created_at as CreationDateConfigIntervalo',
+                'ConfiguracionIntervalo.Orden as OrdenConfigIntervalo',
                 'ConfiguracionIntervalo.Eliminado'
             )
             .leftJoin('ConfiguracionIntervalo', function () { this
@@ -1190,6 +1197,7 @@ async function addConfigDictation(req, res) {
                     ModuloId: idModule,
                     CreadorUsuarioId: idUserCreate,
                     Eliminado: false,
+                    Orden: 9999,
                 })
                 .returning(['id'])
                 .transacting(trx);

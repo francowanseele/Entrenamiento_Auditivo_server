@@ -66,6 +66,7 @@ async function add(req, res) {
             description,
             dataCamposArmonicos,
             escalaDiatonicaRegla,
+            referenciaRegla,
         } = req.body;
         const { idModule } = req.query;
 
@@ -78,6 +79,8 @@ async function add(req, res) {
                     CreadorUsuarioId: getAuthenticationToken(req).id,
                     ModuloId: idModule,
                     Eliminado: false,
+                    Orden: 9999,
+                    ReferenciaRegla: referenciaRegla,
                 })
                 .returning(['id'])
                 .transacting(trx);
@@ -144,7 +147,8 @@ async function get(req, res) {
                 'ConfiguracionAcordeJazz.id',
                 'ConfiguracionAcordeJazz.Nombre',
                 'ConfiguracionAcordeJazz.Descripcion',
-                'ConfiguracionAcordeJazz.ModuloId'
+                'ConfiguracionAcordeJazz.ModuloId',
+                'ConfiguracionAcordeJazz.ReferenciaRegla',
             );
         const caj = cajs[0];
 
@@ -176,6 +180,7 @@ async function get(req, res) {
             id: caj.id,
             name: caj.Nombre,
             description: caj.Descripcion,
+            referenciaRegla: caj.ReferenciaRegla,
             dataCamposArmonicos: camposArmonicos,
             escalaDiatonicaRegla: tonalities,
         };

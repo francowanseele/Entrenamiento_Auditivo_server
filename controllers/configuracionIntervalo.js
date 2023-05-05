@@ -56,6 +56,7 @@ async function add(req, res) {
                     Direccion: dataIntervalos.Direccion,
                     Tipo: dataIntervalos.Tipo,
                     Eliminado: false,
+                    Orden: 9999,
                 })
                 .returning(['id'])
                 .transacting(trx);

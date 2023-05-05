@@ -23,13 +23,13 @@ const GroupByIdAndShortByOrder = (arr) => {
 const orderByDateModuleAndConfig = (modules) => {
     let res;
     res = modules.sort(function(a,b){
-        return new Date(a.FechaCreacion) - new Date(b.FechaCreacion);
+        return a.Orden - b.Orden || new Date(a.FechaCreacion) - new Date(b.FechaCreacion);
     });
 
     let ret = [];
     res.forEach(m => {
         const configOrded = m.configuracion_dictado.sort(function(a,b){
-            return new Date(a.FechaCreacion) - new Date(b.FechaCreacion);
+            return a.Orden - b.Orden || new Date(a.FechaCreacion) - new Date(b.FechaCreacion);
         })
 
         ret.push({
@@ -54,6 +54,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Descripcion: d.DescripcionConfigDictado,
                 Tipo: 'ConfiguracionDictado', // table name
                 FechaCreacion: d.CreationDateConfigDictado,
+                Orden: d.OrdenConfigDictado,
             });
         } else {
             res.push({
@@ -61,6 +62,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Nombre: d.Nombre,
                 Descripcion: d.Descripcion,
                 FechaCreacion: d.CreationDateModulo,
+                Orden: d.OrdenModulo,
                 configuracion_dictado: [
                     {
                         id: d.idConfigDictado,
@@ -68,6 +70,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                         Descripcion: d.DescripcionConfigDictado,
                         Tipo: 'ConfiguracionDictado', // table name
                         FechaCreacion: d.CreationDateConfigDictado,
+                        Orden: d.OrdenConfigDictado,
                     },
                 ],
             });
@@ -84,6 +87,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 id: d.idAcordeJazz,
                 Tipo: 'ConfiguracionAcordeJazz', // table name
                 FechaCreacion: d.CreationDateAcordeJazz,
+                Orden: d.OrdenAcordeJazz,
             });
         } else {
             res.push({
@@ -91,6 +95,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Nombre: d.Nombre,
                 Descripcion: d.Descripcion,
                 FechaCreacion: d.CreationDateModulo,
+                Orden: d.OrdenModulo,
                 configuracion_dictado: [
                     {
                         Nombre: d.NombreAcordeJazz,
@@ -98,6 +103,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                         id: d.idAcordeJazz,
                         Tipo: 'ConfiguracionAcordeJazz', // table name
                         FechaCreacion: d.CreationDateAcordeJazz,
+                        Orden: d.OrdenAcordeJazz,
                     },
                 ],
             });
@@ -114,6 +120,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 id: d.idConfigIntervalo,
                 Tipo: 'ConfiguracionIntervalo', // table name
                 FechaCreacion: d.CreationDateConfigIntervalo,
+                Orden: d.OrdenConfigIntervalo,
             });
         } else {
             res.push({
@@ -121,6 +128,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                 Nombre: d.Nombre,
                 Descripcion: d.Descripcion,
                 FechaCreacion: d.CreationDateModulo,
+                Orden: d.OrdenModulo,
                 configuracion_dictado: [
                     {
                         Nombre: d.NombreConfigIntervalo,
@@ -128,6 +136,7 @@ const GroupByModuleAndConfigDict = (dataConfigDictation, dataConfigAcordesJazz, 
                         id: d.idConfigIntervalo,
                         Tipo: 'ConfiguracionIntervalo', // table name
                         FechaCreacion: d.CreationDateConfigIntervalo,
+                        Orden: d.OrdenConfigIntervalo,
                     },
                 ],
             });
