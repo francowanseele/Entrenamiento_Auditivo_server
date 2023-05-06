@@ -306,7 +306,7 @@ function generateAcordeJazzFile(req, res) {
         const trackAcordeSound = (track, notesArray) => {
             notesArray.forEach(n => {
                 track.addNote({
-                    name: n,
+                    name: Note.simplify(n),
                     time: 0,
                     duration: 2,
                 });
@@ -398,7 +398,7 @@ function generateIntervaloFile(req, res) {
                 for (let i = 0; i < notesArray.length; i++) {
                     const n = notesArray[i];
                     track.addNote({
-                        name: n,
+                        name: Note.simplify(n),
                         time: i,
                         duration: 1,
                     });
@@ -406,7 +406,7 @@ function generateIntervaloFile(req, res) {
             } else {
                 notesArray.forEach(n => {
                     track.addNote({
-                        name: n,
+                        name: Note.simplify(n),
                         time: 1,
                         duration: 2,
                     });
