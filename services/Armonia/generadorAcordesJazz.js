@@ -4,11 +4,12 @@ const { getRandom, removeAllItemsFromArr, subtractArrays, getElemPrioridad } = r
 const { logError } = require('../errorService');
 const { ALTERACIONES_ESCALA_DIATONICA } = require('../EscalasDiatonicas/datosAngloSaxonNomenclature');
 const { transformarAEscalaDiatonica, applyAlteraciones } = require('../EscalasDiatonicas/moduleAngloSaxonNomenclature');
-const { acordesJazz, intervaloTensiones, nombreCifrado_codigoTension_byNote } = require('./dataAcordesJazz');
+const { acordesJazz, intervaloTensiones, nombreCifrado_codigoTension_byNote, tensionesCondicionales } = require('./dataAcordesJazz');
 const { lessOrEqualThan, destructuringNote, removeAltura } = require('./generadorAcordesServices');
 const { acordeType } = require('../../enums/acordeType');
 const { estadoAcorde } = require('../../enums/estadoAcorde');
 const { referenciaReglaAcorde } = require('../../enums/referenciaReglaAcorde');
+const { escalaCampoArmonico } = require('../../enums/escalaCampoArmonico');
 
 /**
  *
@@ -829,10 +830,10 @@ const deleteTension = (intervaloTensionesAux, tension) => {
  * @return an array of notes (ex C#5, Eb5) which belongs to tensiones section. 
  * That notes can't be the same notes of the tetrada.
  */
-const addTensiones = (acorde, keyNote, possibleTensiones) => {
+const addTensiones = (acorde, keyNote, possibleTensiones, tensionesAlreadyApplied) => {
     let intervaloTensionesAux = possibleTensiones;
     let acordeAux = acorde;
-    let tensionesApplied = [];
+    let tensionesApplied = tensionesAlreadyApplied;
 
     if (acorde) {
         do {
@@ -897,7 +898,45 @@ const getReferenceNoteInRange = (note) => {
     return result;
 }
 
-const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde, referenceRule) => {
+const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, possibleTensiones) => {
+    // Check if intervalo condicional exist
+    const tensionesCondicionalesPosibles = tensionesCondicionales.filter(
+        (x) =>
+            x.escala == escala &&
+            x.keyNote == keyNote &&
+            x.nombreCifrado == encryptedName
+    );
+    if (tensionesCondicionalesPosibles.length == 0) return { tetrada: tetrada, tension: null }
+
+    let tensionesToApply = []
+    tensionesCondicionalesPosibles.forEach(t => {
+        const tensionFinded = possibleTensiones.find((x) => x.codigo == t.tension)
+        if (tensionFinded) {
+            tensionesToApply.push(t)
+        }
+    });
+
+    if (tensionesToApply.length == 0) return { tetrada: tetrada, tension: null }
+
+    // if exists -> add one with 50% of chances and delete intervalo prohibido
+    
+    // randomly 50/50
+    const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
+    if (rdm % 2 == 0) return { tetrada: tetrada, tension: null }
+    const tensionCondicional = getRandom(tensionesToApply)
+
+    // delete intervalo prohibido
+    const noteToDelete = Note.transpose(keyNote, tensionCondicional.intervaloProhibido);
+    let newTetrada = removeAllItemsFromArr(tetrada, noteToDelete);
+
+    // add new note from tension
+    const noteToAdd = Note.transpose(keyNote, tensionCondicional.intervalo);
+    newTetrada.push(noteToAdd)
+
+    return { tetrada: newTetrada, tension: tensionCondicional.tension };
+}
+
+const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde, referenceRule, escala) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -907,13 +946,20 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, esta
     tetrada = generarTetradaJazz(encryptedName, keyNote);
     const notesProhibidasEnBajo = getNotesProhibidasEnBajo(encryptedName, keyNote);
 
+    // add tension condicional
+    const tensionesCondicionalesAdded = addTensionCondicional(escala, keyNote, encryptedName, tetrada, possibleTensiones) // Agrega la tensión especial (50/50 de agregarla o no) y si la agrega saca el intervalo que no debe estar
+
+    tetrada = tensionesCondicionalesAdded.tetrada;
+    const tensionAppliedAsCondicional = intervaloTensiones.find((x) => x.codigo == tensionesCondicionalesAdded.tension)
+    if (tensionAppliedAsCondicional) tensionesApplied.push(tensionAppliedAsCondicional)
+    
     let j = 0;
     do {
         // Get acorde
         acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo, estadosAcorde, tetrada);
         acorde = completeAcorde(acorde, tetrada);
         if (possibleTensiones.length > 0) {
-            const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones);
+            const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones, tensionesApplied);
             acorde = resultTensiones.acorde;
             tensionesApplied = resultTensiones.tensionesApplied;
         }
@@ -1057,6 +1103,7 @@ const getEstadosAcorde = (estadosAcordeStr) => {
     EstadosAcorde: 'estadoAcorde.fundamental, estadoAcorde.terceraInversion'
 }
  * @param {[{elem: string, prioridad: int}]} tonality [{elem: 'Do', prioridad: 3}] ¡¡¡ATENCIÓN!!! elem es Do y NO es C
+ * @param {referenciaReglaAcorde} referenceRule referenciaReglaAcorde.fundamental || referenciaReglaAcorde.bajo
  * @returns acorde = { name: result.name, acorde: result.acorde, tonality: tonality.escala }
  */
 const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule) => {
@@ -1090,7 +1137,7 @@ const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule) => {
         dataCamposArmonicos.find((x) => x.Escala == escala && x.KeyNote == keyNote).EstadosAcorde
     );
 
-    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule);
+    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule, escala);
 
     // TODO: define if apply or not alteraciones
     // const acorde = applyAlteraciones(result.acorde, tonality.escala);
@@ -1196,7 +1243,35 @@ const printToSee = (elem) => {
 // console.log(generarTetradaJazz('Maj7', 'C'));
 
 
-// console.log(generarAcordeJazz('Maj7', 'C', intervaloTensiones, acordeType.tetrada, [estadoAcorde.primeraInversion, estadoAcorde.fundamental]))
+// const intervaloTensionesEXAMPLE = [
+//     {
+//         nombre: 'Novena menor',
+//         codigo: 'b9',
+//         tipo: '9',
+//         intervalo: '9m',
+//         semitonos: 1,
+//         cantidadNombres: 2,
+//     },
+//     {
+//         nombre: 'Trecena menor',
+//         codigo: 'b13',
+//         tipo: '13',
+//         intervalo: '13m',
+//         semitonos: 8,
+//         cantidadNombres: 6,
+//     },
+// ]
+// console.log(
+//     generarAcordeJazz(
+//         '7',
+//         'E',
+//         intervaloTensionesEXAMPLE,
+//         acordeType.tetrada,
+//         [estadoAcorde.fundamental],
+//         referenciaReglaAcorde.fundamental,
+//         escalaCampoArmonico.menorArmonica
+//     )
+// );
 // console.log(generarTetradaJazz('Maj7', 'C'))
 
 

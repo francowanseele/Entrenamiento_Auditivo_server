@@ -1,4 +1,25 @@
 const { acordeType } = require('../../enums/acordeType');
+const { escalaCampoArmonico } = require('../../enums/escalaCampoArmonico');
+const { nombreCifrado_TetradaTriada } = require('../../enums/nombreCifrado_TetradaTriada');
+
+const tensionesCondicionales = [
+    {
+        escala: escalaCampoArmonico.menorArmonica,
+        keyNote: 'E',
+        nombreCifrado: nombreCifrado_TetradaTriada.tetrada_7,
+        tension: 'b13',
+        intervalo: '13m',
+        intervaloProhibido: '5P',
+    },
+    {
+        escala: escalaCampoArmonico.menorArmonica,
+        keyNote: 'E',
+        nombreCifrado: nombreCifrado_TetradaTriada.tetrada_7sus4,
+        tension: 'b13',
+        intervalo: '13m',
+        intervaloProhibido: '5P',
+    }
+]
 
 const acordesJazz = [
     // TÉTRADAS
@@ -475,4 +496,5 @@ module.exports = {
     acordesJazz,
     intervaloTensiones,
     nombreCifrado_codigoTension_byNote,
+    tensionesCondicionales,
 };

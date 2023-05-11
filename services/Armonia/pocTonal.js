@@ -164,7 +164,8 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 
 
 
-// console.log(Note.chroma('Db'))
+// console.log(Note.chroma('C#'))
+// console.log(Note.chroma('C#4'))
 
 // console.log(Note.transpose('G#2', '2m')); // Db2
 // console.log(Note.transpose('G#3', '2m')); // Db2
@@ -238,8 +239,8 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 // console.log(Interval.distance('B1', 'F4'));
 
 // console.log(Note.transpose('A4', '-8P'));
-console.log(Note.transpose('C4', '4A'));
-console.log(Note.transpose('C4', '4P'));
+// console.log(Note.transpose('C4', '4A'));
+console.log(Note.transpose('E', '5P'));
 
 
 // console.log(Interval.names());
