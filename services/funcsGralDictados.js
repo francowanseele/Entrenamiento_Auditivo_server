@@ -1,3 +1,4 @@
+const { Note } = require('@tonaljs/tonal');
 const transformar = require('./DictadosMelodicos/transformarEscala');
 const datoEscalaDiatonica = require('./EscalasDiatonicas/datos');
 const datoEscalaDiatonicaAnglo = require('./EscalasDiatonicas/datosAngloSaxonNomenclature');
@@ -142,6 +143,35 @@ const applyTransformation = (notas, escala) => {
     }
 };
 
+/**
+ * se fija las alteraciones que tiene tonality y les saca dicha alteracion a notas.
+ * 
+ * @param {[string]} notas ex: ['A#3', 'Cb4']
+ * @param {string} tonality ex: 'C' || 'Do'
+ */
+const unapplyTonality = (notas, tonality) => {
+    const alteraciones = datoEscalaDiatonicaAnglo.ALTERACIONES_ESCALA_DIATONICA.find(
+        (x) => x.escalaTraducida == tonality || x.escala == tonality
+    ).alteracion
+
+    let res = []
+    notas.forEach(nota => {
+        const infoNota = Note.get(nota)
+        let newNote = nota
+        alteraciones.forEach(alteracion => {
+            const acc = Note.get(alteracion).acc
+            const letter = Note.get(alteracion).letter
+            
+            if (infoNota.letter == letter) {
+                newNote = nota.replace(acc, '')
+            } 
+        });
+        res.push(newNote)
+    });
+
+    return res
+}
+
 // bpm = {menor: Number, mayor: Number}
 const getBPMRandom = (bpm) => {
     const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
@@ -260,4 +290,5 @@ module.exports = {
     getCompasSec,
     translateFigToSec,
     translateTonality,
+    unapplyTonality,
 };

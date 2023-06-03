@@ -216,10 +216,11 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 
 // console.log(letter + ' ' + acc + ' ' + oct);
 
-// console.log(Note.get('C'));
-// console.log(Note.get('C4'));
+console.log(Note.get('C#'));
+// console.log(Note.get('C2'));
 // console.log(Note.get('C#'));
 // console.log(Note.get('C#4'));
+// console.log(Note.get('C##2'));
 
 
 // console.log(calcularDiatonicaMayorMenor('Fa#', 'M'));
@@ -240,8 +241,20 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 
 // console.log(Note.transpose('A4', '-8P'));
 // console.log(Note.transpose('C4', '4A'));
-console.log(Note.transpose('E', '5P'));
+// console.log(Note.transpose('E', '5P')); // B
 
 
 // console.log(Interval.names());
 
+// console.log(Note.transpose('F2', '8P'));
+// console.log(Note.transpose('F2', '-8P'));
+// console.log('-----');
+// console.log(Note.transpose('F5', '6M'));
+// console.log(Note.transpose('F5', '-6M'));
+
+
+// console.log(Interval.add(Interval.distance('A3', 'A2'), '8P')); // != -
+
+
+// console.log(Interval.distance('A4', 'G#5'))
+// console.log(Interval.distance('C5', 'B3'))

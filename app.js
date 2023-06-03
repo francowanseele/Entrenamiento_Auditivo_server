@@ -19,6 +19,9 @@ const configIntervaloRoutes = require('./routers/configuracionIntervalo');
 const intervalosRoutes = require('./routers/intervalo');
 const calificacionRoutes = require('./routers/calificacion');
 const versionCheckRoutes = require('./routers/versionCheck');
+const dictadoArmonicoRoutes = require('./routers/dictadoArmonico');
+const CDARoutes = require('./routers/configuracionDictadoArmonico');
+const MusicSheetRoutes = require('./routers/musicSheet');
 
 // Configuration body parser
 app.use(express.urlencoded({ extended: false }));
@@ -56,6 +59,9 @@ app.use(`/api`, configIntervaloRoutes);
 app.use(`/api`, intervalosRoutes);
 app.use(`/api`, calificacionRoutes);
 app.use(`/api`, versionCheckRoutes);
+app.use(`/api`, dictadoArmonicoRoutes);
+app.use(`/api`, CDARoutes);
+app.use(`/api`, MusicSheetRoutes);
 
 // Export
 module.exports = app;

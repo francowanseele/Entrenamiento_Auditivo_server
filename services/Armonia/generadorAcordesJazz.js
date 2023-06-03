@@ -10,6 +10,7 @@ const { acordeType } = require('../../enums/acordeType');
 const { estadoAcorde } = require('../../enums/estadoAcorde');
 const { referenciaReglaAcorde } = require('../../enums/referenciaReglaAcorde');
 const { escalaCampoArmonico } = require('../../enums/escalaCampoArmonico');
+const { log } = require('vexflow');
 
 /**
  *
@@ -45,7 +46,6 @@ const getAltura = (note, voiceType, notesToAvoid, noteRange) => {
             higherNote = getHigherNote(voiceType);
             lowerNote = getLowerNote(voiceType);
         };
-
 
         if (lessOrEqualThan(noteToTry, higherNote)) {
             if (lessOrEqualThan(lowerNote, noteToTry)) {
@@ -266,13 +266,6 @@ const fixDistances = (acorde, i, notesToAvoid, allNotes) => {
         mustToAddNote = mustToAdd1 || mustToAdd2;
     }
 
-    // Check distances between voices (6m/6M or 11P)
-    // if(!checkProhibitedDistancesBetweenVoices(acordeResult)) {
-    //     console.log('..');
-    //     console.log(acordeResult);
-    //     console.log('..');
-    // }
-
     return {
         acorde: acordeResult,
         newNotes: newNotes,
@@ -362,7 +355,7 @@ const getMissingNotes = (acorde, allNotes) => {
  * @param {[ 'G', 'B', 'D', 'F#' ]} allNotes 
  * @returns check all notes be in acorde; distances between any pair and consecutive pairs -> return an avaliable acorde
  */
-const completeAcorde = (acorde, allNotes) => {
+const completeAcorde = (acorde, allNotes, newIntervalLower, newIntervalHigher) => {
     if (acorde == null) return null;
     let ok = checkProhibitedIntervalsBetweenAnyPair(acorde);
     if (!ok) return null;
@@ -391,10 +384,15 @@ const completeAcorde = (acorde, allNotes) => {
     // Check all notes be in acordeResult
     const notesToAdd = getMissingNotes(acordeResult, allNotes);
 
-    const noteRange = {
-        higherNote: getHigherNote(voices.tetrada_triada),
-        lowerNote: getLowerNote(voices.tetrada_triada),
-    };
+    let noteRange = null;
+    if (newIntervalLower && newIntervalHigher) {
+        noteRange = getUpperRange(voices.tetrada_triada, newIntervalLower, newIntervalHigher)
+    } else {
+        noteRange = {
+            higherNote: getHigherNote(voices.tetrada_triada),
+            lowerNote: getLowerNote(voices.tetrada_triada), 
+        };
+    }
     notesToAdd.forEach((n) => {
         let notesToAvoid = [];
         let noteToTry = null;
@@ -569,6 +567,7 @@ const checkTetradaInAcorde = (acorde, tetrada) => {
  * @returns voices.bajo || voices.tetrada_triada
  */
 const getVoiceTypeFromAcorde = (acorde) => {
+    // TODO: depende si es tríada o tétrada para el caso de acorde.length = 3 :O
     switch (acorde.length) {
         case 0:
             return voices.bajo;
@@ -583,9 +582,9 @@ const getVoiceTypeFromAcorde = (acorde) => {
 
 /**
  * 
- * @param {[C2, D2, F2, C3]} acorde 
- * @param {E2} noteToInsert 
- * @returns [C2, D2, E2, F2, C3]
+ * @param {[string]} acorde ex [C2, D2, F2, C3]
+ * @param {string} noteToInsert ex E2
+ * @returns acorde with noteToInsert. Ex: [C2, D2, E2, F2, C3]
  */
 const insertInOrder = (acorde, noteToInsert) => {
     let res = [];
@@ -642,6 +641,83 @@ const getFirstNoteBasedOnEstado = (estadosAcorde, tetrada, notesProhibidasEnBajo
 
 /**
  * 
+ * @param {*} voice 
+ * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
+ * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
+ * @returns upper notes
+ */
+const getUpperRange = (voice, newIntervalLower, newIntervalHigher) => {
+    if (newIntervalHigher && newIntervalLower) {
+        let lowerNoteResult = getLowerNote(voice)
+        let higherNoteResult = null
+
+        if (lessOrEqualThan(getHigherNote(voice), newIntervalHigher.higher)) {
+            // nota mas alta del intervalo < nota mas alta del nuevo intervalo
+            higherNoteResult = getHigherNote(voice)
+        } else {
+            higherNoteResult = newIntervalHigher.higher
+        }
+
+        return {
+            higherNote: higherNoteResult,
+            lowerNote: lowerNoteResult
+        }
+    } else {
+        return null;
+    }
+}
+
+/**
+ * 
+ * @param {voices} voice ex: voices.bajo
+ * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
+ * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
+ */
+const getRange = (voice, newIntervalLower, newIntervalHigher) => {
+    if (newIntervalHigher && newIntervalLower) {
+        let lowerNoteResult = null
+        let higherNoteResult = null
+        if (voice == voices.bajo) {
+            if (lessOrEqualThan(getLowerNote(voice), newIntervalLower.lower)) {
+                // nota mas baja del bajo < nota mas baja del nuevo intervalo
+                lowerNoteResult = newIntervalLower.lower
+            } else {
+                lowerNoteResult = getLowerNote(voice)
+            }
+
+            if (lessOrEqualThan(getHigherNote(voice), newIntervalLower.higher)) {
+                // nota mas alta del bajo < nota mas alta del nuevo intervalo
+                higherNoteResult = getHigherNote(voice)
+            } else {
+                higherNoteResult = newIntervalLower.higher
+            }
+        } else {
+            if (lessOrEqualThan(getLowerNote(voice), newIntervalHigher.lower)) {
+                // nota mas baja del intervalo < nota mas baja del nuevo intervalo
+                lowerNoteResult = newIntervalHigher.lower
+            } else {
+                lowerNoteResult = getLowerNote(voice)
+            }
+
+            if (lessOrEqualThan(getHigherNote(voice), newIntervalHigher.higher)) {
+                // nota mas alta del intervalo < nota mas alta del nuevo intervalo
+                higherNoteResult = getHigherNote(voice)
+            } else {
+                higherNoteResult = newIntervalHigher.higher
+            }
+        }
+
+        return {
+            higherNote: higherNoteResult,
+            lowerNote: lowerNoteResult
+        }
+    } else {
+        return null;
+    }
+}
+
+/**
+ * 
  * @param {[E, G#]} allNotes notes from tetrada, all this notes has to be in acorde
  * @param {[A2, C#5]} acorde acorde until this moment. In each recurtion it will have a new note
  * @param {[E]} notesNamesToAvoid this notes can not be selected as next note in the acorde, but in the next recurtion has to be included
@@ -650,7 +726,7 @@ const getFirstNoteBasedOnEstado = (estadosAcorde, tetrada, notesProhibidasEnBajo
  * @returns recursive function. Returns an acorde with a minimum of 4 notes, with all notes of allNotes. 
  *          --- This functions don't check consecutive distances. ---
  */
-const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhibidasEnBajo, estadosAcorde, tetrada) => {
+const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhibidasEnBajo, estadosAcorde, tetrada, newIntervalLower, newIntervalHigher) => {
     // Check if acorde is ok or fail
     const status = checkProhibitedIntervalsBetweenAnyPair(acorde);
     if (!status) return null;
@@ -665,15 +741,19 @@ const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhi
             [notaBajo],
             getVoiceTypeFromAcorde(acorde),
             [],
-            null
+            getRange(getVoiceTypeFromAcorde(acorde), newIntervalLower, newIntervalHigher),
         );
     } else {
         // New note
+        // **************************
+        // Verifico que no se pase de la nota máxima en base al acorde anterior
+        // **************************
+        const range = getUpperRange(getVoiceTypeFromAcorde(acorde), newIntervalLower, newIntervalHigher)
         note = getNote(
             subtractArrays(allNotesAux, notesNamesToAvoid),
             getVoiceTypeFromAcorde(acorde),
             [],
-            null
+            range,
         );
     }
 
@@ -688,13 +768,15 @@ const getIncompleteAcordeJazz = (allNotes, acorde, notesNamesToAvoid, notesProhi
         [],
         notesProhibidasEnBajo,
         estadosAcorde,
-        tetrada
+        tetrada,
+        newIntervalLower, 
+        newIntervalHigher
     );
 
     if (acordeResult) return acordeResult;
 
     // Recursive with the same acorde but new note will be avoided as next note in acorde
-    return getIncompleteAcordeJazz(allNotes, acorde, [removeAltura(note)], notesProhibidasEnBajo, estadosAcorde, tetrada);
+    return getIncompleteAcordeJazz(allNotes, acorde, [removeAltura(note)], notesProhibidasEnBajo, estadosAcorde, tetrada, newIntervalLower, newIntervalHigher);
 };
 
 
@@ -772,21 +854,25 @@ const isTensionApplied = (tension, tensionesApplied, acorde, keyNote) => {
  * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
  * @param {{nombre: 'Novena menor',codigo: 'b9',tipo: '9',intervalo: '9m',semitonos: 1,cantidadNombres: 2,}} tension 
  * @param {C} keyNote 
+ * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
+ * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
  * @returns returns the acorde after apply tension. 
  *          If is not possible to apply, return same acorde and accordeApplied = false 
  *          {acorde, acordeApplied}
  */
-const applyTensionToAcorde = (acorde, tension, keyNote) => {
+const applyTensionToAcorde = (acorde, tension, keyNote, newIntervalLower, newIntervalHigher) => {
     const newNote = Note.transpose(keyNote, tension.intervalo);
 
     let acordeResult = acorde;
     let notesToAvoid = [];
     let noteToTry = null;
     let acordeApplied = false;
+
+    const noteRange = getUpperRange(voices.tensiones, newIntervalLower, newIntervalHigher)
         
     do {
         // Get different altura
-        noteToTry = getAltura(newNote, voices.tensiones, notesToAvoid, null);
+        noteToTry = getAltura(newNote, voices.tensiones, notesToAvoid, noteRange);
 
         if (noteToTry) {
             notesToAvoid.push(noteToTry);
@@ -827,10 +913,12 @@ const deleteTension = (intervaloTensionesAux, tension) => {
  * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
  * @param {*} keyNote 
  * @param {*} possibleTensiones
+ * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
+ * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
  * @return an array of notes (ex C#5, Eb5) which belongs to tensiones section. 
  * That notes can't be the same notes of the tetrada.
  */
-const addTensiones = (acorde, keyNote, possibleTensiones, tensionesAlreadyApplied) => {
+const addTensiones = (acorde, keyNote, possibleTensiones, tensionesAlreadyApplied, newIntervalLower, newIntervalHigher) => {
     let intervaloTensionesAux = possibleTensiones;
     let acordeAux = acorde;
     let tensionesApplied = tensionesAlreadyApplied;
@@ -843,7 +931,7 @@ const addTensiones = (acorde, keyNote, possibleTensiones, tensionesAlreadyApplie
             const tension = getRandom(intervaloTensionesAux);
 
             if (isTensionApplied(tension, tensionesApplied, acorde, keyNote)) { 
-                const result = applyTensionToAcorde(acordeAux, tension, keyNote);
+                const result = applyTensionToAcorde(acordeAux, tension, keyNote, newIntervalLower, newIntervalHigher);
                 acordeAux = result.acorde;
                 if (result.acordeApplied) tensionesApplied.push(tension);
             }
@@ -936,7 +1024,44 @@ const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, possible
     return { tetrada: newTetrada, tension: tensionCondicional.tension };
 }
 
-const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde, referenceRule, escala) => {
+/**
+ * 
+ * @param {string} note 
+ * @param {{lower: string, higher: string}} interval {lower: 'F2', higher: 'D3'}
+ * @returns true if interval.lower <= note <= interval.higher
+ */
+const isNoteInInterval = (note, interval) => {
+    return lessOrEqualThan(interval.lower, note) && lessOrEqualThan(note, interval.higher);
+}
+
+/**
+ * Duplicate note in range
+ * @param {[E, G#, B, Cb]} allNotes notes from tetrada, all this notes has to be in acorde
+ * @param {[E2, G#5, B5, Cb5]} acorde acorde until this moment
+ * @param {[E3, E4, B2]} notesToAvoid notes can't be added
+ * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
+ * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
+ * @returns acorde with note in new interval (newIntervalLower - newIntervalHigher)
+ *          if can't insert -> return null
+ */
+const duplicateNotes = (allNotes, acorde, notesToAvoid, newIntervalLower, newIntervalHigher) => {
+    if (isNoteInInterval(acorde[acorde.length - 1], newIntervalHigher)) return { acorde: acorde, newNote: null };
+
+    const note = getNote(
+        allNotes,
+        null,
+        notesToAvoid,
+        getRange(voices.tetrada_triada, newIntervalLower, newIntervalHigher),
+    );
+    if (note == null) return { acorde: null, newNote: null }
+
+    return {
+        acorde: insertInOrder(acorde, note),
+        newNote: note,
+    }
+}
+
+const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde, referenceRule, escala, newIntervalLower, newIntervalHigher) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -956,13 +1081,38 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, esta
     let j = 0;
     do {
         // Get acorde
-        acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo, estadosAcorde, tetrada);
-        acorde = completeAcorde(acorde, tetrada);
+        acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo, estadosAcorde, tetrada, newIntervalLower, newIntervalHigher);
+        acorde = completeAcorde(acorde, tetrada, newIntervalLower, newIntervalHigher);
         if (possibleTensiones.length > 0) {
-            const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones, tensionesApplied);
+            const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones, tensionesApplied, newIntervalLower, newIntervalHigher);
             acorde = resultTensiones.acorde;
             tensionesApplied = resultTensiones.tensionesApplied;
         }
+        if (acorde && newIntervalLower && newIntervalHigher) {
+            // Check intervals between higher notes
+            let notesToAvoid = [];
+            let ok = false;
+            let exit = false;
+            let acordeToInterate = acorde
+
+
+            do {
+                const result = duplicateNotes(tetrada, acorde, notesToAvoid, newIntervalLower, newIntervalHigher)
+                // TODO: if result.acorde == null and recorde.newNote == null 
+                // Quiere decir que no pudo insertar ninguna nota en el intervalo. ¿¿¿¿¿¿Eso está bien??????
+                acordeToInterate = result.acorde
+                if (acordeToInterate) {
+                    acordeToInterate = completeAcorde(acordeToInterate, tetrada, newIntervalLower, newIntervalHigher);
+                    if (result.newNote) notesToAvoid.push(result.newNote)
+                    ok = acordeToInterate != null
+                } else {
+                    // can't find note to insert
+                    exit = true
+                }
+            } while (!ok && !exit)
+            if (ok) acorde = acordeToInterate
+        }
+
         j++;
     } while (acorde == null && j < MAX_ITERATION);
 
@@ -1104,9 +1254,11 @@ const getEstadosAcorde = (estadosAcordeStr) => {
 }
  * @param {[{elem: string, prioridad: int}]} tonality [{elem: 'Do', prioridad: 3}] ¡¡¡ATENCIÓN!!! elem es Do y NO es C
  * @param {referenciaReglaAcorde} referenceRule referenciaReglaAcorde.fundamental || referenciaReglaAcorde.bajo
+ * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
+ * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
  * @returns acorde = { name: result.name, acorde: result.acorde, tonality: tonality.escala }
  */
-const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule) => {
+const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule, newIntervalLower, newIntervalHigher) => {
     // get tonality
     const tonalitySelected = getElemPrioridad(tonality);
 
@@ -1127,7 +1279,7 @@ const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule) => {
     // get tensiones
     const tensiones = getDifferentsTensiones(nombreCifrado_tension.Tension);
 
-    const alt = ALTERACIONES_ESCALA_DIATONICA.find(x => x.escalaTraducida == tonalitySelected);
+    const alt = ALTERACIONES_ESCALA_DIATONICA.find(x => x.escalaTraducida == tonalitySelected || x.escala == tonalitySelected);
 
     // transpose keyNote to tonalitySelected
     const newNote = transformarAEscalaDiatonica([keyNote], alt.escala); // with alteraciones applied
@@ -1137,7 +1289,7 @@ const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule) => {
         dataCamposArmonicos.find((x) => x.Escala == escala && x.KeyNote == keyNote).EstadosAcorde
     );
 
-    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule, escala);
+    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule, escala, newIntervalLower, newIntervalHigher);
 
     // TODO: define if apply or not alteraciones
     // const acorde = applyAlteraciones(result.acorde, tonality.escala);

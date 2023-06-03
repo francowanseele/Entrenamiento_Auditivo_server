@@ -391,6 +391,112 @@ function generateAcordeJazzFile(req, res) {
     }
 }
 
+function generateDictadoArmonicoFile(req, res) {
+    try {
+        const trackDictadoArmonicoSound = (track, acordes) => {
+            let time = 0
+            acordes.forEach(a => {
+                a.Notas.split(',').forEach(n => {
+                    track.addNote({
+                        name: Note.simplify(n),
+                        time: time,
+                        duration: 2,
+                    });
+                });
+                time += 2
+            });
+
+            return track;
+        };
+
+        const trackAcordeSound = (track, notesArray) => {
+            notesArray.split(',').forEach(n => {
+                track.addNote({
+                    name: Note.simplify(n),
+                    time: 0,
+                    duration: 2,
+                });
+            });
+
+            return track;
+        };
+
+        const { dictado, acordes } = req.body;
+        const id = getAuthenticationToken(req).id;
+
+        // DICTADO
+        var midi = new Midi();
+        var track = midi.addTrack();
+        track = trackDictadoArmonicoSound(
+            track,
+            acordes
+        );
+
+        // ACORDE REF
+        var midiReferenceNote = new Midi();
+        var trackReferenceNote = midiReferenceNote.addTrack();
+        trackReferenceNote = trackAcordeSound(
+            trackReferenceNote,
+            dictado.AcordeReferencia
+        );
+
+        // DICTADO
+        const nameFileMidi = id.toString();
+        const nameFileMp3 = nameFileMidi + '_out';
+        fs.writeFileSync(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidi}.mid`,
+            new Buffer(midi.toArray())
+        );
+
+        // ACORDE REF
+        const nameFileMidi_noteRef = id.toString() + '_note_ref';
+        const nameFileMp3_noteRef = nameFileMidi_noteRef + '_out';
+        fs.writeFileSync(
+            `${cte.LOCATION_MUSIC_FILE}${nameFileMidi_noteRef}.mid`,
+            new Buffer(midiReferenceNote.toArray())
+        );
+
+        // DICTADO
+        // Dictado -> if exist file mp3 DELETE
+        const filePathMp3 = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3}.mp3`;
+        fs.exists(filePathMp3, (exists) => {
+            if (exists) {
+                fs.unlinkSync(filePathMp3);
+            }
+        });
+
+        // ACORDE REF
+        // Dictado -> if exist file mp3 DELETE
+        const filePathMp3_noteRef = `${cte.LOCATION_MUSIC_FILE}${nameFileMp3_noteRef}.mp3`;
+        fs.exists(filePathMp3_noteRef, (exists) => {
+            if (exists) {
+                fs.unlinkSync(filePathMp3_noteRef);
+            }
+        });
+
+        // DICTADO
+        // Dictado -> Midi to mp3
+        const comand = comands.miditomp3(nameFileMidi, nameFileMp3);
+        exec(comand);
+
+        // ACORDE REF
+        // Dictado -> Midi to mp3
+        const comand_noteRef = comands.miditomp3(nameFileMidi_noteRef, nameFileMp3_noteRef);
+        exec(comand_noteRef);
+
+        res.status(200).send({
+            ok: true,
+            message: 'Generación correcta del dictado armónico en .mid y .mp3.',
+        });
+    } catch (error) {
+        logError('sound/generateDictadoArmonicoFile', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 function generateIntervaloFile(req, res) {
     try {
         const trackSound = (track, notesArray, type) => {
@@ -499,5 +605,6 @@ module.exports = {
     tramsitDictation,
     tramsitNoteReference,
     generateAcordeJazzFile,
+    generateDictadoArmonicoFile,
     generateIntervaloFile,
 };

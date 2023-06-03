@@ -157,6 +157,57 @@ async function add(req, res) {
                     message: 'El usuario no tiene permisos de calificar este ejercicio.',
                 });
             }
+        } if (typeConfig == tipoConfiguracion.ConfiguracionDictadoArmonico) {
+            const configs = await db
+                .knex('DictadoArmonico')
+                .where({ 'DictadoArmonico.id': idExercise })
+                .select(
+                    'DictadoArmonico.id as DictadoArmonicoId', 
+                    'DictadoArmonico.CreadorUsuarioId as UsuarioId',
+
+                    'ConfiguracionDictadoArmonico.id as ConfiguracionDictadoArmonicoId',
+                    'Modulo.id as ModuloId',
+                    'Modulo.CursoId as CursoId',
+                )
+                .join(
+                    'ConfiguracionDictadoArmonico',
+                    'ConfiguracionDictadoArmonico.id',
+                    '=',
+                    'DictadoArmonico.ConfiguracionDictadoArmonicoId'
+                )
+                .join(
+                    'Modulo',
+                    'Modulo.id',
+                    '=',
+                    'ConfiguracionDictadoArmonico.ModuloId'
+                );
+            const config = configs[0];
+
+            if (config.UsuarioId == usrId) {
+                await db
+                    .knex('Calificacion')
+                    .insert({
+                        Nota: note,
+                        Correcto: correct,
+                        UsuarioId: usrId,
+                        DictadoId: null,
+                        AcordeJazzid: null,
+                        DictadoArmonicoId: config.DictadoArmonicoId,
+                        IntervaloId: null,
+                        ModuloId: config.ModuloId,
+                        CursoId: config.CursoId,
+                    });
+
+                res.status(200).send({
+                    ok: true,
+                    message: 'Calificacion guardada correctamente.',
+                });
+            } else {
+                res.status(400).send({
+                    ok: false,
+                    message: 'El usuario no tiene permisos de calificar este ejercicio.',
+                });
+            }
         } else {
             res.status(400).send({
                 ok: false,

@@ -311,9 +311,30 @@ async function getModules(req, res) {
                 .on('ConfiguracionIntervalo.Eliminado', db.knex.raw('?', [false]))
             });
 
+        const modulesDictadoArmonico = await db
+            .knex('Modulo')
+            .where({ 'Modulo.CursoId': id, 'Modulo.Eliminado': false })
+            .select(
+                'Modulo.id',
+                'Modulo.Nombre',
+                'Modulo.Descripcion',
+                'Modulo.created_at as CreationDateModulo',
+                'Modulo.Orden as OrdenModulo',
+                'ConfiguracionDictadoArmonico.Nombre as NombreConfigDictadoArmonico',
+                'ConfiguracionDictadoArmonico.Descripcion as DescripcionConfigDictadoArmonico',
+                'ConfiguracionDictadoArmonico.id as idConfigDictadoArmonico',
+                'ConfiguracionDictadoArmonico.created_at as CreationDateConfigDictadoArmonico',
+                'ConfiguracionDictadoArmonico.Orden as OrdenConfigDictadoArmonico',
+                'ConfiguracionDictadoArmonico.Eliminado'
+            )
+            .leftJoin('ConfiguracionDictadoArmonico', function () { this
+                .on('ConfiguracionDictadoArmonico.ModuloId', 'Modulo.id')
+                .on('ConfiguracionDictadoArmonico.Eliminado', db.knex.raw('?', [false]))
+            });
+
         res.status(200).send({
             ok: true,
-            modules: formatData.orderByDateModuleAndConfig(formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz, modulesIntervalo)),
+            modules: formatData.orderByDateModuleAndConfig(formatData.GroupByModuleAndConfigDict(modules, modulesAcordesJazz, modulesIntervalo, modulesDictadoArmonico)),
             message: 'Ok',
         });
     } catch (error) {
