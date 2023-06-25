@@ -147,6 +147,7 @@ async function get(req, res) {
 
         const camposArmonicosInicio = await db
             .knex('ConfiguracionDictadoArmonico_CampoArmonicoInicio')
+            .where({ 'ConfiguracionDictadoArmonicoId': id })
             .select(
                 'ConfiguracionDictadoArmonico_CampoArmonicoInicio.Escala',
                 'ConfiguracionDictadoArmonico_CampoArmonicoInicio.EscalaPrioridad',
@@ -161,6 +162,7 @@ async function get(req, res) {
 
         const camposArmonicosFin = await db
             .knex('ConfiguracionDictadoArmonico_CampoArmonicoFin')
+            .where({ 'ConfiguracionDictadoArmonicoId': id })
             .select(
                 'ConfiguracionDictadoArmonico_CampoArmonicoFin.Escala',
                 'ConfiguracionDictadoArmonico_CampoArmonicoFin.EscalaPrioridad',
@@ -175,6 +177,7 @@ async function get(req, res) {
 
         const camposArmonicosReferencia = await db
             .knex('ConfiguracionDictadoArmonico_CampoArmonicoReferencia')
+            .where({ 'ConfiguracionDictadoArmonicoId': id })
             .select(
                 'ConfiguracionDictadoArmonico_CampoArmonicoReferencia.Escala',
                 'ConfiguracionDictadoArmonico_CampoArmonicoReferencia.EscalaPrioridad',
