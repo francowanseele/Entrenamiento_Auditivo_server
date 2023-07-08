@@ -13,6 +13,7 @@ const nombreCifrado_TetradaTriada = {
     tetrada_AugMaj7: 'AugMaj7',
     tetrada_07: '07',
     tetrada_7hash5: '7(#5)',
+    tetrada_aug7: 'aug7',
     tetrada_7b5: '7(b5)',
     tetrada_7sus2: '7sus2',
     tetrada_7sus4: '7sus4',

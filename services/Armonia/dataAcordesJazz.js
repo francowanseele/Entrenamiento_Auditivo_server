@@ -84,6 +84,12 @@ const acordesJazz = [
         prohibidasEnBajo: [],
     },
     {
+        nombreCifrado: 'aug7', // <<<---
+        semitonos: ['4', '8', '10'], // Interval.fromSemitones(semitone) -> return interval
+        intervalos: ['3M', '5A', '7m'],
+        prohibidasEnBajo: [],
+    },
+    {
         nombreCifrado: '7(b5)',
         semitonos: ['4', '6', '10'], // Interval.fromSemitones(semitone) -> return interval
         intervalos: ['3M', '5d', '7m'],
