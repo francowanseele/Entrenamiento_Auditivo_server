@@ -1750,6 +1750,15 @@ async function editConfigDictation(req, res) {
                         'Descripcion': description,
                     })
                     .returning(['id', 'Nombre', 'Descripcion']);
+            } else if (tipo == tipoConfiguracion.ConfiguracionDictadoArmonico) {
+                configUpdated = await db
+                    .knex('ConfiguracionDictadoArmonico')
+                    .where({ 'ConfiguracionDictadoArmonico.id': idConfigDictation })
+                    .update({
+                        'Nombre': name,
+                        'Descripcion': description,
+                    })
+                    .returning(['id', 'Nombre', 'Descripcion']);
             }
 
             if (configUpdated && configUpdated.length > 0) {
