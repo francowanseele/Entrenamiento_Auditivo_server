@@ -10,5 +10,6 @@ api.post('/generate-dictado-armonico-file', [md_auth.ensureAuth], SoundControlle
 api.post('/generate-intervalo-file', [md_auth.ensureAuth], SoundController.generateIntervaloFile);
 api.get('/get-dictation-sound/:id', SoundController.tramsitDictation);
 api.get('/get-note-reference-sound/:id', SoundController.tramsitNoteReference);
+api.post('/save-listen-dictation', [md_auth.ensureAuth], SoundController.listenDictation);
 
 module.exports = api;

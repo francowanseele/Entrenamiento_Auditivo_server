@@ -11,6 +11,7 @@ const funcGralDictado = require('../services/funcsGralDictados');
 const { logError } = require('../services/errorService');
 const { getAuthenticationToken } = require('../services/headers');
 const { tipoIntervalo } = require('../enums/tipoIntervalo');
+const db = require('../data/knex');
 
 function tramsitDictation(req, res) {
     try {
@@ -600,6 +601,34 @@ function generateIntervaloFile(req, res) {
     }
 }
 
+async function listenDictation(req, res) {
+    try {
+        const { dictadoId, acordeJazzId, dictadoArmonicoId, intervaloId } = req.body
+
+        await db
+            .knex('ListenDictation')
+            .insert({
+                UsuarioId: getAuthenticationToken(req).id,
+                DictadoId: dictadoId,
+                DictadoArmonicoId: dictadoArmonicoId,
+                AcordeJazzId: acordeJazzId,
+                IntervaloId: intervaloId,
+            })
+            .returning(['id']);
+
+        res.status(200).send({
+            ok: true,
+            message: 'Registro guardado.',
+        });
+    } catch (error) {
+        logError('sound/listenDictation', error, req);
+        res.status(501).send({
+            ok: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     generateDictationFile,
     tramsitDictation,
@@ -607,4 +636,5 @@ module.exports = {
     generateAcordeJazzFile,
     generateDictadoArmonicoFile,
     generateIntervaloFile,
+    listenDictation,
 };
