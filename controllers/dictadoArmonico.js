@@ -1,6 +1,5 @@
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
-const { getAcordeJazz } = require('../services/Armonia/generadorAcordesJazz');
 const { getAuthenticationToken } = require('../services/headers');
 const { generarDictadoArmonicoJazz } = require('../services/Armonia/generadorDictadosArmonicosJazz');
 
@@ -58,6 +57,7 @@ async function generateDictadoArmonico(req, res) {
                         dictationLength
                     );
                 } catch (error) {
+                    console.log(error);
                     console.log('TRY CATCH -> ERRORRRRRRR....... generarDictadoArmonicoJazz');
                     result = null
                 }

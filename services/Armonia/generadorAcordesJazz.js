@@ -832,8 +832,8 @@ const checkTensionAlreadyApplaied = (tension, tensionesApplied) => {
  * @param {B} keyNote 
  * @returns true if Tension will be applied
  *          false if:   1. Tension type already exists, 
- *                      2. Enarmonía exist in interval tétrada/triada
- *                      3. 0.5 of probability to be applied or not
+ *                      2. Enarmonía exist in interval tétrada/triada  
+ *                      3. (NOT MORE) -> 0.5 of probability to be applied or not
  */
 const isTensionApplied = (tension, tensionesApplied, acorde, keyNote) => {
     // Check if tension with same name already applaied
@@ -843,10 +843,92 @@ const isTensionApplied = (tension, tensionesApplied, acorde, keyNote) => {
     if (checkExistEnarmonias(tension, acorde, keyNote)) return false;
 
     // Filter randomly if Tension is applied or not
-    const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
-    if (rdm % 2 == 0) return false
+    // const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
+    // if (rdm % 2 == 0) return false
     
     return true;
+}
+
+const insertTensionInAcorde = (acorde, noteToTry) => {
+    let acordeResult = insertInOrder(acorde, noteToTry);
+
+    if (!checkProhibitedIntervalsBetweenAnyPair(acordeResult)) {
+        // Fix noteToTry between any pair
+
+        let acordeAux = [];
+        acordeResult.forEach(note => {
+            let incorrectInterval = Interval.distance(note, noteToTry) == '8P' || Interval.distance(note, noteToTry) == '-8P' ||
+                Interval.distance(note, noteToTry) == '9m' || Interval.distance(note, noteToTry) == '-9m';
+            
+            if (incorrectInterval) {
+                // If note is duplicated -> delete it 
+                if (acordeResult.filter(n => Note.get(n).letter == Note.get(note).letter).length < 2) {
+                    // Note is not duplicated 
+                    acordeAux.push(note);
+                }
+            } else {
+                acordeAux.push(note);
+            }
+        });
+
+        acordeResult = acordeAux;
+    }
+    if (!checkProhibitedIntervalsBetweenConsecutivePair(acordeResult)) {
+        // Fix noteToTry between consecutive pair
+        const index = acordeResult.findIndex((x) => x == noteToTry);
+
+        if (acordeResult[index + 1]) {
+            if (Interval.distance(acordeResult[index], acordeResult[index + 1]) == '2m') {
+                if (acordeResult[index + 2]) {
+                    if (
+                        !(
+                            Interval.distance(acordeResult[index + 1], acordeResult[index + 2]) == '3M'
+                            && Interval.distance(acordeResult[index], acordeResult[index + 2]) == '4P'
+                        )
+                    ) {
+                        // if note acordeResult[index + 1] duplicated -> delete it
+                        if (acordeResult.filter(n => Note.get(n).letter == Note.get(acordeResult[index + 1]).letter).length > 1) {
+                            // duplicated note
+                            acordeResult = removeAllItemsFromArr(acordeResult, acordeResult[index + 1]);
+                        }
+                    }
+                } else {
+                    // if note acordeResult[index + 1] duplicated -> delete it
+                    if (acordeResult.filter(n => Note.get(n).letter == Note.get(acordeResult[index + 1]).letter).length > 1) {
+                        // duplicated note
+                        acordeResult = removeAllItemsFromArr(acordeResult, acordeResult[index + 1]);
+                    }
+                }
+            }
+        }
+
+        if (acordeResult[index - 1]) {
+            if (Interval.distance(acordeResult[index - 1], acordeResult[index]) == '2m') {
+                if (acordeResult[index + 1]) {
+                    if (
+                        !(
+                            Interval.distance(acordeResult[index], acordeResult[index + 1]) == '3M'
+                            && Interval.distance(acordeResult[index - 1], acordeResult[index + 1]) == '4P'
+                        )
+                    ) {
+                        // if note acordeResult[index - 1] duplicated -> delete it
+                        if (acordeResult.filter(n => Note.get(n).letter == Note.get(acordeResult[index - 1]).letter).length > 1) {
+                            // duplicated note
+                            acordeResult = removeAllItemsFromArr(acordeResult, acordeResult[index - 1]);
+                        }
+                    }
+                } else {
+                    // if note acordeResult[index - 1] duplicated -> delete it
+                    if (acordeResult.filter(n => Note.get(n).letter == Note.get(acordeResult[index - 1]).letter).length > 1) {
+                        // duplicated note
+                        acordeResult = removeAllItemsFromArr(acordeResult, acordeResult[index - 1]);
+                    }
+                }
+            }
+        }
+    }
+
+    return acordeResult;
 }
 
 /**
@@ -860,7 +942,7 @@ const isTensionApplied = (tension, tensionesApplied, acorde, keyNote) => {
  *          If is not possible to apply, return same acorde and accordeApplied = false 
  *          {acorde, acordeApplied}
  */
-const applyTensionToAcorde = (acorde, tension, keyNote, newIntervalLower, newIntervalHigher) => {
+const applyTensionToAcorde = (acorde, tension, keyNote, newIntervalLower, newIntervalHigher, tetrada) => {
     const newNote = Note.transpose(keyNote, tension.intervalo);
 
     let acordeResult = acorde;
@@ -869,6 +951,7 @@ const applyTensionToAcorde = (acorde, tension, keyNote, newIntervalLower, newInt
     let acordeApplied = false;
 
     const noteRange = getUpperRange(voices.tensiones, newIntervalLower, newIntervalHigher)
+    let acordeToCheck = null;
         
     do {
         // Get different altura
@@ -876,18 +959,27 @@ const applyTensionToAcorde = (acorde, tension, keyNote, newIntervalLower, newInt
 
         if (noteToTry) {
             notesToAvoid.push(noteToTry);
-            const acordeToCheck = insertInOrder(acorde, noteToTry);
+            acordeToCheck = insertTensionInAcorde(acorde, noteToTry);
+            acordeToCheck = completeAcorde(acordeToCheck, tetrada, newIntervalLower, newIntervalHigher);
+            
             acordeApplied = checkProhibitedIntervalsBetweenAnyPair(acordeToCheck) 
                             && checkProhibitedIntervalsBetweenConsecutivePair(acordeToCheck) 
                             && checkProhibitedDistancesBetweenVoices(acordeToCheck);
-            if (acordeApplied) acordeResult = acordeToCheck;
+            if (acordeToCheck) acordeResult = acordeToCheck;
         }
-    } while (noteToTry != null && !acordeApplied);
+    } while (noteToTry != null && acordeToCheck == null /*&& !acordeApplied*/);
 
-    return {
-        acorde: acordeResult,
-        acordeApplied: acordeApplied,
-    }
+    // if (!acordeApplied) {
+    //     console.log('NOT ACORDE APLIED');
+    //     console.log(acorde);
+    //     console.log(newNote);
+    // }
+
+    return acordeResult;
+    // return {
+    //     acorde: acordeResult,
+    //     acordeApplied: acordeApplied,
+    // }
 }
 
 /**
@@ -912,14 +1004,14 @@ const deleteTension = (intervaloTensionesAux, tension) => {
  * 
  * @param {[F#2, F#3, C#4, G#4, B4]} acorde 
  * @param {*} keyNote 
- * @param {*} possibleTensiones
+ * @param {*} addingTensiones
  * @param {{lower: string, higher: string}} newIntervalLower {lower: 'F2', higher: 'D3'}
  * @param {{lower: string, higher: string}} newIntervalHigher {lower: 'G3', higher: 'D5'}
  * @return an array of notes (ex C#5, Eb5) which belongs to tensiones section. 
  * That notes can't be the same notes of the tetrada.
  */
-const addTensiones = (acorde, keyNote, possibleTensiones, tensionesAlreadyApplied, newIntervalLower, newIntervalHigher) => {
-    let intervaloTensionesAux = possibleTensiones;
+const addTensiones = (acorde, keyNote, addingTensiones, tensionesAlreadyApplied, newIntervalLower, newIntervalHigher, tetrada) => {
+    let intervaloTensionesAux = addingTensiones;
     let acordeAux = acorde;
     let tensionesApplied = tensionesAlreadyApplied;
 
@@ -930,14 +1022,13 @@ const addTensiones = (acorde, keyNote, possibleTensiones, tensionesAlreadyApplie
             // However distances are checked when a tension is applied
             const tension = getRandom(intervaloTensionesAux);
 
-            if (isTensionApplied(tension, tensionesApplied, acorde, keyNote)) { 
-                const result = applyTensionToAcorde(acordeAux, tension, keyNote, newIntervalLower, newIntervalHigher);
-                acordeAux = result.acorde;
-                if (result.acordeApplied) tensionesApplied.push(tension);
+            if (isTensionApplied(tension, tensionesApplied, acorde, keyNote)) {  
+                acordeAux = applyTensionToAcorde(acordeAux, tension, keyNote, newIntervalLower, newIntervalHigher, tetrada);
+                tensionesApplied.push(tension);
             }
             
             intervaloTensionesAux = deleteTension(intervaloTensionesAux, tension);
-        } while (intervaloTensionesAux.length > 0);
+        } while (intervaloTensionesAux.length > 0 && acordeAux != null);
     }
 
     return {
@@ -986,7 +1077,7 @@ const getReferenceNoteInRange = (note) => {
     return result;
 }
 
-const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, possibleTensiones) => {
+const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, addingTensiones) => {
     // Check if intervalo condicional exist
     const tensionesCondicionalesPosibles = tensionesCondicionales.filter(
         (x) =>
@@ -998,7 +1089,7 @@ const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, possible
 
     let tensionesToApply = []
     tensionesCondicionalesPosibles.forEach(t => {
-        const tensionFinded = possibleTensiones.find((x) => x.codigo == t.tension)
+        const tensionFinded = addingTensiones.find((x) => x.codigo == t.tension)
         if (tensionFinded) {
             tensionesToApply.push(t)
         }
@@ -1006,11 +1097,8 @@ const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, possible
 
     if (tensionesToApply.length == 0) return { tetrada: tetrada, tension: null }
 
-    // if exists -> add one with 50% of chances and delete intervalo prohibido
+    // if exists -> add one with 100% (NO 50%) of chances and delete intervalo prohibido
     
-    // randomly 50/50
-    const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
-    if (rdm % 2 == 0) return { tetrada: tetrada, tension: null }
     const tensionCondicional = getRandom(tensionesToApply)
 
     // delete intervalo prohibido
@@ -1061,7 +1149,8 @@ const duplicateNotes = (allNotes, acorde, notesToAvoid, newIntervalLower, newInt
     }
 }
 
-const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, estadosAcorde, referenceRule, escala, newIntervalLower, newIntervalHigher) => {
+// addingTensiones -> son las tensiones que si o si tienen que ir
+const generarAcordeJazz = (encryptedName, keyNote, addingTensiones, tipo, estadosAcorde, referenceRule, escala, newIntervalLower, newIntervalHigher) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -1071,8 +1160,8 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, esta
     tetrada = generarTetradaJazz(encryptedName, keyNote);
     const notesProhibidasEnBajo = getNotesProhibidasEnBajo(encryptedName, keyNote);
 
-    // add tension condicional
-    const tensionesCondicionalesAdded = addTensionCondicional(escala, keyNote, encryptedName, tetrada, possibleTensiones) // Agrega la tensión especial (50/50 de agregarla o no) y si la agrega saca el intervalo que no debe estar
+    // add tension condicional 
+    const tensionesCondicionalesAdded = addTensionCondicional(escala, keyNote, encryptedName, tetrada, addingTensiones) // Si existe tensión especial  la agrega y saca el intervalo que no debe estar
 
     tetrada = tensionesCondicionalesAdded.tetrada;
     const tensionAppliedAsCondicional = intervaloTensiones.find((x) => x.codigo == tensionesCondicionalesAdded.tension)
@@ -1083,8 +1172,8 @@ const generarAcordeJazz = (encryptedName, keyNote, possibleTensiones, tipo, esta
         // Get acorde
         acorde = getIncompleteAcordeJazz(tetrada, [], [], notesProhibidasEnBajo, estadosAcorde, tetrada, newIntervalLower, newIntervalHigher);
         acorde = completeAcorde(acorde, tetrada, newIntervalLower, newIntervalHigher);
-        if (possibleTensiones.length > 0) {
-            const resultTensiones = addTensiones(acorde, keyNote, possibleTensiones, tensionesApplied, newIntervalLower, newIntervalHigher);
+        if (addingTensiones.length > 0) {
+            const resultTensiones = addTensiones(acorde, keyNote, addingTensiones, tensionesApplied, newIntervalLower, newIntervalHigher, tetrada);
             acorde = resultTensiones.acorde;
             tensionesApplied = resultTensiones.tensionesApplied;
         }
@@ -1245,6 +1334,10 @@ const getEstadosAcorde = (estadosAcordeStr) => {
     KeyNote: 'C',
     KeyNotePrioridad: 1,
     NombreCifrado: nombreCifrado_TetradaTriada.tetrada_Maj7,
+    SpecificTensions: 
+        intervaloTensiones.novenaMayor +
+        ', ' +
+        intervaloTensiones.tercenaMayor,
     Tension:
         intervaloTensiones.novenaMayor +
         ', ' +
@@ -1276,9 +1369,19 @@ const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule, newInterval
     // get nombreCifrado
     const nombreCifrado = nombreCifrado_tension.NombreCifrado;
 
-    // get tensiones
-    const tensiones = getDifferentsTensiones(nombreCifrado_tension.Tension);
-
+    // get tensiones ...
+    // TODO: getParticularTensiones
+    // en tensiones voy a tener las tensiones que si o si tienen que ir
+    // Se va a agregar otro campo en lugar de Tension (nombreCifrado_tension.Tension) para tener las tensiones que si o si tienen que aplicar
+    // const tensiones = getDifferentsTensiones(nombreCifrado_tension.Tension);
+    const tension = dataCamposArmonicos.find(x => x.Escala == escala && x.KeyNote == keyNote && x.NombreCifrado == nombreCifrado)?.Tension
+    // Validator
+    if (typeof tension != 'string') {
+        console.log('tension NO ES STRING !!!!');
+        console.log(tension);
+        console.log(typeof tension);
+    }
+    const tensiones = getDifferentsTensiones(tension);
     const alt = ALTERACIONES_ESCALA_DIATONICA.find(x => x.escalaTraducida == tonalitySelected || x.escala == tonalitySelected);
 
     // transpose keyNote to tonalitySelected

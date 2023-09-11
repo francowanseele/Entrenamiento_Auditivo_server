@@ -216,7 +216,7 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 
 // console.log(letter + ' ' + acc + ' ' + oct);
 
-console.log(Note.get('C#'));
+console.log(Note.get('C#3'));
 // console.log(Note.get('C2'));
 // console.log(Note.get('C#'));
 // console.log(Note.get('C#4'));
