@@ -162,7 +162,13 @@ const unapplyTonality = (notas, tonality) => {
             const acc = Note.get(alteracion).acc
             const letter = Note.get(alteracion).letter
             
-            if (infoNota.letter == letter) {
+            if (infoNota.letter == letter && (infoNota.acc == 'b' || infoNota.acc == '#')) { // saco la alteracion si solo tiene UNA alteración
+                // TODO: no solo reemplazar.. 
+                //  if acc == b
+                //      if nota tiene b
+                //          nota.replace(acc, '')
+                //      else
+                //          nota aplicar #
                 newNote = nota.replace(acc, '')
             } 
         });

@@ -52,6 +52,16 @@ const getAlteracionEscalaDiatonica = (noteLetter, alts) => {
     return altResult;
 }
 
+const getAlteracionResult = (alt1, alt2) => {
+    if (alt2 == 'b' && alt1.includes('#')) {
+        return alt1.replace('#', '');
+    } else if (alt2 == '#' && alt1.includes('b')) {
+        return alt1.replace('b', '');
+    } else {
+        return (alt1 + alt2);
+    }
+}
+
 /**
  * 
  * @param {[string]} notes notes array. Ex: ['C', 'F', 'G'] or ['C3', 'F3', 'G3']
@@ -71,9 +81,9 @@ const applyAlteraciones = (notes, tonalidad) => {
 
         let newNote = '';
         if (oct) {
-            newNote = letter + acc + newAcc + oct.toString();
+            newNote = letter + getAlteracionResult(acc, newAcc) + oct.toString();
         } else {
-            newNote = letter + acc + newAcc;
+            newNote = letter + getAlteracionResult(acc, newAcc);
         }
 
         notesResult.push(newNote);

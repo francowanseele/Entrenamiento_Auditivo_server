@@ -257,7 +257,7 @@ const getImageDictadoArmonico = (notas, tonalidad, fileName) => {
     for (let m = 0; m < nroMeasures; m++) {
         // Measure (compás)
         const staveTreble = new Vex.Flow.Stave(totalWidth, 0, 200);
-        const staveBass = new Vex.Flow.Stave(totalWidth, 60, 200);
+        const staveBass = new Vex.Flow.Stave(totalWidth, 75, 200);
         if (m == 0) {
             staveTreble
                 .addClef('treble')
