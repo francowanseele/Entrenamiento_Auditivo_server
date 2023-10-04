@@ -94,6 +94,10 @@ const obtenerUsuarioRegistrado = async (req, res) => {
     try {
         const { email, password, isTeacher } = req.body;
 
+        // JUST FOR CHECK ERROR IN PRODUCTION
+        // TODO: DELETE
+        console.log('call --> obtenerUsuarioRegistrado');
+
         const users = await db
             .knex('Usuario')
             .where({ Email: email.toLowerCase(), EsDocente: isTeacher, Eliminado: false })
@@ -121,6 +125,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                         isTeacher: usr.EsDocente,
                         personalCourseId: usr.CursoPersonalId,
                     }
+                    console.log('---> SUCCESS !!');
                     res.status(200).send({
                         ok: true,
                         personal_course: usr.CursoPersonalId,
@@ -136,6 +141,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                         message: 'Usuario encontrado',
                     });
                 } else {
+                    console.log('---> Error in bcrypt');
                     res.status(404).send({
                         ok: false,
                         message: 'password incorrecta',
@@ -143,6 +149,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
                 }
             });
         } else {
+            console.log('---> Usuario no encontrado');
             res.status(404).send({
                 ok: false,
                 message: 'No se ha encontrado el usuario',
