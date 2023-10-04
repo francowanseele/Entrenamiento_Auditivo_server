@@ -97,6 +97,7 @@ const obtenerUsuarioRegistrado = async (req, res) => {
         // JUST FOR CHECK ERROR IN PRODUCTION
         // TODO: DELETE
         console.log('call --> obtenerUsuarioRegistrado');
+        console.log(password);
 
         const users = await db
             .knex('Usuario')
