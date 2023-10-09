@@ -80,6 +80,7 @@ const getNotesInBeam = (fig_notes, index, n, clave) => {
         // TODO: Para acordes, puede que se le tenga que aplicar alteraciones diferentes a cada una de las notas
         const acc = Note.get(object.notas[0]).acc
         if (acc == '') {
+            // 
             keys.push(
                 new Vex.Flow.StaveNote({
                     clef: getClef(clave),
@@ -175,12 +176,43 @@ const getNotesInClef = (notes, clef) => {
 
 /**
  * 
+ * @param {*} note ex: 'A#3'
+ * @param {*} tonality ex: 'C' || 'Do'
+ * @returns {b | bb | # | ## | n}
+ */
+const getAlteracionNoteForTonality = (note, tonality) => {
+    const alteraciones = ALTERACIONES_ESCALA_DIATONICA.find(
+        (x) => x.escalaTraducida == tonality || x.escala == tonality
+    ).alteracion
+
+    let { letter, acc } = Note.get(note);
+    let res = acc
+
+    alteraciones.forEach(alteracion => {
+        if (letter == Note.get(alteracion).letter) {
+            if (acc == 'b' || acc == '#') {
+                res = '';
+                return res;
+            }
+
+            if (acc == '') {
+                res = 'n';
+                return res;
+            }
+        }
+    });
+
+    return res;
+}
+
+/**
+ * 
  * @param {[{figura: string, notas: [string]}]} fig_notes ex: [{figura: '8', notas: ['D3']}, {figura: '8', notas: ['D3', 'C3']}, ....]
  * @param {int} index 
  * @param {int} n 
  * @returns ex: [ { keys: ["c/4", "e/4", "g/4"], duration: "8" }, ...]
  */
-const getNotesInBeamPerClef = (fig_notes, index, n) => {
+const getNotesInBeamPerClef = (fig_notes, index, n, tonality) => {
     let keysTreble = []
     let keysBass = []
     for (let i = index; i < index + n; i++) {
@@ -196,7 +228,9 @@ const getNotesInBeamPerClef = (fig_notes, index, n) => {
             });
             for (let j = 0; j < notesTreble.length; j++) {
                 const note = notesTreble[j];
-                const acc = Note.get(note).acc
+                // Check alteracion with tonalidad (#, b, or neutral (becuadro))
+                const acc = getAlteracionNoteForTonality(note, tonality);
+                // const acc = Note.get(note).acc
                 if (acc != '') {
                     noteToAddTreble.addModifier(new Vex.Flow.Accidental(acc), j)
                 }
@@ -212,7 +246,9 @@ const getNotesInBeamPerClef = (fig_notes, index, n) => {
             });
             for (let j = 0; j < notesBass.length; j++) {
                 const note = notesBass[j];
-                const acc = Note.get(note).acc
+                // Check alteracion with tonalidad (#, b, or neutral (becuadro))
+                const acc = getAlteracionNoteForTonality(note, tonality);
+                // const acc = Note.get(note).acc
                 if (acc != '') {
                     noteToAddBass.addModifier(new Vex.Flow.Accidental(acc), j)
                 }
@@ -241,23 +277,24 @@ const getImageDictadoArmonico = (notas, tonalidad, fileName) => {
     const nroMeasures = figuras.length;
     const canvas = createCanvas();
     const renderer = new Vex.Flow.Renderer(canvas, Vex.Flow.Renderer.Backends.CANVAS);
-    renderer.resize((nroMeasures * 200) + 40, 200);
+    renderer.resize((nroMeasures * 200) + 60, 200);
 
     const context = renderer.getContext();
     context.save();
     context.fillStyle = 'white';
-    context.fillRect(0, 0, (nroMeasures * 200) + 40, 200);
+    context.fillRect(0, 0, (nroMeasures * 200) + 70, 200); // 70 = 40 + 30 -> 30 para el primer compás
     context.restore();
 
-    const notasWithoutTonality = notas.map((x) => unapplyTonality(x, tonalidad))
-    const fig_notes = getFigNotes(figuras, notasWithoutTonality);
+    // const notasWithoutTonality = notas.map((x) => unapplyTonality(x, tonalidad))
+    // const fig_notes = getFigNotes(figuras, notasWithoutTonality);
+    const fig_notes = getFigNotes(figuras, notas);
 
     let totalWidth = 20
     let fig_notes_i = 0
     for (let m = 0; m < nroMeasures; m++) {
         // Measure (compás)
-        const staveTreble = new Vex.Flow.Stave(totalWidth, 0, 200);
-        const staveBass = new Vex.Flow.Stave(totalWidth, 75, 200);
+        const staveTreble = new Vex.Flow.Stave(totalWidth, 0, m == 0 ? 230 : 200); // Se le suma 30 al primer compás
+        const staveBass = new Vex.Flow.Stave(totalWidth, 75, m == 0 ? 230 : 200); // Se le suma 30 al primer compás
         if (m == 0) {
             staveTreble
                 .addClef('treble')
@@ -268,6 +305,8 @@ const getImageDictadoArmonico = (notas, tonalidad, fileName) => {
                 .addClef('bass')
                 .addTimeSignature(numerador + '/' + denominador)
                 .addKeySignature(getKeySignature(tonalidad));
+
+            totalWidth += 30 // Se suma 30 al primer compás
         }
         totalWidth += 200
 
@@ -279,7 +318,7 @@ const getImageDictadoArmonico = (notas, tonalidad, fileName) => {
             // Beam (conjunto de figura)
             const nroFigsPerBeam = figuras[m][b_i].split('-').length
 
-            const result = getNotesInBeamPerClef(fig_notes, fig_notes_i, nroFigsPerBeam)
+            const result = getNotesInBeamPerClef(fig_notes, fig_notes_i, nroFigsPerBeam, tonalidad)
 
             notesInMeasureTreble = notesInMeasureTreble.concat(result.keysTreble)
             notesInMeasureBass = notesInMeasureBass.concat(result.keysBass)

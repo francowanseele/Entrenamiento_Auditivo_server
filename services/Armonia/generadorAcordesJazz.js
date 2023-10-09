@@ -1077,12 +1077,12 @@ const getReferenceNoteInRange = (note) => {
     return result;
 }
 
-const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, addingTensiones) => {
+const addTensionCondicional = (escala, keyNote, encryptedName, tetrada, addingTensiones, originalKeyNote) => {
     // Check if intervalo condicional exist
     const tensionesCondicionalesPosibles = tensionesCondicionales.filter(
         (x) =>
             x.escala == escala &&
-            x.keyNote == keyNote &&
+            x.keyNote == originalKeyNote &&
             x.nombreCifrado == encryptedName
     );
     if (tensionesCondicionalesPosibles.length == 0) return { tetrada: tetrada, tension: null }
@@ -1150,7 +1150,7 @@ const duplicateNotes = (allNotes, acorde, notesToAvoid, newIntervalLower, newInt
 }
 
 // addingTensiones -> son las tensiones que si o si tienen que ir
-const generarAcordeJazz = (encryptedName, keyNote, addingTensiones, tipo, estadosAcorde, referenceRule, escala, newIntervalLower, newIntervalHigher) => {
+const generarAcordeJazz = (encryptedName, keyNote, addingTensiones, tipo, estadosAcorde, referenceRule, escala, newIntervalLower, newIntervalHigher, originalKeyNote) => {
     const MAX_ITERATION = 15;
     let acorde = null;
     let tensionesApplied = [];
@@ -1161,7 +1161,7 @@ const generarAcordeJazz = (encryptedName, keyNote, addingTensiones, tipo, estado
     const notesProhibidasEnBajo = getNotesProhibidasEnBajo(encryptedName, keyNote);
 
     // add tension condicional 
-    const tensionesCondicionalesAdded = addTensionCondicional(escala, keyNote, encryptedName, tetrada, addingTensiones) // Si existe tensión especial  la agrega y saca el intervalo que no debe estar
+    const tensionesCondicionalesAdded = addTensionCondicional(escala, keyNote, encryptedName, tetrada, addingTensiones, originalKeyNote) // Si existe tensión especial  la agrega y saca el intervalo que no debe estar
 
     tetrada = tensionesCondicionalesAdded.tetrada;
     const tensionAppliedAsCondicional = intervaloTensiones.find((x) => x.codigo == tensionesCondicionalesAdded.tension)
@@ -1392,7 +1392,7 @@ const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule, newInterval
         dataCamposArmonicos.find((x) => x.Escala == escala && x.KeyNote == keyNote).EstadosAcorde
     );
 
-    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule, escala, newIntervalLower, newIntervalHigher);
+    const result = generarAcordeJazz(nombreCifrado, newNote[0], tensiones, nombreCifrado_tension.Tipo, estadosAcordeArray, referenceRule, escala, newIntervalLower, newIntervalHigher, keyNote);
 
     // TODO: define if apply or not alteraciones
     // const acorde = applyAlteraciones(result.acorde, tonality.escala);
@@ -1412,23 +1412,6 @@ module.exports = {
     fixDistances,
     getAcordeJazz,
 };
-
-// console.log('Maj7 -> ' + generarAcordeJazz('Maj7'));
-// console.log('7 -> ' + generarAcordeJazz('7'));
-// console.log('m7 -> ' + generarAcordeJazz('m7'));
-// console.log('m7b5 -> ' + generarAcordeJazz('m7b5'));
-// console.log('AugMaj7 -> ' + generarAcordeJazz('AugMaj7'));
-// console.log('07 -> ' + generarAcordeJazz('07'));
-// console.log('6 -> ' + generarAcordeJazz('6'));
-// console.log('m6 -> ' + generarAcordeJazz('m6'));
-// console.log('7(#5) -> ' + generarAcordeJazz('7(#5)'));
-// console.log('7(b5 -> ' + generarAcordeJazz('7(b5)'));
-// console.log('7sus2 -> ' + generarAcordeJazz('7sus2'));
-// console.log('7sus4 -> ' + generarAcordeJazz('7sus4'));
-// console.log('6sus2 -> ' + generarAcordeJazz('6sus2'));
-// console.log('6sus4 -> ' + generarAcordeJazz('6sus4'));
-// console.log('maj7sus2 -> ' + generarAcordeJazz('maj7sus2'));
-// console.log('maj7sus4 -> ' + generarAcordeJazz('maj7sus4'));
 
 // ------------------------------------------------------------
 // THIS ACORDE CAN NOT BE COMPLETED
@@ -1451,82 +1434,4 @@ const printToSee = (elem) => {
 
     return res;
 }
-
-
-// console.log(printToSee(generarAcordeJazz('Maj7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('m7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('m7b5', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('AugMaj7', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('07', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('6', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('m6', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('7(#5)', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('7(b5)', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('7sus2', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('7sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('6sus2', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('6sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('maj7sus2', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-// console.log(printToSee(generarAcordeJazz('maj7sus4', getRandom(SIMPLE_NOTES), intervaloTensiones)));
-
-
-// console.log('----------------------------------------')
-// console.log('TÉTRADAS')
-// console.log('----------------------------------------')
-// console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.tetrada)));
-// console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.tetrada)));
-// console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.tetrada)));
-// console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.tetrada)));
-// console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.tetrada)));
-// console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.tetrada)));
-// console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.tetrada)));
-
-// console.log('----------------------------------------')
-// console.log('TRÍADAS')
-// console.log('----------------------------------------')
-// console.log(printToSee(generarAcordeJazzFromNote('C', acordeType.triada)));
-// console.log(printToSee(generarAcordeJazzFromNote('D', acordeType.triada)));
-// console.log(printToSee(generarAcordeJazzFromNote('E', acordeType.triada)));
-// console.log(printToSee(generarAcordeJazzFromNote('F', acordeType.triada)));
-// console.log(printToSee(generarAcordeJazzFromNote('G', acordeType.triada)));
-// console.log(printToSee(generarAcordeJazzFromNote('A', acordeType.triada)));
-// console.log(printToSee(generarAcordeJazzFromNote('B', acordeType.triada)));
-
-
-// console.log(generarAcordeJazzFromNote('C', acordeType.tetrada));
-// console.log(generarTetradaJazz('Maj7', 'C'));
-
-
-// const intervaloTensionesEXAMPLE = [
-//     {
-//         nombre: 'Novena menor',
-//         codigo: 'b9',
-//         tipo: '9',
-//         intervalo: '9m',
-//         semitonos: 1,
-//         cantidadNombres: 2,
-//     },
-//     {
-//         nombre: 'Trecena menor',
-//         codigo: 'b13',
-//         tipo: '13',
-//         intervalo: '13m',
-//         semitonos: 8,
-//         cantidadNombres: 6,
-//     },
-// ]
-// console.log(
-//     generarAcordeJazz(
-//         '7',
-//         'E',
-//         intervaloTensionesEXAMPLE,
-//         acordeType.tetrada,
-//         [estadoAcorde.fundamental],
-//         referenciaReglaAcorde.fundamental,
-//         escalaCampoArmonico.menorArmonica
-//     )
-// );
-// console.log(generarTetradaJazz('Maj7', 'C'))
-
 
