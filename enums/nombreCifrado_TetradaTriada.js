@@ -17,6 +17,8 @@ const nombreCifrado_TetradaTriada = {
     tetrada_7b5: '7(b5)',
     tetrada_7sus2: '7sus2',
     tetrada_7sus4: '7sus4',
+    tetrada_m6sus2: 'm6sus2',
+    tetrada_mMaj7sus2: 'mMaj7sus2',
     triada_Mayor: 'Mayor',
     triada_Menor: 'Menor',
     triada_Disminuido: 'Disminuido',

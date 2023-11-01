@@ -3,9 +3,11 @@ const { escalaCampoArmonico } = require('../../enums/escalaCampoArmonico');
 const { nombreCifrado_TetradaTriada } = require('../../enums/nombreCifrado_TetradaTriada');
 
 const tensionesCondicionales = [
+    // CREO QUE ESTE TODO NO VA
+    // TODO: Agregar que keyNote sea con las nuevas notas que cambian para las tablas de menor
     {
         escala: escalaCampoArmonico.menorArmonica,
-        keyNote: 'E',
+        keyNote: 'G',
         nombreCifrado: nombreCifrado_TetradaTriada.tetrada_7,
         tension: 'b13',
         intervalo: '13m',
@@ -13,7 +15,23 @@ const tensionesCondicionales = [
     },
     {
         escala: escalaCampoArmonico.menorArmonica,
-        keyNote: 'E',
+        keyNote: 'G',
+        nombreCifrado: nombreCifrado_TetradaTriada.tetrada_7sus4,
+        tension: 'b13',
+        intervalo: '13m',
+        intervaloProhibido: '5P',
+    },
+    {
+        escala: escalaCampoArmonico.menorMelodica,
+        keyNote: 'G',
+        nombreCifrado: nombreCifrado_TetradaTriada.tetrada_7,
+        tension: 'b13',
+        intervalo: '13m',
+        intervaloProhibido: '5P',
+    },
+    {
+        escala: escalaCampoArmonico.menorMelodica,
+        keyNote: 'G',
         nombreCifrado: nombreCifrado_TetradaTriada.tetrada_7sus4,
         tension: 'b13',
         intervalo: '13m',

@@ -216,7 +216,7 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 
 // console.log(letter + ' ' + acc + ' ' + oct);
 
-console.log(Note.get('C#3'));
+// console.log(Note.get('C4'));
 // console.log(Note.get('C2'));
 // console.log(Note.get('C#'));
 // console.log(Note.get('C#4'));
@@ -237,16 +237,26 @@ console.log(Note.get('C#3'));
 // console.log('---------------------');
 
 // console.log(Interval.distance('G3', 'D6'));
-// console.log(Interval.distance('B1', 'F4'));
+// console.log(Interval.distance('C4', 'D#4'));
+// console.log(Interval.distance('B2', 'C4'));
+// console.log(Interval.distance('B2', 'C4'));
+// console.log(Interval.distance('B2', 'C4'));
+// console.log(Interval.distance('B2', 'C4'));
 
-// console.log(Note.transpose('A4', '-8P'));
+// console.log(Note.transpose('A4', '5P'));
 // console.log(Note.transpose('C4', '4A'));
 // console.log(Note.transpose('E', '5P')); // B
 
 
 // console.log(Interval.names());
 
-// console.log(Note.transpose('F2', '8P'));
+// console.log(Note.transpose('C#3', '5P'));
+// console.log(Note.transpose('A3', '5P'));
+// console.log(Note.transpose('E#4', '5P'));
+// console.log(Note.transpose('B4', '5P'));
+// console.log(Note.transpose('F4', '5P'));
+// console.log(Note.transpose('C5', '5P'));
+// console.log(Note.transpose('B2', '5P'));
 // console.log(Note.transpose('F2', '-8P'));
 // console.log('-----');
 // console.log(Note.transpose('F5', '6M'));
@@ -258,3 +268,10 @@ console.log(Note.get('C#3'));
 
 // console.log(Interval.distance('A4', 'G#5'))
 // console.log(Interval.distance('C5', 'B3'))
+
+
+console.log(Note.transpose('G#2', '5P'));
+console.log(Note.transpose('A3', '5P'));
+console.log(Note.transpose('B#3', '5P'));
+console.log(Note.transpose('E4', '5P'));
+console.log(Note.transpose('F#4', '5P'));
