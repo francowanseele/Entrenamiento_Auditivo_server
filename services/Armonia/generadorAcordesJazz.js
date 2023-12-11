@@ -1403,6 +1403,10 @@ const getAcordeJazz = (dataCamposArmonicos, tonality, referenceRule, newInterval
         tonality: alt.escala,
         type: nombreCifrado_tension.Tipo,
         referenceNote: result.referenceNote,
+        context: {
+            escala: escala,
+            keyNote: keyNote,
+        }
     };
 }
 

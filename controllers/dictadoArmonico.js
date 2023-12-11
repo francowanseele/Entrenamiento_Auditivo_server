@@ -1,7 +1,7 @@
 const db = require('../data/knex');
 const { logError } = require('../services/errorService');
 const { getAuthenticationToken } = require('../services/headers');
-const { generarDictadoArmonicoJazz } = require('../services/Armonia/generadorDictadosArmonicosJazz');
+const { generarDictadoArmonicoJazz, generarDictadoArmonicoJazzConTonicalizacion } = require('../services/Armonia/generadorDictadosArmonicosJazz');
 
 async function generateDictadoArmonico(req, res) {
     try {
@@ -48,7 +48,7 @@ async function generateDictadoArmonico(req, res) {
             let i = 0; 
             while (!(result && result.dictation && result.dictation.length == dictationLength) && i < 20) {
                 try {
-                    result = generarDictadoArmonicoJazz(
+                    result = generarDictadoArmonicoJazzConTonicalizacion(
                         dataCamposArmonicos,
                         dataCamposArmonicosInicio,
                         dataCamposArmonicosFin,
@@ -58,7 +58,7 @@ async function generateDictadoArmonico(req, res) {
                     );
                 } catch (error) {
                     console.log(error);
-                    console.log('TRY CATCH -> ERRORRRRRRR....... generarDictadoArmonicoJazz');
+                    console.log('TRY CATCH -> ERRORRRRRRR....... generarDictadoArmonicoJazzConTonicalizacion');
                     result = null
                 }
                 i++;
@@ -88,7 +88,7 @@ async function generateDictadoArmonico(req, res) {
                 let dictation = null;
                 while (!generateOk && cantRec < cantRecMax) {
                     try {
-                        dictation = generarDictadoArmonicoJazz(
+                        dictation = generarDictadoArmonicoJazzConTonicalizacion(
                             dataCamposArmonicos, 
                             dataCamposArmonicosInicio,
                             dataCamposArmonicosFin,
@@ -97,7 +97,7 @@ async function generateDictadoArmonico(req, res) {
                             dictationLength
                         );
                     } catch (error) {
-                        console.log('TRY CATCH -> ERRORRRRRRR....... generarDictadoArmonicoJazz');
+                        console.log('TRY CATCH -> ERRORRRRRRR....... generarDictadoArmonicoJazzConTonicalizacion');
                         dictation = null
                     }
                     generateOk = dictation && dictation.dictation && dictation.dictation.length && dictation.referenceChord;
@@ -137,6 +137,7 @@ async function generateDictadoArmonico(req, res) {
                                 AcordeReferencia: getNotasToSave(d.referenceChord.acorde),
                                 CreadorUsuarioId: getAuthenticationToken(req).id, 
                                 ConfiguracionDictadoArmonicoId: idDA,
+                                EsquemaDictado: d.dictationScheme.toString()
                             })
                             .returning(['id', 'Tonalidad', 'AcordeReferencia', 'CreadorUsuarioId', 'ConfiguracionDictadoArmonicoId'])
                             .transacting(trx);

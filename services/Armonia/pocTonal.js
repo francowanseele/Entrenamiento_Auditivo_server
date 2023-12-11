@@ -1,7 +1,7 @@
 const { Scale, ScaleType } = require("@tonaljs/tonal");
 const { ChordType } = require("@tonaljs/tonal");
 const { Note, Interval } = require('@tonaljs/tonal');
-const { getNotaTransformada } = require("../DictadosMelodicos/transformarEscala");
+const { getNotaTransformada, transformarNotasAEscalaDiatonica } = require("../DictadosMelodicos/transformarEscala");
 const { transformarAEscalaDiatonica } = require("../EscalasDiatonicas/moduleAngloSaxonNomenclature");
 const { calcularDiatonicaMayorMenor } = require("../EscalasDiatonicas/validacion");
 const { translateNotes } = require("../funcsGralDictados");
@@ -270,8 +270,12 @@ const { generarTetradaJazz } = require("./generadorAcordesJazz");
 // console.log(Interval.distance('C5', 'B3'))
 
 
-console.log(Note.transpose('G#2', '5P'));
-console.log(Note.transpose('A3', '5P'));
-console.log(Note.transpose('B#3', '5P'));
-console.log(Note.transpose('E4', '5P'));
-console.log(Note.transpose('F#4', '5P'));
+// console.log(Note.transpose('G#2', '5P'));
+// console.log(Note.transpose('A3', '5P'));
+// console.log(Note.transpose('B#3', '5P'));
+// console.log(Note.transpose('E4', '5P'));
+// console.log(Note.transpose('F#4', '5P'));
+
+
+
+transformarNotasAEscalaDiatonica(['C'])

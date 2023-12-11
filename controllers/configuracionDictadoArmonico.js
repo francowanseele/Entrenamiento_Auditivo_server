@@ -3,6 +3,30 @@ const { logError } = require('../services/errorService');
 const { getAuthenticationToken } = require('../services/headers');
 
 async function add(req, res) {
+    const getCampoArmonicoToInsertWithTonicalizacion = (camposArmonicos, cdaId) => {
+        let resultToInsert = [];
+
+        camposArmonicos.forEach((ca) => {
+            resultToInsert.push({
+                Nivel: ca.Nivel,
+                From: ca.From,
+                Tonicalizado: ca.Tonicalizado,
+                Funcion: ca.Funcion,
+                Escala: ca.Escala,
+                EscalaPrioridad: ca.EscalaPrioridad,
+                KeyNote: ca.KeyNote,
+                KeyNotePrioridad: ca.KeyNotePrioridad,
+                NombreCifrado: ca.NombreCifrado,
+                Tension: ca.Tension,
+                Tipo: ca.Tipo,
+                EstadosAcorde: ca.EstadosAcorde,
+                ConfiguracionDictadoArmonicoId: cdaId,
+            });
+        });
+
+        return resultToInsert;
+    };
+
     const getCampoArmonicoToInsert = (camposArmonicos, cdaId) => {
         let resultToInsert = [];
 
@@ -70,7 +94,7 @@ async function add(req, res) {
             await db
                 .knex('ConfiguracionDictadoArmonico_CampoArmonico')
                 .insert(
-                    getCampoArmonicoToInsert(dataCamposArmonicos, idCdaAdded)
+                    getCampoArmonicoToInsertWithTonicalizacion(dataCamposArmonicos, idCdaAdded)
                 )
                 .transacting(trx);
 
@@ -143,6 +167,10 @@ async function get(req, res) {
                 'ConfiguracionDictadoArmonico_CampoArmonico.Tipo',
                 'ConfiguracionDictadoArmonico_CampoArmonico.ConfiguracionDictadoArmonicoId',
                 'ConfiguracionDictadoArmonico_CampoArmonico.EstadosAcorde',
+                'ConfiguracionDictadoArmonico_CampoArmonico.Nivel',
+                'ConfiguracionDictadoArmonico_CampoArmonico.Tonicalizado',
+                'ConfiguracionDictadoArmonico_CampoArmonico.From',
+                'ConfiguracionDictadoArmonico_CampoArmonico.Funcion',
             );
 
         const camposArmonicosInicio = await db
