@@ -125,7 +125,7 @@ const generarDictadoArmonicoJazzConTonicalizacion = (
         } else {
             let res = false;
             const rdm = Math.floor(Math.random() * 10000 + 1); // nro random de 4 cifras
-            if (rdm % 4 == 0) res = true
+            if (rdm % 3 == 0) res = true
             
             dictationScheme.push(res)
         }
