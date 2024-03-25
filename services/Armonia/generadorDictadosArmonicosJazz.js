@@ -55,6 +55,8 @@ const getFuncionCampoArmonico = (isChordTarget, shouldHaveDominante, shouldHaveS
         } else {
             if (isChordTarget) {
                 res.push(funcionCampoArmonico.tonica)
+                res.push(funcionCampoArmonico.dominante)
+                res.push(funcionCampoArmonico.subdominante)
             } else {
                 for (const key in funcionCampoArmonico) {
                     res.push(funcionCampoArmonico[key])
@@ -82,20 +84,37 @@ const getFrom = (context) => {
  * @param {[funcionCampoArmonico]} funcionesCA [funcionCampoArmonico.tonica]
  * @param {string} from ex: 'Mayor|C'
  * @param {boolean} isChordTarget ex: true
+ * @param {boolean} isDominanteOrSub
  * @returns {object} ex: dataCamposArmonicos
  */
-const getDataCamposArmonicosWithTonicalizacion = (dataCamposArmonicos, nivel, funcionesCA, from, isChordTarget) => {
+const getDataCamposArmonicosWithTonicalizacion = (dataCamposArmonicos, nivel, funcionesCA, from, isChordTarget, isDominanteOrSub) => {
     let result = null
     if (nivel == 0) {
-        result = dataCamposArmonicos.filter(x => x.Nivel == nivel && funcionesCA.includes(x.Funcion) && x.From == '')
+        result = dataCamposArmonicos.filter(x => x.Nivel == nivel && (funcionesCA.includes(x.Funcion) || x.Funcion == null) && x.From == '')
     } else {
         result = dataCamposArmonicos.filter(x => x.Nivel == nivel && funcionesCA.includes(x.Funcion) && x.From == from)
     }
 
-    if (isChordTarget) {
-        return result.filter(x => x.Tonicalizado)
+    if (isDominanteOrSub) {
+        let escalaCAFrom = from.split('|')[0]
+        if (escalaCAFrom == escalaCampoArmonico.mayor || escalaCAFrom == escalaCampoArmonico.mayorArmonica) {
+            result = result.filter(x => x.Escala == escalaCampoArmonico.mayor || x.Escala == escalaCampoArmonico.mayorArmonica);
+        }
+
+        if (escalaCAFrom == escalaCampoArmonico.menorArmonica 
+            || escalaCAFrom == escalaCampoArmonico.menorMelodica
+            || escalaCAFrom == escalaCampoArmonico.menorNatural
+        ) {
+            result = result.filter(x => x.Escala == escalaCampoArmonico.menorArmonica 
+                || x.Escala == escalaCampoArmonico.menorMelodica
+                || x.Escala == escalaCampoArmonico.menorNatural);
+        }
     }
-    
+
+    if (isChordTarget) {
+        result = result.filter(x => x.Tonicalizado)
+    }
+        
     return result;
 }
 
@@ -163,7 +182,15 @@ const generarDictadoArmonicoJazzConTonicalizacion = (
             } else {
                 const funcionesCA = getFuncionCampoArmonico(dictationScheme[index], shouldHaveDominante, shouldHaveSubDominante)
                 let paramFrom = !shouldHaveDominante && shouldHaveSubDominante ? getFrom(dictation[index + 2].context) : getFrom(dictation[index + 1].context);
-                const dataCamposArmonicosWithLevel = getDataCamposArmonicosWithTonicalizacion(dataCamposArmonicos, nivel, funcionesCA, paramFrom, dictationScheme[index])
+                const dataCamposArmonicosWithLevel =
+                    getDataCamposArmonicosWithTonicalizacion(
+                        dataCamposArmonicos,
+                        nivel,
+                        funcionesCA,
+                        paramFrom,
+                        dictationScheme[index],
+                        shouldHaveDominante || shouldHaveSubDominante
+                    );
                 if (dataCamposArmonicosWithLevel.length == 0) console.log('ERROR... No hay dataCampoArmonico para tonicalizado')
                 chord = getAcordeJazz(dataCamposArmonicosWithLevel, newTonality, null, newIntervalLower, newIntervalHigher)
             }
@@ -178,7 +205,7 @@ const generarDictadoArmonicoJazzConTonicalizacion = (
                 tries ++
             } else {
                 let typeChord = dictationScheme[index] ? 'Tonicalizado' : shouldHaveDominante ? 'Dominante' : shouldHaveSubDominante ? 'Subdominante' : 'Normal'
-                dictationSchemeToSave[index] = typeChord + '|' + nivel.toString()
+                dictationSchemeToSave[index] = typeChord + '|' + nivel.toString() + '|' + chord.context.escala
                 // Chord OK 
                 if (dictationScheme[index]) {
                     // Acorde target -> usar tabla en las dos anteriores
