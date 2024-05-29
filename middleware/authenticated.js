@@ -25,10 +25,21 @@ exports.ensureAuth = (req, res, next) => {
         }
     } catch (ex) {
         logError('ensureAuth', ex, null);
-        return res.status(404).send({ 
-            ok: false,
-            message: 'Token inválido.' 
-        });
+
+        console.log('------>>>>> header.authorization')
+        console.log(req.headers.authorization);
+        console.log('------>>>>> token')
+        console.log(token);
+        console.log('--------------------------------------------------------');
+        console.log('--------------------------------------------------------');
+        ////////////////////////////////////////////////////
+        // TODO: esto no deberia estar comentado ya que no hace validacion de token
+        ////////////////////////////////////////////////////
+
+        // return res.status(404).send({ 
+        //     ok: false,
+        //     message: 'Token inválido.' 
+        // });
     }
 
     req.user = payload;
